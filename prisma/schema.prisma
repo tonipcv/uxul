@@ -1,0 +1,101 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Cycle {
+  id        Int      @id @default(autoincrement())
+  startDate DateTime
+  endDate   DateTime
+  vision    String?
+  weeks     Week[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Week {
+  id          Int      @id @default(autoincrement())
+  weekNumber  Int
+  vision      String?
+  reflection  String?
+  isExpanded  Boolean  @default(true)
+  cycle       Cycle    @relation(fields: [cycleId], references: [id], onDelete: Cascade)
+  cycleId     Int
+  goals       Goal[]
+  keyResults  KeyResult[]
+  days        Day[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([cycleId, weekNumber])
+}
+
+model Goal {
+  id        Int      @id @default(autoincrement())
+  title     String
+  week      Week     @relation(fields: [weekId], references: [id], onDelete: Cascade)
+  weekId    Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model KeyResult {
+  id        Int      @id @default(autoincrement())
+  title     String
+  target    Float
+  current   Float    @default(0)
+  week      Week     @relation(fields: [weekId], references: [id], onDelete: Cascade)
+  weekId    Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Day {
+  id        Int      @id @default(autoincrement())
+  date      DateTime
+  notes     String?
+  week      Week     @relation(fields: [weekId], references: [id], onDelete: Cascade)
+  weekId    Int
+  tasks     Task[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([weekId, date])
+}
+
+model Task {
+  id            Int       @id @default(autoincrement())
+  title         String
+  completed     Boolean   @default(false)
+  timeBlock     String    // 'strategic', 'buffer', 'break'
+  scheduledTime String?   // HH:mm format
+  day           Day       @relation(fields: [dayId], references: [id], onDelete: Cascade)
+  dayId         Int
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Habit {
+  id          Int           @id @default(autoincrement())
+  title       String
+  category    String        @default("personal")
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  progress    DayProgress[]
+}
+
+model DayProgress {
+  id        Int      @id @default(autoincrement())
+  date      DateTime
+  isChecked Boolean  @default(false)
+  habitId   Int
+  habit     Habit    @relation(fields: [habitId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([habitId, date])
+} 
