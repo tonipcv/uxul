@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { PlusIcon, TrashIcon, ChevronDownIcon, CheckCircleIcon, ClockIcon } from '@heroicons/react/24/outline';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,11 +9,13 @@ import { Progress } from "@/components/ui/progress";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
+type TimeBlock = 'strategic' | 'buffer' | 'break';
+
 interface Task {
   id: number;
   title: string;
   completed: boolean;
-  timeBlock: 'strategic' | 'buffer' | 'break';
+  timeBlock: TimeBlock;
   scheduledTime?: string;
 }
 
@@ -48,23 +50,50 @@ interface Cycle {
   weeks: WeekPlan[];
 }
 
+interface LatestCycleWeek {
+  id: number;
+  weekNumber: number;
+  vision: string;
+  reflection: string;
+  isExpanded: boolean;
+  goals: string[];
+  keyResults: {
+    id: number;
+    title: string;
+    target: number;
+    current: number;
+  }[];
+  days: {
+    id: number;
+    date: string;
+    notes: string;
+    tasks: Task[];
+  }[];
+}
+
+interface SelectValue {
+  title: string;
+  value: string;
+  icon?: React.ComponentType<{ className?: string }>;
+}
+
 export default function OneWeek() {
   const [cycle, setCycle] = useState<Cycle | null>(null);
   const [newTask, setNewTask] = useState({
     title: '',
-    timeBlock: 'strategic' as const,
+    timeBlock: 'strategic' as TimeBlock,
     scheduledTime: '09:00'
   });
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const [newGoal, setNewGoal] = useState('');
 
-  const timeBlocks = [
+  const timeBlocks: Array<{ id: TimeBlock; name: string; color: string }> = [
     { id: 'strategic', name: 'Estratégico', color: 'bg-cyan-900 text-cyan-200' },
     { id: 'buffer', name: 'Buffer', color: 'bg-purple-900 text-purple-200' },
     { id: 'break', name: 'Pausa', color: 'bg-pink-900 text-pink-200' },
   ];
 
-  const createNewCycle = () => {
+  const createNewCycle = useCallback(() => {
     const startDate = new Date();
     const endDate = new Date();
     endDate.setDate(endDate.getDate() + 84); // 12 semanas
@@ -106,31 +135,28 @@ export default function OneWeek() {
 
     setCycle(newCycle);
     saveCycle(newCycle); // Salvar o novo ciclo no banco de dados
-  };
+  }, []);
 
   useEffect(() => {
-    // Carregar dados existentes
     const loadCycle = async () => {
       try {
         const response = await fetch('/api/cycles');
         const cycles = await response.json();
         if (cycles.length > 0) {
-          // Converter datas de string para Date
           const latestCycle = cycles[cycles.length - 1];
           setCycle({
             ...latestCycle,
             startDate: new Date(latestCycle.startDate).toISOString().split('T')[0],
             endDate: new Date(latestCycle.endDate).toISOString().split('T')[0],
-            weeks: latestCycle.weeks.map((week: any) => ({
+            weeks: latestCycle.weeks.map((week: LatestCycleWeek) => ({
               ...week,
-              days: week.days.map((day: any) => ({
+              days: week.days.map((day) => ({
                 ...day,
                 date: new Date(day.date).toISOString().split('T')[0]
               }))
             }))
           });
         } else {
-          // Criar novo ciclo como antes
           createNewCycle();
         }
       } catch (error) {
@@ -140,7 +166,7 @@ export default function OneWeek() {
     };
 
     loadCycle();
-  }, []);
+  }, [createNewCycle]);
 
   // Função para salvar alterações
   const saveCycle = async (updatedCycle: Cycle) => {
@@ -258,17 +284,6 @@ export default function OneWeek() {
     return Math.round((completedTasks / totalTasks) * 100);
   };
 
-  const toggleWeekExpand = (weekId: number) => {
-    if (!cycle) return;
-
-    setCycle({
-      ...cycle,
-      weeks: cycle.weeks.map(week => 
-        week.id === weekId ? { ...week, isExpanded: !week.isExpanded } : week
-      )
-    });
-  };
-
   if (!cycle) return null;
 
   return (
@@ -373,7 +388,7 @@ export default function OneWeek() {
                                   <div className="flex gap-2">
                                     <Select
                                       value={newTask.timeBlock}
-                                      onValueChange={(value) => setNewTask({ ...newTask, timeBlock: value as any })}
+                                      onValueChange={(value: TimeBlock) => setNewTask({ ...newTask, timeBlock: value })}
                                     >
                                       <SelectTrigger className="text-xs">
                                         <SelectValue placeholder="Bloco" />

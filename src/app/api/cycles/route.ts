@@ -19,21 +19,69 @@ export async function GET() {
       }
     });
     return NextResponse.json(cycles);
-  } catch (error) {
+  } catch (err) {
+    console.error(err);
     return NextResponse.json({ error: 'Error fetching cycles' }, { status: 500 });
   }
 }
 
-export async function POST(request: Request) {
+interface Week {
+  weekNumber: number;
+  vision: string;
+  reflection: string;
+  isExpanded: boolean;
+  goals: string[];
+  keyResults: {
+    title: string;
+    target: number;
+    current: number;
+  }[];
+  days: {
+    date: string;
+    notes: string;
+    tasks: {
+      title: string;
+      completed: boolean;
+      timeBlock: string;
+      scheduledTime?: string;
+    }[];
+  }[];
+}
+
+interface CycleData {
+  startDate: Date;
+  endDate: Date;
+  vision?: string;
+  weeks: Week[];
+}
+
+interface Day {
+  date: string;
+  notes: string;
+  tasks: {
+    title: string;
+    completed: boolean;
+    timeBlock: string;
+    scheduledTime?: string;
+  }[];
+}
+
+interface Task {
+  title: string;
+  completed: boolean;
+  timeBlock: string;
+  scheduledTime?: string;
+}
+
+async function handlePost(data: CycleData) {
   try {
-    const data = await request.json();
     const cycle = await prisma.cycle.create({
       data: {
         startDate: new Date(data.startDate),
         endDate: new Date(data.endDate),
         vision: data.vision,
         weeks: {
-          create: data.weeks.map((week: any) => ({
+          create: data.weeks.map((week: Week) => ({
             weekNumber: week.weekNumber,
             vision: week.vision,
             reflection: week.reflection,
@@ -44,18 +92,18 @@ export async function POST(request: Request) {
               }))
             },
             keyResults: {
-              create: week.keyResults.map((kr: any) => ({
+              create: week.keyResults.map((kr) => ({
                 title: kr.title,
                 target: kr.target,
                 current: kr.current
               }))
             },
             days: {
-              create: week.days.map((day: any) => ({
+              create: week.days.map((day: Day) => ({
                 date: new Date(day.date),
                 notes: day.notes,
                 tasks: {
-                  create: day.tasks.map((task: any) => ({
+                  create: day.tasks.map((task: Task) => ({
                     title: task.title,
                     completed: task.completed,
                     timeBlock: task.timeBlock,
@@ -82,7 +130,18 @@ export async function POST(request: Request) {
       }
     });
     return NextResponse.json(cycle);
-  } catch (error) {
+  } catch (err) {
+    console.error(err);
+    return NextResponse.json({ error: 'Error creating cycle' }, { status: 500 });
+  }
+}
+
+export async function POST(request: Request) {
+  try {
+    const data = await request.json();
+    return handlePost(data);
+  } catch (err) {
+    console.error(err);
     return NextResponse.json({ error: 'Error creating cycle' }, { status: 500 });
   }
 } 

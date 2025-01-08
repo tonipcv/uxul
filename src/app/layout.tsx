@@ -1,35 +1,41 @@
-import type { Metadata } from "next";
-import { Inter } from "next/font/google";
-import "./globals.css";
-import Navigation from "@/components/Navigation";
+import './globals.css'
+import type { Metadata } from 'next'
+import { Inter } from 'next/font/google'
+import Navigation from '@/components/Navigation'
+import { ThemeProvider } from '@/components/theme-provider'
+import { NextAuthProvider } from '@/components/NextAuthProvider'
 
-const inter = Inter({ subsets: ["latin"] });
+const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: "BOOP - Planejamento e Hábitos",
-  description: "Organize seus hábitos e planeje seu trimestre de forma simples e eficiente.",
-  keywords: ["hábitos", "planejamento", "produtividade", "checklist", "metas", "organização"],
-  authors: [{ name: "BOOP" }],
-  creator: "BOOP",
-  publisher: "BOOP",
-  formatDetection: {
-    email: false,
-    address: false,
-    telephone: false,
-  },
-};
+  title: 'Habit Tracker',
+  description: 'Track your habits and achieve your goals',
+}
 
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode;
+  children: React.ReactNode
 }) {
   return (
-    <html lang="pt-BR">
+    <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
-        <Navigation />
-        <main className="lg:pl-20 pt-[4.5rem] lg:pt-0">{children}</main>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="dark"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <NextAuthProvider>
+            <div className="min-h-screen flex">
+              <Navigation />
+              <main className="flex-1 lg:pl-20">
+                {children}
+              </main>
+            </div>
+          </NextAuthProvider>
+        </ThemeProvider>
       </body>
     </html>
-  );
+  )
 }

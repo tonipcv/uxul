@@ -28,7 +28,8 @@ export async function POST(request: Request) {
       });
       return NextResponse.json(progress);
     }
-  } catch (error) {
+  } catch (err) {
+    console.error(err);
     return NextResponse.json({ error: 'Error updating progress' }, { status: 500 });
   }
 } 

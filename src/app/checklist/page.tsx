@@ -1,8 +1,8 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { ChevronLeftIcon, ChevronRightIcon, PlusIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { ChevronLeftIcon, ChevronRightIcon, PlusIcon, TrashIcon, CheckIcon } from '@heroicons/react/24/outline';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -61,11 +61,7 @@ export default function ChecklistPage() {
 
   const days = getDaysInMonth();
 
-  useEffect(() => {
-    loadHabits();
-  }, [currentDate]);
-
-  const loadHabits = async () => {
+  const loadHabits = useCallback(async () => {
     try {
       setIsLoading(true);
       const month = currentDate.toISOString();
@@ -83,7 +79,11 @@ export default function ChecklistPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [currentDate]);
+
+  useEffect(() => {
+    loadHabits();
+  }, [loadHabits]);
 
   const toggleHabit = async (habitId: number, date: string) => {
     try {
@@ -161,7 +161,8 @@ export default function ChecklistPage() {
       if (response.ok) {
         setHabits(prevHabits => prevHabits.filter(habit => habit.id !== habitId));
       } else {
-        console.error('Error deleting habit:', response.statusText);
+        const errorData = await response.json();
+        console.error('Error deleting habit:', errorData.error || response.statusText);
       }
     } catch (error) {
       console.error('Error deleting habit:', error);
@@ -169,24 +170,26 @@ export default function ChecklistPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background lg:p-8">
-      <Card className="lg:min-h-[calc(100vh-4rem)] border-0 lg:border">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-7 sticky top-0 bg-background/50 backdrop-blur supports-[backdrop-filter]:bg-background/30 z-10">
+    <div className="min-h-screen bg-background">
+      <Card className="min-h-screen lg:min-h-[calc(100vh-4rem)] border-0 lg:border">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4 lg:pb-7 sticky top-0 bg-background/50 backdrop-blur supports-[backdrop-filter]:bg-background/30 z-10 pt-[72px] lg:pt-4">
           <CardTitle className="text-xs font-normal text-white/70">Checklist de Hábitos</CardTitle>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 lg:gap-4">
             <Button
               variant="outline"
               size="icon"
+              className="h-8 w-8 lg:h-9 lg:w-9"
               onClick={() => setCurrentDate(prev => new Date(prev.getFullYear(), prev.getMonth() - 1))}
             >
               <ChevronLeftIcon className="h-4 w-4" />
             </Button>
-            <span className="text-sm font-light">
+            <span className="text-xs lg:text-sm font-light">
               {format(currentDate, 'MMMM yyyy', { locale: ptBR })}
             </span>
             <Button
               variant="outline"
               size="icon"
+              className="h-8 w-8 lg:h-9 lg:w-9"
               onClick={() => setCurrentDate(prev => new Date(prev.getFullYear(), prev.getMonth() + 1))}
             >
               <ChevronRightIcon className="h-4 w-4" />
@@ -194,9 +197,9 @@ export default function ChecklistPage() {
           </div>
         </CardHeader>
 
-        <CardContent>
+        <CardContent className="pb-24 lg:pb-8">
           {/* Form para adicionar novo hábito */}
-          <form onSubmit={addHabit} className="mb-8 flex flex-col lg:flex-row gap-4 sticky top-[5.5rem] bg-background/50 backdrop-blur supports-[backdrop-filter]:bg-background/30 z-10 py-4">
+          <form onSubmit={addHabit} className="mb-4 lg:mb-8 flex flex-col lg:flex-row gap-2 lg:gap-4 sticky top-[8.5rem] lg:top-[5.5rem] bg-background/50 backdrop-blur supports-[backdrop-filter]:bg-background/30 z-10 py-4">
             <Input
               value={newHabit.title}
               onChange={(e) => setNewHabit({ ...newHabit, title: e.target.value })}
@@ -207,7 +210,7 @@ export default function ChecklistPage() {
               value={newHabit.category}
               onValueChange={(value) => setNewHabit({ ...newHabit, category: value })}
             >
-              <SelectTrigger className="lg:w-48 text-xs">
+              <SelectTrigger className="text-xs">
                 <SelectValue placeholder="Categoria" />
               </SelectTrigger>
               <SelectContent>
@@ -218,14 +221,14 @@ export default function ChecklistPage() {
                 ))}
               </SelectContent>
             </Select>
-            <Button type="submit" className="w-full lg:w-auto text-xs">
+            <Button type="submit" className="text-xs">
               <PlusIcon className="h-4 w-4 mr-2" />
               Adicionar
             </Button>
           </form>
 
           {/* Tabela de hábitos */}
-          <div className="relative overflow-x-auto -mx-6 lg:mx-0">
+          <div className="relative overflow-x-auto -mx-4 lg:mx-0">
             {isLoading ? (
               <div className="text-center py-8">
                 <span className="text-xs text-muted-foreground">Carregando...</span>
@@ -239,14 +242,14 @@ export default function ChecklistPage() {
                 <table className="w-full border-collapse">
                   <thead>
                     <tr>
-                      <th className="text-left p-4 font-normal text-muted-foreground w-64 sticky left-0 bg-background/50 backdrop-blur supports-[backdrop-filter]:bg-background/30 z-10 text-xs">
+                      <th className="text-left p-3 lg:p-4 font-normal text-muted-foreground w-48 lg:w-64 sticky left-0 bg-background/50 backdrop-blur supports-[backdrop-filter]:bg-background/30 z-10 text-xs">
                         Hábito
                       </th>
                       {days.map(day => (
                         <th 
                           key={day.toString()} 
                           className={cn(
-                            "p-2 font-light text-center min-w-[40px]",
+                            "p-1 lg:p-2 font-light text-center min-w-[36px] lg:min-w-[40px]",
                             day.getMonth() !== currentDate.getMonth() && "text-muted-foreground/50"
                           )}
                         >
@@ -263,7 +266,7 @@ export default function ChecklistPage() {
                   <tbody>
                     {habits.map(habit => (
                       <tr key={habit.id} className="border-t border-border/50 group">
-                        <td className="p-4 sticky left-0 bg-background/50 backdrop-blur supports-[backdrop-filter]:bg-background/30 z-10">
+                        <td className="p-3 lg:p-4 sticky left-0 bg-background/50 backdrop-blur supports-[backdrop-filter]:bg-background/30 z-10">
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
                               <span className="font-light text-xs">{habit.title}</span>
@@ -274,7 +277,7 @@ export default function ChecklistPage() {
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-6 w-6 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                              className="h-6 w-6 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity lg:flex hidden"
                               onClick={() => deleteHabit(habit.id)}
                             >
                               <TrashIcon className="h-3 w-3" />
@@ -286,12 +289,12 @@ export default function ChecklistPage() {
                           const progress = habit.progress.find(p => p.date === dateStr);
                           
                           return (
-                            <td key={dateStr} className="p-2 text-center">
+                            <td key={dateStr} className="p-1 lg:p-2 text-center">
                               <Button
                                 variant="outline"
                                 size="icon"
                                 className={cn(
-                                  "w-8 h-8 rounded-full",
+                                  "w-7 h-7 lg:w-8 lg:h-8 rounded-full",
                                   day.getMonth() !== currentDate.getMonth() && "opacity-50",
                                   progress?.isChecked 
                                     ? "bg-turquoise border-turquoise text-background hover:bg-turquoise/90" 
@@ -299,21 +302,7 @@ export default function ChecklistPage() {
                                 )}
                                 onClick={() => toggleHabit(habit.id, dateStr)}
                               >
-                                {progress?.isChecked && (
-                                  <svg 
-                                    className="w-4 h-4" 
-                                    fill="none" 
-                                    viewBox="0 0 24 24" 
-                                    stroke="currentColor"
-                                  >
-                                    <path 
-                                      strokeLinecap="round" 
-                                      strokeLinejoin="round" 
-                                      strokeWidth={2} 
-                                      d="M5 13l4 4L19 7" 
-                                    />
-                                  </svg>
-                                )}
+                                {progress?.isChecked && <CheckIcon className="h-3 w-3 lg:h-4 lg:w-4" />}
                               </Button>
                             </td>
                           );
