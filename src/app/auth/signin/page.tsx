@@ -40,8 +40,8 @@ export default function SignIn() {
   };
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-background font-['Helvetica'] font-light">
-      <div className="w-full max-w-[350px]">
+    <div className="min-h-screen w-full flex items-center justify-center bg-background font-['Helvetica'] font-light px-4">
+      <div className="w-full max-w-[350px] mx-auto">
         <Card className="border-none shadow-none">
           <CardHeader className="space-y-1 pb-4">
             <Logo className="flex justify-center h-8 w-8 mx-auto" />

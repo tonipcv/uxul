@@ -27,7 +27,7 @@ export default function Navigation() {
   const pathname = usePathname();
 
   // Não mostrar navegação em páginas de autenticação
-  if (pathname?.startsWith('/auth/')) {
+  if (pathname?.startsWith('/auth')) {
     return null;
   }
 

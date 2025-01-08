@@ -10,6 +10,11 @@ const inter = Inter({ subsets: ['latin'] })
 export const metadata: Metadata = {
   title: 'Habit Tracker',
   description: 'Track your habits and achieve your goals',
+  viewport: {
+    width: 'device-width',
+    initialScale: 1,
+    maximumScale: 1,
+  },
 }
 
 export default function RootLayout({
@@ -27,9 +32,9 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <NextAuthProvider>
-            <div className="min-h-screen flex">
+            <div className="min-h-screen">
               <Navigation />
-              <main className="flex-1 lg:pl-20">
+              <main className="lg:pl-20">
                 {children}
               </main>
             </div>
