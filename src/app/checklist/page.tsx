@@ -8,6 +8,14 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 
 interface Habit {
   id: number;
@@ -173,7 +181,62 @@ export default function ChecklistPage() {
     <div className="min-h-screen bg-background">
       <Card className="min-h-screen lg:min-h-[calc(100vh-4rem)] border-0 lg:border">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4 lg:pb-7 sticky top-0 bg-background/50 backdrop-blur supports-[backdrop-filter]:bg-background/30 z-10 pt-[72px] lg:pt-4">
-          <CardTitle className="text-xs font-normal text-white/70">Checklist de Hábitos</CardTitle>
+          <div className="flex items-center gap-4">
+            <CardTitle className="text-xs font-normal text-white/70">Checklist de Hábitos</CardTitle>
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  size="icon"
+                  className="h-8 w-8 border-white/20 bg-transparent hover:bg-white/5"
+                >
+                  <PlusIcon className="h-4 w-4" />
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle className="text-sm font-normal">Novo Hábito</DialogTitle>
+                </DialogHeader>
+                <form onSubmit={addHabit} className="space-y-4 pt-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="title">Nome do hábito</Label>
+                    <Input
+                      id="title"
+                      value={newHabit.title}
+                      onChange={(e) => setNewHabit({ ...newHabit, title: e.target.value })}
+                      placeholder="Ex: Meditar"
+                      className="text-xs"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="category">Categoria</Label>
+                    <Select
+                      value={newHabit.category}
+                      onValueChange={(value) => setNewHabit({ ...newHabit, category: value })}
+                    >
+                      <SelectTrigger className="text-xs">
+                        <SelectValue placeholder="Selecione uma categoria" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {categories.map(category => (
+                          <SelectItem key={category.id} value={category.id} className="text-xs">
+                            {category.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <Button 
+                    type="submit" 
+                    className="w-full text-xs border-turquoise border bg-transparent hover:bg-turquoise/10 text-white hover:text-white" 
+                    disabled={isLoading}
+                  >
+                    {isLoading ? "Adicionando..." : "Adicionar"}
+                  </Button>
+                </form>
+              </DialogContent>
+            </Dialog>
+          </div>
           <div className="flex items-center gap-2 lg:gap-4">
             <Button
               variant="outline"
@@ -198,35 +261,6 @@ export default function ChecklistPage() {
         </CardHeader>
 
         <CardContent className="pb-24 lg:pb-8">
-          {/* Form para adicionar novo hábito */}
-          <form onSubmit={addHabit} className="mb-4 lg:mb-8 flex flex-col lg:flex-row gap-2 lg:gap-4 sticky top-[8.5rem] lg:top-[5.5rem] bg-background/50 backdrop-blur supports-[backdrop-filter]:bg-background/30 z-10 py-4">
-            <Input
-              value={newHabit.title}
-              onChange={(e) => setNewHabit({ ...newHabit, title: e.target.value })}
-              placeholder="Novo hábito..."
-              className="flex-1 text-xs"
-            />
-            <Select
-              value={newHabit.category}
-              onValueChange={(value) => setNewHabit({ ...newHabit, category: value })}
-            >
-              <SelectTrigger className="text-xs">
-                <SelectValue placeholder="Categoria" />
-              </SelectTrigger>
-              <SelectContent>
-                {categories.map(category => (
-                  <SelectItem key={category.id} value={category.id} className="text-xs">
-                    {category.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Button type="submit" className="text-xs">
-              <PlusIcon className="h-4 w-4 mr-2" />
-              Adicionar
-            </Button>
-          </form>
-
           {/* Tabela de hábitos */}
           <div className="relative overflow-x-auto -mx-4 lg:mx-0">
             {isLoading ? (

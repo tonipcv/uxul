@@ -84,7 +84,7 @@ export default function SignIn() {
               )}
               <Button 
                 type="submit" 
-                className="w-full border-white border bg-transparent hover:bg-white/10" 
+                className="w-full border-white border bg-transparent hover:bg-white/10 text-white hover:text-white" 
                 disabled={isLoading}
               >
                 {isLoading ? "Entrando..." : "Entrar"}
