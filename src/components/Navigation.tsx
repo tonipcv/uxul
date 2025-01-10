@@ -7,6 +7,7 @@ import {
   CheckCircleIcon,
   CircleStackIcon,
   ArrowRightOnRectangleIcon,
+  SparklesIcon,
 } from '@heroicons/react/24/outline';
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -52,6 +53,12 @@ export default function Navigation() {
           label: 'Círculos', 
           icon: CircleStackIcon,
           description: 'Progresso em círculos'
+        },
+        { 
+          href: '/gpt', 
+          label: 'Nutrição', 
+          icon: SparklesIcon,
+          description: 'Análise nutricional com IA'
         },
       ]
     }
