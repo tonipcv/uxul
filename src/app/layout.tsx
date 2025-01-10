@@ -14,7 +14,10 @@ export const metadata: Metadata = {
     width: 'device-width',
     initialScale: 1,
     maximumScale: 1,
+    userScalable: false,
+    viewportFit: 'cover',
   },
+  themeColor: '#000000',
 }
 
 export default function RootLayout({
@@ -23,8 +26,12 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" suppressHydrationWarning className="dark">
-      <body className={`${inter.className} antialiased`}>
+    <html lang="en" suppressHydrationWarning className="dark h-full">
+      <head>
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+      </head>
+      <body className={`${inter.className} antialiased h-full`}>
         <ThemeProvider
           attribute="class"
           defaultTheme="dark"
@@ -33,9 +40,9 @@ export default function RootLayout({
           forcedTheme="dark"
         >
           <NextAuthProvider>
-            <div className="min-h-screen">
+            <div className="min-h-[100dvh] h-full">
               <Navigation />
-              <main className="lg:pl-20">
+              <main className="lg:pl-20 h-full">
                 {children}
               </main>
             </div>
