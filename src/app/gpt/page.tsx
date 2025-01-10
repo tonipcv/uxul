@@ -20,7 +20,7 @@ interface NutritionInfo {
 }
 
 interface Message {
-  type: 'image' | 'response';
+  type: 'image' | 'response' | 'text';
   content: string;
   text?: string;
   nutritionInfo?: NutritionInfo;
@@ -81,18 +81,27 @@ export default function GptPage() {
   };
 
   const handleSubmit = async () => {
-    if (!selectedImage) {
-      setError('Por favor, selecione uma imagem primeiro.');
+    if (!selectedImage && !userText.trim()) {
+      setError('Por favor, adicione uma imagem ou texto.');
       return;
     }
 
     try {
-      setMessages(prev => [...prev, { 
-        type: 'image', 
-        content: selectedImage,
-        text: userText,
-        timestamp: new Date()
-      }]);
+      // Add message to chat
+      if (selectedImage) {
+        setMessages(prev => [...prev, { 
+          type: 'image', 
+          content: selectedImage,
+          text: userText,
+          timestamp: new Date()
+        }]);
+      } else {
+        setMessages(prev => [...prev, { 
+          type: 'text', 
+          content: userText,
+          timestamp: new Date()
+        }]);
+      }
       
       setIsAnalyzing(true);
       setError(null);
@@ -111,7 +120,7 @@ export default function GptPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Erro ao analisar imagem');
+        throw new Error(data.error || 'Erro ao analisar');
       }
 
       setMessages(prev => [...prev, { 
@@ -129,10 +138,10 @@ export default function GptPage() {
       if (error instanceof Error) {
         setError(error.message);
       } else {
-        setError('Erro ao analisar imagem. Por favor, tente novamente.');
+        setError('Erro ao analisar. Por favor, tente novamente.');
       }
       
-      // Remove a última mensagem (a imagem) se houver erro
+      // Remove a última mensagem se houver erro
       setMessages(prev => prev.slice(0, -1));
     } finally {
       setIsAnalyzing(false);
@@ -141,20 +150,20 @@ export default function GptPage() {
 
   return (
     <div className="flex flex-col h-screen bg-background">
-      <div className="fixed top-0 left-0 right-0 z-30 bg-background/50 backdrop-blur supports-[backdrop-filter]:bg-background/30 border-b">
+      <div className="hidden lg:block fixed top-0 left-0 right-0 z-30 bg-background/50 backdrop-blur supports-[backdrop-filter]:bg-background/30 border-b">
         <div className="container max-w-3xl mx-auto flex items-center gap-3 h-14 px-4">
           <Bot className="h-6 w-6" />
           <h1 className="text-lg font-normal">Assistente Nutricional</h1>
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto pt-[5.5rem] pb-[calc(18rem+env(safe-area-inset-bottom))] lg:pt-[3.5rem] lg:pb-[11rem]">
+      <div className="flex-1 overflow-y-auto pt-0 lg:pt-[3.5rem] pb-[calc(18rem+env(safe-area-inset-bottom))] lg:pb-[11rem]">
         <div className="container max-w-3xl mx-auto p-4">
           <div className="space-y-4">
             {messages.length === 0 && (
               <div className="text-center py-8 text-muted-foreground">
                 <Bot className="h-8 w-8 mx-auto mb-4 opacity-50" />
-                <p className="text-sm">Envie uma foto do seu alimento para análise nutricional</p>
+                <p className="text-sm">Envie uma foto ou descreva seu alimento para análise nutricional</p>
               </div>
             )}
             
@@ -163,7 +172,7 @@ export default function GptPage() {
                 key={index}
                 className={cn(
                   "flex items-end gap-2",
-                  message.type === 'image' ? "justify-end" : "justify-start"
+                  message.type === 'image' || message.type === 'text' ? "justify-end" : "justify-start"
                 )}
               >
                 {message.type === 'response' && (
@@ -172,7 +181,7 @@ export default function GptPage() {
                 <div
                   className={cn(
                     "rounded-2xl p-4 max-w-[85%] relative",
-                    message.type === 'image' 
+                    message.type === 'image' || message.type === 'text'
                       ? "bg-primary text-primary-foreground rounded-br-sm" 
                       : "bg-muted rounded-bl-sm"
                   )}
@@ -190,6 +199,13 @@ export default function GptPage() {
                       {message.text && (
                         <p className="text-sm">{message.text}</p>
                       )}
+                      <div className="text-[10px] opacity-70 text-right">
+                        {format(message.timestamp, 'HH:mm', { locale: ptBR })}
+                      </div>
+                    </div>
+                  ) : message.type === 'text' ? (
+                    <div className="space-y-3">
+                      <p className="text-sm">{message.content}</p>
                       <div className="text-[10px] opacity-70 text-right">
                         {format(message.timestamp, 'HH:mm', { locale: ptBR })}
                       </div>
@@ -223,7 +239,7 @@ export default function GptPage() {
                     </div>
                   )}
                 </div>
-                {message.type === 'image' && (
+                {(message.type === 'image' || message.type === 'text') && (
                   <User className="h-6 w-6 mb-1" />
                 )}
               </div>
@@ -255,7 +271,7 @@ export default function GptPage() {
       </div>
 
       <div className="fixed bottom-0 left-0 right-0 z-30 bg-background border-t">
-        <div className="container max-w-3xl mx-auto p-4 pb-[calc(6rem+env(safe-area-inset-bottom))] lg:pb-4">
+        <div className="container max-w-3xl mx-auto p-4 pb-[calc(5rem+env(safe-area-inset-bottom))] lg:pb-4">
           <div className="space-y-4">
             {selectedImage && (
               <div className="relative aspect-video w-full max-w-[150px] overflow-hidden rounded-lg border">
@@ -269,7 +285,7 @@ export default function GptPage() {
             )}
             <div className="flex flex-col gap-2">
               <Textarea
-                placeholder="Descreva o alimento ou adicione informações relevantes... (opcional)"
+                placeholder={selectedImage ? "Descreva o alimento ou adicione informações relevantes... (opcional)" : "Descreva o alimento que você quer analisar..."}
                 value={userText}
                 onChange={(e) => setUserText(e.target.value)}
                 className="min-h-[80px] max-h-[120px] resize-none text-sm"
@@ -295,7 +311,7 @@ export default function GptPage() {
                 </Button>
                 <Button
                   className="flex-1"
-                  disabled={!selectedImage || isAnalyzing}
+                  disabled={(!selectedImage && !userText.trim()) || isAnalyzing}
                   onClick={handleSubmit}
                 >
                   <Send className="mr-2 h-4 w-4" />
