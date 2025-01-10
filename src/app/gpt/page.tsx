@@ -141,15 +141,15 @@ export default function GptPage() {
 
   return (
     <div className="flex flex-col h-screen bg-background">
-      <div className="flex-none p-4 border-b bg-background/50 backdrop-blur supports-[backdrop-filter]:bg-background/30">
-        <div className="container max-w-3xl mx-auto flex items-center gap-3">
+      <div className="fixed top-0 left-0 right-0 z-30 bg-background/50 backdrop-blur supports-[backdrop-filter]:bg-background/30 border-b">
+        <div className="container max-w-3xl mx-auto flex items-center gap-3 h-14 px-4">
           <Bot className="h-6 w-6" />
           <h1 className="text-lg font-normal">Assistente Nutricional</h1>
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4">
-        <div className="container max-w-3xl mx-auto">
+      <div className="flex-1 overflow-y-auto pt-[5.5rem] pb-[calc(18rem+env(safe-area-inset-bottom))] lg:pt-[3.5rem] lg:pb-[11rem]">
+        <div className="container max-w-3xl mx-auto p-4">
           <div className="space-y-4">
             {messages.length === 0 && (
               <div className="text-center py-8 text-muted-foreground">
@@ -171,7 +171,7 @@ export default function GptPage() {
                 )}
                 <div
                   className={cn(
-                    "rounded-2xl p-4 max-w-[80%] relative",
+                    "rounded-2xl p-4 max-w-[85%] relative",
                     message.type === 'image' 
                       ? "bg-primary text-primary-foreground rounded-br-sm" 
                       : "bg-muted rounded-bl-sm"
@@ -254,11 +254,11 @@ export default function GptPage() {
         </div>
       </div>
 
-      <div className="flex-none p-4 border-t bg-background">
-        <div className="container max-w-3xl mx-auto">
+      <div className="fixed bottom-0 left-0 right-0 z-30 bg-background border-t">
+        <div className="container max-w-3xl mx-auto p-4 pb-[calc(6rem+env(safe-area-inset-bottom))] lg:pb-4">
           <div className="space-y-4">
             {selectedImage && (
-              <div className="relative aspect-video w-full max-w-[200px] overflow-hidden rounded-lg border">
+              <div className="relative aspect-video w-full max-w-[150px] overflow-hidden rounded-lg border">
                 <Image
                   src={selectedImage}
                   alt="Selected food"
@@ -272,7 +272,7 @@ export default function GptPage() {
                 placeholder="Descreva o alimento ou adicione informações relevantes... (opcional)"
                 value={userText}
                 onChange={(e) => setUserText(e.target.value)}
-                className="min-h-[80px]"
+                className="min-h-[80px] max-h-[120px] resize-none text-sm"
               />
               <div className="flex items-center gap-2">
                 <Input
@@ -290,7 +290,8 @@ export default function GptPage() {
                   onClick={() => document.getElementById('image-upload')?.click()}
                 >
                   <Camera className="mr-2 h-4 w-4" />
-                  {selectedImage ? "Trocar foto" : "Adicionar foto"}
+                  <span className="hidden sm:inline">{selectedImage ? "Trocar foto" : "Adicionar foto"}</span>
+                  <span className="sm:hidden">Foto</span>
                 </Button>
                 <Button
                   className="flex-1"
@@ -298,7 +299,8 @@ export default function GptPage() {
                   onClick={handleSubmit}
                 >
                   <Send className="mr-2 h-4 w-4" />
-                  {isAnalyzing ? "Analisando..." : "Analisar"}
+                  <span className="hidden sm:inline">{isAnalyzing ? "Analisando..." : "Analisar"}</span>
+                  <span className="sm:hidden">{isAnalyzing ? "..." : "Enviar"}</span>
                 </Button>
               </div>
             </div>
