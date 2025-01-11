@@ -34,7 +34,7 @@ export async function POST(req: Request) {
             content: [
               { 
                 type: "text", 
-                text: `Analise esta imagem de comida e forneça uma descrição detalhada do que você vê. Foque em identificar os principais ingredientes e tamanhos das porções. ${text ? `Informação adicional do usuário: ${text}` : ''} Responda em português.` 
+                text: `Descreva brevemente esta refeição, listando apenas os principais componentes e suas quantidades aproximadas. Seja objetivo e conciso. ${text ? `Contexto adicional: ${text}` : ''} Responda em português.` 
               },
               {
                 type: "image_url",
@@ -65,7 +65,7 @@ export async function POST(req: Request) {
       messages: [
         {
           role: "system",
-          content: "Você é um especialista em nutrição. Com base na descrição do alimento fornecida, estime os valores nutricionais. Forneça apenas os valores numéricos para calorias, proteínas, carboidratos e gorduras em gramas. Formate sua resposta como um objeto JSON com estes campos: calories (número), protein (número), carbs (número), fat (número). Seja conservador em suas estimativas."
+          content: "Você é um especialista em nutrição. Forneça uma estimativa nutricional conservadora baseada na descrição do alimento. Sua resposta deve ser um objeto JSON com apenas: calories (número), protein (número), carbs (número), fat (número). Não inclua texto adicional, apenas o JSON."
         },
         {
           role: "user",
@@ -80,18 +80,24 @@ export async function POST(req: Request) {
     }
 
     const nutritionData = JSON.parse(nutritionResponse.choices[0].message.content);
+    const description = foodDescription.replace(/\*\*/g, '').trim();
 
     return NextResponse.json({
       ...nutritionData,
-      description: foodDescription,
+      description,
     });
   } catch (error: unknown) {
     console.error('Erro ao analisar comida:', error);
+    if (error instanceof Error) {
+      console.error('Error name:', error.name);
+      console.error('Error message:', error.message);
+      console.error('Error stack:', error.stack);
+    }
     const errorMessage = error instanceof Error ? error.message : 'Falha ao analisar';
     return NextResponse.json(
       { 
         error: errorMessage,
-        details: error instanceof Error ? error.toString() : undefined
+        details: error instanceof Error ? error.stack : String(error)
       },
       { status: 500 }
     );
