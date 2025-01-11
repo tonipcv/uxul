@@ -15,42 +15,49 @@ export async function POST(req: Request) {
   try {
     const { image, text } = await req.json();
 
-    if (!image) {
+    if (!image && !text) {
       return NextResponse.json(
-        { error: 'Imagem é obrigatória' },
+        { error: 'É necessário fornecer uma imagem ou texto' },
         { status: 400 }
       );
     }
 
-    // First, use OpenAI's Vision API to identify the food
-    const visionResponse = await openai.chat.completions.create({
-      model: "gpt-4o",
-      messages: [
-        {
-          role: "user",
-          content: [
-            { 
-              type: "text", 
-              text: `Analise esta imagem de comida e forneça uma descrição detalhada do que você vê. Foque em identificar os principais ingredientes e tamanhos das porções. ${text ? `Informação adicional do usuário: ${text}` : ''} Responda em português.` 
-            },
-            {
-              type: "image_url",
-              image_url: {
-                url: image,
-                detail: "low"
+    let foodDescription = '';
+
+    if (image) {
+      // Use Vision API to analyze the image
+      const visionResponse = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          {
+            role: "user",
+            content: [
+              { 
+                type: "text", 
+                text: `Analise esta imagem de comida e forneça uma descrição detalhada do que você vê. Foque em identificar os principais ingredientes e tamanhos das porções. ${text ? `Informação adicional do usuário: ${text}` : ''} Responda em português.` 
+              },
+              {
+                type: "image_url",
+                image_url: {
+                  url: image,
+                  detail: "low"
+                }
               }
-            }
-          ],
-        },
-      ],
-      max_tokens: 500,
-    });
+            ],
+          },
+        ],
+        max_tokens: 500,
+      });
 
-    if (!visionResponse.choices[0]?.message?.content) {
-      throw new Error('Sem resposta da API de visão');
+      if (!visionResponse.choices[0]?.message?.content) {
+        throw new Error('Sem resposta da API de visão');
+      }
+
+      foodDescription = visionResponse.choices[0].message.content;
+    } else {
+      // Use text only for analysis
+      foodDescription = text;
     }
-
-    const foodDescription = visionResponse.choices[0].message.content;
 
     // Now use OpenAI to estimate nutritional values based on the description
     const nutritionResponse = await openai.chat.completions.create({
@@ -80,7 +87,7 @@ export async function POST(req: Request) {
     });
   } catch (error: unknown) {
     console.error('Erro ao analisar comida:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Falha ao analisar imagem da comida';
+    const errorMessage = error instanceof Error ? error.message : 'Falha ao analisar';
     return NextResponse.json(
       { 
         error: errorMessage,

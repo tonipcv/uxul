@@ -8,14 +8,28 @@ import { NextAuthProvider } from '@/components/NextAuthProvider'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'Habit Tracker',
-  description: 'Track your habits and achieve your goals',
+  title: 'BOOP | Unlock Your Potential',
+  description: 'Track your habits, achieve your goals, and unlock your full potential with BOOP.',
+  manifest: '/manifest.json',
+  icons: {
+    icon: [
+      { url: '/icon.png', type: 'image/png', sizes: '32x32' },
+      { url: '/icon-512.png', type: 'image/png', sizes: '512x512' },
+    ],
+    apple: [
+      { url: '/apple-icon.png', sizes: '180x180', type: 'image/png' },
+    ],
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'BOOP',
+  },
   viewport: {
     width: 'device-width',
     initialScale: 1,
     maximumScale: 1,
     userScalable: false,
-    viewportFit: 'cover',
   },
   themeColor: '#000000',
 }
@@ -26,10 +40,11 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" suppressHydrationWarning className="dark h-full">
+    <html lang="pt-BR" suppressHydrationWarning className="dark h-full">
       <head>
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/icon.png" />
       </head>
       <body className={`${inter.className} antialiased h-full`}>
         <ThemeProvider
