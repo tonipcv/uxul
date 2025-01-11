@@ -1,13 +1,11 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { signOut } from "next-auth/react";
 import { 
   CalendarIcon,
   CheckCircleIcon,
-  CircleStackIcon,
-  ArrowRightOnRectangleIcon,
   SparklesIcon,
+  UserCircleIcon,
 } from '@heroicons/react/24/outline';
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -49,12 +47,6 @@ export default function Navigation() {
           description: 'Planejamento trimestral'
         },
         { 
-          href: '/circles', 
-          label: 'Círculos', 
-          icon: CircleStackIcon,
-          description: 'Progresso em círculos'
-        },
-        { 
           href: '/gpt', 
           label: 'Nutrição', 
           icon: SparklesIcon,
@@ -75,7 +67,7 @@ export default function Navigation() {
         className
       )}
     >
-      <item.icon className="h-5 w-5" />
+      <item.icon className="h-4 w-4 stroke-current" />
     </Button>
   );
 
@@ -94,7 +86,7 @@ export default function Navigation() {
               {navSections.map((section) => (
                 <div key={section.title} className="space-y-1">
                   {section.items.map((item) => (
-                    <Link key={item.href} href={item.href}>
+                    <Link key={item.href} href={item.href} className="block">
                       <NavButton item={item} />
                     </Link>
                   ))}
@@ -103,13 +95,11 @@ export default function Navigation() {
             </nav>
           </div>
           <div className="p-6 border-t border-white/10">
-            <Button
-              variant="outline"
-              className="w-full h-14 flex items-center justify-center bg-transparent border-white/10 text-white/70 hover:border-white/20 hover:text-white hover:bg-white/5"
-              onClick={() => signOut({ callbackUrl: '/auth/signin' })}
-            >
-              <ArrowRightOnRectangleIcon className="h-5 w-5" />
-            </Button>
+            <Link href="/profile">
+              <div className="w-full h-14 flex items-center justify-center cursor-pointer border border-white/10 rounded-md hover:border-white/20">
+                <UserCircleIcon className="h-4 w-4 text-white" />
+              </div>
+            </Link>
           </div>
         </div>
       </nav>
@@ -122,14 +112,11 @@ export default function Navigation() {
             <Link href="/" className="flex items-center">
               <span className="text-sm font-normal text-white tracking-wide">BOOP</span>
             </Link>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-white/70"
-              onClick={() => signOut({ callbackUrl: '/auth/signin' })}
-            >
-              <ArrowRightOnRectangleIcon className="h-5 w-5" />
-            </Button>
+            <Link href="/profile">
+              <div className="h-8 w-8 flex items-center justify-center cursor-pointer">
+                <UserCircleIcon className="h-4 w-4 text-white" />
+              </div>
+            </Link>
           </div>
         </div>
 
@@ -142,14 +129,13 @@ export default function Navigation() {
                   <Button
                     variant="outline"
                     className={cn(
-                      "w-full flex-col h-14 gap-1 px-0 bg-transparent",
+                      "w-full h-14 flex items-center justify-center bg-transparent",
                       pathname === item.href 
                         ? "border-white/20 text-white hover:bg-white/5" 
                         : "border-white/10 text-white/70 hover:border-white/20 hover:text-white hover:bg-white/5"
                     )}
                   >
-                    <item.icon className="h-5 w-5" />
-                    <span className="text-[10px]">{item.label}</span>
+                    <item.icon className="h-4 w-4 stroke-current" />
                   </Button>
                 </Link>
               ))}
