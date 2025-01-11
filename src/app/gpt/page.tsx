@@ -10,6 +10,7 @@ import { Loader2, Camera, Bot, User, Send } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import heicConvert from 'heic-convert';
 
 interface NutritionInfo {
   calories: number;
@@ -48,6 +49,22 @@ export default function GptPage() {
     scrollToBottom();
   }, [messages]);
 
+  const convertHeicToJpeg = async (file: File): Promise<string> => {
+    try {
+      const buffer = await file.arrayBuffer();
+      const convertedBuffer = await heicConvert({
+        buffer: Buffer.from(buffer),
+        format: 'JPEG',
+        quality: 0.9
+      });
+      
+      return `data:image/jpeg;base64,${Buffer.from(convertedBuffer).toString('base64')}`;
+    } catch (error) {
+      console.error('Error converting HEIC:', error);
+      throw new Error('Erro ao converter a imagem. Por favor, tente novamente.');
+    }
+  };
+
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -57,24 +74,36 @@ export default function GptPage() {
       return;
     }
 
-    if (!file.type.startsWith('image/')) {
+    // Accept both standard image formats and HEIC/HEIF
+    if (!file.type.startsWith('image/') && 
+        !file.type.includes('heic') && 
+        !file.type.includes('heif')) {
       setError('Por favor, selecione apenas arquivos de imagem.');
       return;
     }
 
-    const reader = new FileReader();
-    
-    reader.onloadend = () => {
-      const imageData = reader.result as string;
+    try {
+      let imageData: string;
+      
+      if (file.type.includes('heic') || file.type.includes('heif')) {
+        // Convert HEIC/HEIF to JPEG
+        imageData = await convertHeicToJpeg(file);
+      } else {
+        // Handle other image formats normally
+        const reader = new FileReader();
+        imageData = await new Promise((resolve, reject) => {
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+      }
+
       setSelectedImage(imageData);
       setError(null);
-    };
-
-    reader.onerror = () => {
-      setError('Erro ao ler a imagem. Por favor, tente novamente.');
-    };
-
-    reader.readAsDataURL(file);
+    } catch (error) {
+      console.error('Error processing image:', error);
+      setError('Erro ao processar a imagem. Por favor, tente novamente.');
+    }
     
     // Clear the input so the same file can be selected again
     e.target.value = '';
@@ -293,7 +322,7 @@ export default function GptPage() {
               <div className="flex items-center gap-2">
                 <Input
                   type="file"
-                  accept="image/*"
+                  accept="image/*,.heic,.heif"
                   onChange={handleImageUpload}
                   className="hidden"
                   id="image-upload"
