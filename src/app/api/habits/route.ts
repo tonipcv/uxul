@@ -1,15 +1,25 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { startOfMonth, endOfMonth } from 'date-fns';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 
 export async function GET(request: Request) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const { searchParams } = new URL(request.url);
     const month = searchParams.get('month') || new Date().toISOString();
     const start = startOfMonth(new Date(month));
     const end = endOfMonth(new Date(month));
 
     const habits = await prisma.habit.findMany({
+      where: {
+        userId: session.user.id
+      },
       include: {
         progress: {
           where: {
@@ -43,22 +53,23 @@ export async function GET(request: Request) {
     return NextResponse.json(formattedHabits);
   } catch (error) {
     console.error('Error in GET /api/habits:', error);
-    // Retorna array vazio em caso de erro
-    return NextResponse.json([]);
+    return NextResponse.json({ error: 'Failed to fetch habits', data: [] });
   }
 }
 
 export async function POST(request: Request) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     // Verificar se o prisma está disponível
     if (!prisma || !prisma.habit) {
       console.error('Prisma client not initialized');
-      return new NextResponse(
-        JSON.stringify({ error: 'Database not available' }),
-        { 
-          status: 500,
-          headers: { 'Content-Type': 'application/json' }
-        }
+      return NextResponse.json(
+        { error: 'Database not available' },
+        { status: 500 }
       );
     }
 
@@ -68,12 +79,9 @@ export async function POST(request: Request) {
       console.log('Database connected successfully');
     } catch (connError) {
       console.error('Database connection error:', connError);
-      return new NextResponse(
-        JSON.stringify({ error: 'Database connection failed' }),
-        { 
-          status: 500,
-          headers: { 'Content-Type': 'application/json' }
-        }
+      return NextResponse.json(
+        { error: 'Database connection failed' },
+        { status: 500 }
       );
     }
 
@@ -81,12 +89,9 @@ export async function POST(request: Request) {
     console.log('Received data:', data);
     
     if (!data.title || !data.category) {
-      return new NextResponse(
-        JSON.stringify({ error: 'Title and category are required' }), 
-        { 
-          status: 400,
-          headers: { 'Content-Type': 'application/json' }
-        }
+      return NextResponse.json(
+        { error: 'Title and category are required' },
+        { status: 400 }
       );
     }
 
@@ -95,7 +100,8 @@ export async function POST(request: Request) {
     const habit = await prisma.habit.create({
       data: {
         title: data.title.trim(),
-        category: data.category
+        category: data.category,
+        userId: session.user.id
       }
     });
 
@@ -108,13 +114,7 @@ export async function POST(request: Request) {
       progress: []
     };
 
-    return new NextResponse(
-      JSON.stringify(formattedHabit),
-      { 
-        status: 201,
-        headers: { 'Content-Type': 'application/json' }
-      }
-    );
+    return NextResponse.json(formattedHabit, { status: 201 });
 
   } catch (error) {
     console.error('Detailed error in POST /api/habits:', {
@@ -123,16 +123,10 @@ export async function POST(request: Request) {
       stack: error instanceof Error ? error.stack : undefined
     });
 
-    return new NextResponse(
-      JSON.stringify({ 
-        error: 'Error creating habit',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      }),
-      { 
-        status: 500,
-        headers: { 'Content-Type': 'application/json' }
-      }
-    );
+    return NextResponse.json({ 
+      error: 'Error creating habit',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 });
   } finally {
     await prisma.$disconnect();
   }

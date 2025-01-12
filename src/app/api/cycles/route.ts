@@ -1,9 +1,19 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 
 export async function GET() {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const cycles = await prisma.cycle.findMany({
+      where: {
+        userId: session.user.id
+      },
       include: {
         weeks: {
           include: {
@@ -73,13 +83,14 @@ interface Task {
   scheduledTime?: string;
 }
 
-async function handlePost(data: CycleData) {
+async function handlePost(data: CycleData, userId: string) {
   try {
     const cycle = await prisma.cycle.create({
       data: {
         startDate: new Date(data.startDate),
         endDate: new Date(data.endDate),
         vision: data.vision,
+        userId: userId,
         weeks: {
           create: data.weeks.map((week: Week) => ({
             weekNumber: week.weekNumber,
@@ -138,8 +149,13 @@ async function handlePost(data: CycleData) {
 
 export async function POST(request: Request) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const data = await request.json();
-    return handlePost(data);
+    return handlePost(data, session.user.id);
   } catch (err) {
     console.error(err);
     return NextResponse.json({ error: 'Error creating cycle' }, { status: 500 });

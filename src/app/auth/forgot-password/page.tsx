@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 'use client';
 
 import { useState } from "react";
@@ -5,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Logo } from "@/components/ui/logo";
 import Link from "next/link";
 
 export default function ForgotPassword() {
@@ -41,71 +43,73 @@ export default function ForgotPassword() {
 
   if (isSubmitted) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background p-4">
-        <Card className="w-full max-w-md">
-          <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl font-bold text-center">Check your email</CardTitle>
-            <CardDescription className="text-center">
-              We have sent you a password reset link to your email address.
-            </CardDescription>
-          </CardHeader>
-          <CardFooter>
-            <Link 
-              href="/auth/signin" 
-              className="text-primary hover:underline w-full text-center"
-            >
-              Back to sign in
-            </Link>
-          </CardFooter>
-        </Card>
+      <div className="min-h-screen w-full flex items-center justify-center bg-background font-['Helvetica'] font-light px-4">
+        <div className="w-full max-w-[350px] mx-auto">
+          <Card className="border-none shadow-none">
+            <CardHeader className="space-y-1 pb-4">
+              <Logo className="flex justify-center h-8 w-8 mx-auto" />
+            </CardHeader>
+            <CardContent className="text-center text-white/70">
+              Enviamos um link de recuperação de senha para seu email.
+            </CardContent>
+            <CardFooter>
+              <Link 
+                href="/auth/signin" 
+                className="text-sm text-white/70 hover:text-white transition-colors w-full text-center"
+              >
+                Voltar para login
+              </Link>
+            </CardFooter>
+          </Card>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold text-center">Reset password</CardTitle>
-          <CardDescription className="text-center">
-            Enter your email address and we&apos;ll send you a link to reset your password
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="m@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-            </div>
-            {error && (
-              <div className="text-sm text-red-500 text-center">
-                {error}
+    <div className="min-h-screen w-full flex items-center justify-center bg-background font-['Helvetica'] font-light px-4">
+      <div className="w-full max-w-[350px] mx-auto">
+        <Card className="border-none shadow-none">
+          <CardHeader className="space-y-1 pb-4">
+            <Logo className="flex justify-center h-8 w-8 mx-auto" />
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="m@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
               </div>
-            )}
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Sending link..." : "Send reset link"}
-            </Button>
-          </form>
-        </CardContent>
-        <CardFooter>
-          <div className="text-sm text-muted-foreground text-center w-full">
-            Remember your password?{" "}
+              {error && (
+                <div className="text-sm text-red-500 text-center">
+                  {error}
+                </div>
+              )}
+              <Button 
+                type="submit" 
+                className="w-full border-white border bg-transparent hover:bg-white/10 text-white hover:text-white" 
+                disabled={isLoading}
+              >
+                {isLoading ? "Enviando link..." : "Recuperar senha"}
+              </Button>
+            </form>
+          </CardContent>
+          <CardFooter>
             <Link 
               href="/auth/signin" 
-              className="text-primary hover:underline"
+              className="text-sm text-white/70 hover:text-white transition-colors w-full text-center"
             >
-              Sign in
+              Voltar para login
             </Link>
-          </div>
-        </CardFooter>
-      </Card>
+          </CardFooter>
+        </Card>
+      </div>
     </div>
   );
 } 

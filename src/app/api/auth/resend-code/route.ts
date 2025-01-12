@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { hash } from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import nodemailer from "nodemailer";
 
@@ -19,46 +18,42 @@ const transporter = nodemailer.createTransport({
 
 export async function POST(req: Request) {
   try {
-    const { name, email, password } = await req.json();
+    const { email } = await req.json();
 
-    // Basic validation
-    if (!name || !email || !password) {
+    if (!email) {
       return NextResponse.json(
-        { message: "Todos os campos são obrigatórios" },
+        { message: "Email é obrigatório" },
         { status: 400 }
       );
     }
 
-    // Check if user already exists
-    const existingUser = await prisma.user.findUnique({
-      where: { email },
+    // Find unverified user
+    const user = await prisma.user.findFirst({
+      where: {
+        email,
+        emailVerified: null
+      }
     });
 
-    if (existingUser) {
+    if (!user) {
       return NextResponse.json(
-        { message: "Este email já está em uso" },
+        { message: "Usuário não encontrado ou já verificado" },
         { status: 400 }
       );
     }
 
-    // Generate verification code (6 digits)
+    // Delete any existing verification token
+    await prisma.verificationToken.deleteMany({
+      where: {
+        identifier: email
+      }
+    });
+
+    // Generate new verification code
     const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
     const codeExpiry = new Date(Date.now() + 3600000); // 1 hour from now
 
-    // Hash password
-    const hashedPassword = await hash(password, 12);
-
-    // Create user
-    const user = await prisma.user.create({
-      data: {
-        name,
-        email,
-        password: hashedPassword,
-        emailVerified: null
-      },
-    });
-
-    // Create verification token
+    // Create new verification token
     await prisma.verificationToken.create({
       data: {
         identifier: email,
@@ -67,8 +62,8 @@ export async function POST(req: Request) {
       }
     });
 
-    console.log('Sending verification email to:', email);
-    // Send verification email
+    console.log('Sending new verification code to:', email);
+    // Send new verification email
     try {
       await transporter.verify();
       console.log('SMTP connection verified');
@@ -79,46 +74,31 @@ export async function POST(req: Request) {
           address: 'ai@booplabs.com'
         },
         to: email,
-        subject: 'Verifique seu email',
+        subject: 'Novo código de verificação',
         html: `
-          <h1>Bem-vindo ao BOOP!</h1>
-          <p>Para confirmar seu cadastro, use o código abaixo:</p>
+          <h1>Novo código de verificação</h1>
+          <p>Conforme solicitado, aqui está seu novo código de verificação:</p>
           <div style="background-color: #f4f4f4; padding: 12px; text-align: center; font-size: 24px; letter-spacing: 4px; margin: 20px 0;">
             <strong>${verificationCode}</strong>
           </div>
           <p>Este código é válido por 1 hora.</p>
-          <p>Se você não solicitou este cadastro, ignore este email.</p>
+          <p>Se você não solicitou este código, ignore este email.</p>
         `
       });
-      console.log('Verification email sent successfully');
+      console.log('New verification code sent successfully');
     } catch (emailError) {
       console.error('Email sending error:', emailError);
-      // If email fails, delete the user and verification token
-      await prisma.user.delete({
-        where: { id: user.id }
-      });
-      await prisma.verificationToken.delete({
-        where: {
-          identifier_token: {
-            identifier: email,
-            token: verificationCode
-          }
-        }
-      });
       throw emailError;
     }
 
     return NextResponse.json(
-      {
-        message: "Usuário criado com sucesso. Verifique seu email para confirmar o cadastro.",
-        userId: user.id
-      },
-      { status: 201 }
+      { message: "Novo código enviado com sucesso" },
+      { status: 200 }
     );
   } catch (error) {
-    console.error("Registration error:", error);
+    console.error("Resend code error:", error);
     return NextResponse.json(
-      { message: "Erro ao criar usuário" },
+      { message: "Erro ao reenviar código" },
       { status: 500 }
     );
   }

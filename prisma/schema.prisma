@@ -15,6 +15,8 @@ model Cycle {
   weeks     Week[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
 }
 
 model Week {
@@ -86,6 +88,8 @@ model Habit {
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
   progress    DayProgress[]
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
 }
 
 model DayProgress {
@@ -107,6 +111,8 @@ model Circle {
   clicks    Int      @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
 }
 
 model Account {
@@ -137,16 +143,21 @@ model Session {
 }
 
 model User {
-  id              String    @id @default(cuid())
-  name            String?
-  email           String?   @unique
-  emailVerified   DateTime?
-  image           String?
-  password        String?
-  resetToken      String?
-  resetTokenExpiry DateTime?
-  accounts        Account[]
-  sessions        Session[]
+  id                    String    @id @default(cuid())
+  name                  String?
+  email                 String?   @unique
+  emailVerified        DateTime?
+  image                 String?
+  password              String?
+  resetToken            String?
+  resetTokenExpiry      DateTime?
+  verificationCode      String?
+  verificationCodeExpiry DateTime?
+  accounts              Account[]
+  sessions              Session[]
+  cycles                Cycle[]
+  habits                Habit[]
+  circles               Circle[]
 }
 
 model VerificationToken {
