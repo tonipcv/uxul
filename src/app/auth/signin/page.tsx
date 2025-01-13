@@ -32,8 +32,12 @@ export default function SignIn() {
       if (result?.error) {
         setError("Email ou senha inválidos");
       } else {
-        router.push("/");
+        router.refresh();
+        router.push("/checklist");
+        router.refresh();
       }
+    } catch (err) {
+      setError("Ocorreu um erro ao fazer login");
     } finally {
       setIsLoading(false);
     }

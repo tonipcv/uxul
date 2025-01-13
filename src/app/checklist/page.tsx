@@ -32,6 +32,7 @@ export default function ChecklistPage() {
   const [habits, setHabits] = useState<Habit[]>([]);
   const [newHabit, setNewHabit] = useState({ title: '', category: 'personal' });
   const [isLoading, setIsLoading] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const categories = [
     { id: 'personal', name: 'Pessoal' },
@@ -148,13 +149,12 @@ export default function ChecklistPage() {
         
         setHabits(prevHabits => [...prevHabits, data]);
         setNewHabit({ title: '', category: 'personal' });
+        setIsModalOpen(false);
       } else {
         console.error('Error adding habit:', data.error || data.details || response.statusText);
-        // Você pode adicionar aqui uma notificação para o usuário
       }
     } catch (error) {
       console.error('Network error adding habit:', error);
-      // Você pode adicionar aqui uma notificação para o usuário
     }
   };
 
@@ -183,7 +183,7 @@ export default function ChecklistPage() {
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4 lg:pb-7 sticky top-0 bg-background/50 backdrop-blur supports-[backdrop-filter]:bg-background/30 z-10 pt-[72px] lg:pt-4">
           <div className="flex items-center gap-4">
             <CardTitle className="text-xs font-normal text-white/70">Checklist de Hábitos</CardTitle>
-            <Dialog>
+            <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
               <DialogTrigger asChild>
                 <Button 
                   variant="outline" 
