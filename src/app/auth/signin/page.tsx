@@ -36,7 +36,11 @@ export default function SignIn() {
         router.push("/checklist");
         router.refresh();
       }
-    } catch (err) {
+    } catch (
+      /* eslint-disable @typescript-eslint/no-unused-vars */
+      err
+      /* eslint-enable @typescript-eslint/no-unused-vars */
+    ) {
       setError("Ocorreu um erro ao fazer login");
     } finally {
       setIsLoading(false);

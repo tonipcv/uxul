@@ -158,6 +158,7 @@ model User {
   cycles                Cycle[]
   habits                Habit[]
   circles               Circle[]
+  checkpoints           Checkpoint[]
 }
 
 model VerificationToken {
@@ -166,4 +167,16 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
+}
+
+model Checkpoint {
+  id          String    @id @default(cuid())
+  date        String
+  isCompleted Boolean   @default(false)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([userId, date])
 } 
