@@ -170,13 +170,12 @@ model VerificationToken {
 }
 
 model Checkpoint {
-  id          String    @id @default(cuid())
+  id          String   @id @default(cuid())
   date        String
-  isCompleted Boolean   @default(false)
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  isCompleted Boolean  @default(false)
+  emotion     String?  // can be: "super_productive", "productive", "normal", "unproductive", "super_unproductive"
   userId      String
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([userId, date])
+  @@unique([date, userId])
 } 

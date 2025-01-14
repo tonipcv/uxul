@@ -30,7 +30,7 @@ export async function GET(request: Request) {
       where: {
         userId: user.id,
         date: {
-          startsWith: month.substring(0, 7), // Get YYYY-MM part
+          startsWith: month.substring(0, 7),
         },
       },
     });
@@ -53,10 +53,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { date } = await request.json();
+    const { date, emotion, isCompleted } = await request.json();
 
     if (!date) {
-      return NextResponse.json({ error: "Date is required" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Date is required" },
+        { status: 400 }
+      );
     }
 
     const user = await prisma.user.findUnique({
@@ -67,41 +70,40 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    const existingCheckpoint = await prisma.checkpoint.findUnique({
+    const existingCheckpoint = await prisma.checkpoint.findFirst({
       where: {
-        userId_date: {
-          userId: user.id,
-          date,
-        },
+        date,
+        userId: user.id,
       },
     });
 
+    const newIsCompleted = emotion ? true : (isCompleted ?? !existingCheckpoint?.isCompleted);
+
     if (existingCheckpoint) {
-      // Toggle the checkpoint
       const updatedCheckpoint = await prisma.checkpoint.update({
-        where: {
-          id: existingCheckpoint.id,
-        },
+        where: { id: existingCheckpoint.id },
         data: {
-          isCompleted: !existingCheckpoint.isCompleted,
+          isCompleted: newIsCompleted,
+          emotion: emotion || null,
         },
       });
       return NextResponse.json(updatedCheckpoint);
-    } else {
-      // Create new checkpoint
-      const checkpoint = await prisma.checkpoint.create({
-        data: {
-          date,
-          isCompleted: true,
-          userId: user.id,
-        },
-      });
-      return NextResponse.json(checkpoint);
     }
+
+    const checkpoint = await prisma.checkpoint.create({
+      data: {
+        date,
+        isCompleted: newIsCompleted,
+        emotion: emotion || null,
+        userId: user.id,
+      },
+    });
+
+    return NextResponse.json(checkpoint);
   } catch (error) {
-    console.error("Error updating checkpoint:", error);
+    console.error("Error creating/updating checkpoint:", error);
     return NextResponse.json(
-      { error: "Error updating checkpoint" },
+      { error: "Error creating/updating checkpoint" },
       { status: 500 }
     );
   }
