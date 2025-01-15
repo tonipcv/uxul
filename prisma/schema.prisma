@@ -12,26 +12,26 @@ model Cycle {
   startDate DateTime
   endDate   DateTime
   vision    String?
-  weeks     Week[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  weeks     Week[]
 }
 
 model Week {
-  id          Int      @id @default(autoincrement())
-  weekNumber  Int
-  vision      String?
-  reflection  String?
-  isExpanded  Boolean  @default(true)
-  cycle       Cycle    @relation(fields: [cycleId], references: [id], onDelete: Cascade)
-  cycleId     Int
-  goals       Goal[]
-  keyResults  KeyResult[]
-  days        Day[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id         Int         @id @default(autoincrement())
+  weekNumber Int
+  vision     String?
+  reflection String?
+  isExpanded Boolean     @default(true)
+  cycleId    Int
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  days       Day[]
+  goals      Goal[]
+  keyResults KeyResult[]
+  cycle      Cycle       @relation(fields: [cycleId], references: [id], onDelete: Cascade)
 
   @@unique([cycleId, weekNumber])
 }
@@ -39,10 +39,10 @@ model Week {
 model Goal {
   id        Int      @id @default(autoincrement())
   title     String
-  week      Week     @relation(fields: [weekId], references: [id], onDelete: Cascade)
   weekId    Int
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  week      Week     @relation(fields: [weekId], references: [id], onDelete: Cascade)
 }
 
 model KeyResult {
@@ -50,46 +50,46 @@ model KeyResult {
   title     String
   target    Float
   current   Float    @default(0)
-  week      Week     @relation(fields: [weekId], references: [id], onDelete: Cascade)
   weekId    Int
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  week      Week     @relation(fields: [weekId], references: [id], onDelete: Cascade)
 }
 
 model Day {
   id        Int      @id @default(autoincrement())
   date      DateTime
   notes     String?
-  week      Week     @relation(fields: [weekId], references: [id], onDelete: Cascade)
   weekId    Int
-  tasks     Task[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  week      Week     @relation(fields: [weekId], references: [id], onDelete: Cascade)
+  tasks     Task[]
 
   @@unique([weekId, date])
 }
 
 model Task {
-  id            Int       @id @default(autoincrement())
+  id            Int      @id @default(autoincrement())
   title         String
-  completed     Boolean   @default(false)
-  timeBlock     String    // 'strategic', 'buffer', 'break'
-  scheduledTime String?   // HH:mm format
-  day           Day       @relation(fields: [dayId], references: [id], onDelete: Cascade)
+  completed     Boolean  @default(false)
+  timeBlock     String
+  scheduledTime String?
   dayId         Int
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  day           Day      @relation(fields: [dayId], references: [id], onDelete: Cascade)
 }
 
 model Habit {
-  id          Int           @id @default(autoincrement())
-  title       String
-  category    String        @default("personal")
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
-  progress    DayProgress[]
-  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId      String
+  id        Int           @id @default(autoincrement())
+  title     String
+  category  String        @default("personal")
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  userId    String
+  progress  DayProgress[]
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model DayProgress {
@@ -97,9 +97,9 @@ model DayProgress {
   date      DateTime
   isChecked Boolean  @default(false)
   habitId   Int
-  habit     Habit    @relation(fields: [habitId], references: [id])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  habit     Habit    @relation(fields: [habitId], references: [id])
 
   @@unique([habitId, date])
 }
@@ -111,8 +111,8 @@ model Circle {
   clicks    Int      @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Account {
@@ -121,15 +121,14 @@ model Account {
   type              String
   provider          String
   providerAccountId String
-  refresh_token     String? @db.Text
-  access_token      String? @db.Text
+  refresh_token     String?
+  access_token      String?
   expires_at        Int?
   token_type        String?
   scope             String?
-  id_token          String? @db.Text
+  id_token          String?
   session_state     String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
 }
@@ -143,22 +142,22 @@ model Session {
 }
 
 model User {
-  id                    String    @id @default(cuid())
-  name                  String?
-  email                 String?   @unique
-  emailVerified        DateTime?
-  image                 String?
-  password              String?
-  resetToken            String?
-  resetTokenExpiry      DateTime?
-  verificationCode      String?
+  id                     String       @id @default(cuid())
+  name                   String?
+  email                  String?      @unique
+  emailVerified          DateTime?
+  image                  String?
+  password               String?
+  resetToken             String?
+  resetTokenExpiry       DateTime?
+  verificationCode       String?
   verificationCodeExpiry DateTime?
-  accounts              Account[]
-  sessions              Session[]
-  cycles                Cycle[]
-  habits                Habit[]
-  circles               Circle[]
-  checkpoints           Checkpoint[]
+  accounts               Account[]
+  checkpoints            Checkpoint[]
+  circles                Circle[]
+  cycles                 Cycle[]
+  habits                 Habit[]
+  sessions               Session[]
 }
 
 model VerificationToken {
@@ -170,12 +169,12 @@ model VerificationToken {
 }
 
 model Checkpoint {
-  id          String   @id @default(cuid())
+  id          String  @id @default(cuid())
   date        String
-  isCompleted Boolean  @default(false)
-  emotion     String?  // can be: "super_productive", "productive", "normal", "unproductive", "super_unproductive"
+  isCompleted Boolean @default(false)
+  emotion     String?
   userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user        User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([date, userId])
-} 
+}

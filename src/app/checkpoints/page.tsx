@@ -20,7 +20,7 @@ interface DayProgress {
   id: string;
   date: string;
   isCompleted: boolean;
-  emotion?: string;
+  emotion?: string | null;
 }
 
 const emotions = [
@@ -123,6 +123,50 @@ export default function CheckpointDaysPage() {
             date: selectedDate,
             isCompleted: true,
             emotion: selectedEmotion
+          }];
+        });
+
+        await loadCheckpoints();
+      }
+    } catch (error) {
+      console.error('Error toggling checkpoint:', error);
+    } finally {
+      setIsModalOpen(false);
+      setSelectedDate(null);
+      setSelectedEmotion(null);
+    }
+  };
+
+  const handleConfirmWithoutEmotion = async () => {
+    if (!selectedDate) return;
+
+    try {
+      const response = await fetch('/api/checkpoints', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          date: selectedDate, 
+          isCompleted: true
+        })
+      });
+
+      if (response.ok) {
+        const updatedCheckpoint = await response.json();
+        setProgress(prev => {
+          const existing = prev.find(p => p.date === selectedDate);
+          if (existing) {
+            return prev.map(p => p.date === selectedDate ? {
+              id: updatedCheckpoint.id,
+              date: selectedDate,
+              isCompleted: true,
+              emotion: null
+            } : p);
+          }
+          return [...prev, {
+            id: updatedCheckpoint.id,
+            date: selectedDate,
+            isCompleted: true,
+            emotion: null
           }];
         });
 
@@ -255,11 +299,12 @@ export default function CheckpointDaysPage() {
                                   <span>{i + 1}</span>
                                   {checkpoint?.isCompleted && (
                                     <div className="flex flex-col items-center gap-0.5">
-                                      <CheckIcon className="h-2 w-2 lg:h-3 lg:w-3" />
-                                      {checkpoint.emotion && (
+                                      {checkpoint.emotion ? (
                                         <span className="text-[8px] lg:text-[10px]">
                                           {getEmotionEmoji(checkpoint.emotion)}
                                         </span>
+                                      ) : (
+                                        <CheckIcon className="h-2 w-2 lg:h-3 lg:w-3" />
                                       )}
                                     </div>
                                   )}
@@ -288,7 +333,7 @@ export default function CheckpointDaysPage() {
           <DialogHeader>
             <DialogTitle>Como foi seu dia?</DialogTitle>
             <p className="text-sm text-muted-foreground mt-2">
-              Selecione como você se sentiu hoje em relação à sua produtividade
+              Selecione como você se sentiu hoje em relação à sua produtividade ou marque sem sentimento
             </p>
           </DialogHeader>
           <div className="grid grid-cols-1 gap-3 py-4">
@@ -318,6 +363,12 @@ export default function CheckpointDaysPage() {
               }}
             >
               Cancelar
+            </Button>
+            <Button
+              onClick={handleConfirmWithoutEmotion}
+              className="bg-turquoise hover:bg-turquoise/90"
+            >
+              Não informar
             </Button>
             <Button
               onClick={handleConfirm}
