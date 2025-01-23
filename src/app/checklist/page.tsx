@@ -1,6 +1,6 @@
 /* eslint-disable */
 'use client';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ChevronLeftIcon, ChevronRightIcon, PlusIcon, TrashIcon, CheckIcon } from '@heroicons/react/24/outline';
@@ -39,6 +39,7 @@ export default function ChecklistPage() {
   const [editTitle, setEditTitle] = useState('');
   const [editCategory, setEditCategory] = useState('');
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
+  const tableRef = useRef<HTMLDivElement>(null);
 
   const categories = [
     { id: 'personal', name: 'Pessoal' },
@@ -104,6 +105,19 @@ export default function ChecklistPage() {
   useEffect(() => {
     loadHabits();
   }, [loadHabits]);
+
+  // Add new useEffect for auto-scrolling to today's column
+  useEffect(() => {
+    if (tableRef.current && window.innerWidth < 1024) { // 1024px is the 'lg' breakpoint
+      const todayColumn = tableRef.current.querySelector('[data-today="true"]');
+      if (todayColumn) {
+        const tableRect = tableRef.current.getBoundingClientRect();
+        const columnRect = todayColumn.getBoundingClientRect();
+        const scrollLeft = columnRect.left - tableRect.left - 192; // 192px is the width of the habit name column
+        tableRef.current.scrollLeft = scrollLeft;
+      }
+    }
+  }, [habits]); // Run when habits are loaded
 
   const toggleHabit = async (habitId: number, date: string) => {
     try {
@@ -302,7 +316,7 @@ export default function ChecklistPage() {
 
         <CardContent className="pb-24 lg:pb-8">
           {/* Tabela de hábitos */}
-          <div className="relative overflow-x-auto -mx-4 lg:mx-0">
+          <div className="relative overflow-x-auto -mx-4 lg:mx-0" ref={tableRef}>
             {isLoading ? (
               <div className="text-center py-8">
                 <span className="text-xs text-muted-foreground">Carregando...</span>
@@ -319,22 +333,35 @@ export default function ChecklistPage() {
                       <th className="text-left p-3 lg:p-4 font-normal text-muted-foreground w-48 lg:w-64 sticky left-0 bg-background/50 backdrop-blur supports-[backdrop-filter]:bg-background/30 z-10 text-xs">
                         Hábito
                       </th>
-                      {days.map(day => (
-                        <th 
-                          key={day.toString()} 
-                          className={cn(
-                            "p-1 lg:p-2 font-light text-center min-w-[36px] lg:min-w-[40px]",
-                            day.getMonth() !== currentDate.getMonth() && "text-muted-foreground/50"
-                          )}
-                        >
-                          <div className="flex flex-col items-center">
-                            <span className="text-[10px] text-muted-foreground">
-                              {format(day, 'EEE', { locale: ptBR })}
-                            </span>
-                            <span className="text-xs">{format(day, 'd')}</span>
-                          </div>
-                        </th>
-                      ))}
+                      {days.map(day => {
+                        const isToday = format(day, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd');
+                        return (
+                          <th 
+                            key={day.toString()} 
+                            data-today={isToday}
+                            className={cn(
+                              "p-1 lg:p-2 font-light text-center min-w-[36px] lg:min-w-[40px]",
+                              day.getMonth() !== currentDate.getMonth() && "text-muted-foreground/50",
+                              isToday && "sticky lg:static left-[192px] bg-background/50 backdrop-blur supports-[backdrop-filter]:bg-background/30 z-[5]"
+                            )}
+                          >
+                            <div className="flex flex-col items-center">
+                              <span className={cn(
+                                "text-[10px] text-muted-foreground",
+                                isToday && "text-turquoise"
+                              )}>
+                                {format(day, 'EEE', { locale: ptBR })}
+                              </span>
+                              <span className={cn(
+                                "text-xs",
+                                isToday && "text-turquoise"
+                              )}>
+                                {format(day, 'd')}
+                              </span>
+                            </div>
+                          </th>
+                        );
+                      })}
                     </tr>
                   </thead>
                   <tbody>
@@ -361,9 +388,16 @@ export default function ChecklistPage() {
                         {days.map(day => {
                           const dateStr = format(day, 'yyyy-MM-dd');
                           const progress = habit.progress.find(p => p.date === dateStr);
+                          const isToday = dateStr === format(new Date(), 'yyyy-MM-dd');
                           
                           return (
-                            <td key={dateStr} className="p-1 lg:p-2 text-center">
+                            <td 
+                              key={dateStr} 
+                              className={cn(
+                                "p-1 lg:p-2 text-center",
+                                isToday && "sticky lg:static left-[192px] bg-background/50 backdrop-blur supports-[backdrop-filter]:bg-background/30 z-[5]"
+                              )}
+                            >
                               <Button
                                 variant="outline"
                                 size="icon"
@@ -372,7 +406,8 @@ export default function ChecklistPage() {
                                   day.getMonth() !== currentDate.getMonth() && "opacity-50",
                                   progress?.isChecked 
                                     ? "bg-turquoise border-turquoise text-background hover:bg-turquoise/90" 
-                                    : "hover:border-turquoise/50"
+                                    : "hover:border-turquoise/50",
+                                  isToday && !progress?.isChecked && "border-turquoise/50"
                                 )}
                                 onClick={() => toggleHabit(habit.id, dateStr)}
                               >
