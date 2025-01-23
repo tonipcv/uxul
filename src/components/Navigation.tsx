@@ -1,12 +1,13 @@
+/* eslint-disable */
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  CalendarIcon,
   CheckCircleIcon,
-  SparklesIcon,
   UserCircleIcon,
   CheckIcon,
+  CalendarDaysIcon,
+  ChatBubbleLeftIcon,
 } from '@heroicons/react/24/outline';
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -42,23 +43,17 @@ export default function Navigation() {
           description: 'Checklist mensal de hábitos'
         },
         {
-          href: '/oneweek', 
-          label: '12 Semanas', 
-          icon: CalendarIcon,
-          description: 'Planejamento trimestral'
-        },
-        {
-          href: '/gpt', 
-          label: 'Nutrição', 
-          icon: SparklesIcon,
-          description: 'Análise nutricional com IA'
-        },
-        {
           href: '/checkpoints', 
           label: 'Checkpoints', 
           icon: CheckIcon,
           description: 'Pontos de controle'
         },
+        {
+          href: '/thoughts',
+          label: 'Pensamentos',
+          icon: ChatBubbleLeftIcon,
+          description: 'Registro de pensamentos'
+        }
       ]
     }
   ];

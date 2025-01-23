@@ -158,6 +158,7 @@ model User {
   cycles                 Cycle[]
   habits                 Habit[]
   sessions               Session[]
+  thoughts               Thought[]
 }
 
 model VerificationToken {
@@ -177,4 +178,12 @@ model Checkpoint {
   user        User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([date, userId])
+}
+
+model Thought {
+  id        String   @id @default(cuid())
+  content   String
+  createdAt DateTime @default(now())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
