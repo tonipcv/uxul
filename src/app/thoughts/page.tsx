@@ -111,10 +111,21 @@ export default function ThoughtsPage() {
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
     const today = new Date();
-    const isToday = date.toDateString() === today.toDateString();
+    today.setHours(0, 0, 0, 0); // Reset hours to compare only dates
+    const thoughtDate = new Date(date);
+    thoughtDate.setHours(0, 0, 0, 0);
 
-    if (isToday) {
+    const diffTime = today.getTime() - thoughtDate.getTime();
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 0) {
       return format(date, "'Hoje às' HH:mm", { locale: ptBR });
+    } else if (diffDays === 1) {
+      return format(date, "'Ontem às' HH:mm", { locale: ptBR });
+    } else if (diffDays === 2) {
+      return format(date, "'2 dias atrás às' HH:mm", { locale: ptBR });
+    } else if (diffDays === 3) {
+      return format(date, "'3 dias atrás às' HH:mm", { locale: ptBR });
     }
     return format(date, "dd 'de' MMMM 'às' HH:mm", { locale: ptBR });
   };
