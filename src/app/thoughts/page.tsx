@@ -6,7 +6,7 @@ import { ptBR } from 'date-fns/locale';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { TrashIcon } from "@heroicons/react/24/outline";
+import { TrashIcon, ArrowRightIcon } from "@heroicons/react/24/outline";
 
 interface Thought {
   id: string;
@@ -119,15 +119,15 @@ export default function ThoughtsPage() {
     const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
 
     if (diffDays === 0) {
-      return format(date, "'Hoje às' HH:mm", { locale: ptBR });
+      return format(date, "HH:mm", { locale: ptBR });
     } else if (diffDays === 1) {
-      return format(date, "'Ontem às' HH:mm", { locale: ptBR });
+      return "Ontem";
     } else if (diffDays === 2) {
-      return format(date, "'2 dias atrás às' HH:mm", { locale: ptBR });
+      return "2 dias atrás";
     } else if (diffDays === 3) {
-      return format(date, "'3 dias atrás às' HH:mm", { locale: ptBR });
+      return "3 dias atrás";
     }
-    return format(date, "dd 'de' MMMM 'às' HH:mm", { locale: ptBR });
+    return format(date, "d MMM", { locale: ptBR }); // ex: 15 mar
   };
 
   return (
@@ -140,20 +140,23 @@ export default function ThoughtsPage() {
         <CardContent className="pb-24 lg:pb-8 space-y-6 px-4 lg:px-6">
           {/* Form for new thought */}
           <form onSubmit={handleSubmit} className="space-y-4">
-            <Textarea
-              value={newThought}
-              onChange={(e) => setNewThought(e.target.value)}
-              placeholder="O que você está pensando?"
-              className="min-h-[100px] text-sm resize-none w-full"
-            />
-            <div className="flex justify-end">
-              <Button 
-                type="submit" 
-                className="text-xs border-turquoise border bg-transparent hover:bg-turquoise/10 text-white hover:text-white"
-                disabled={!newThought.trim() || isLoading}
-              >
-                Publicar
-              </Button>
+            <div className="relative">
+              <Textarea
+                value={newThought}
+                onChange={(e) => setNewThought(e.target.value)}
+                placeholder="O que você está pensando?"
+                className="min-h-[100px] text-sm resize-none w-full pr-16 border border-white/10 focus-visible:ring-0 focus-visible:border-turquoise"
+              />
+              <div className="absolute bottom-3 right-3">
+                <Button 
+                  type="submit" 
+                  size="icon"
+                  className="h-8 w-8 rounded-full border-turquoise border bg-transparent hover:bg-turquoise/10 text-white hover:text-white"
+                  disabled={!newThought.trim() || isLoading}
+                >
+                  <ArrowRightIcon className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           </form>
 
@@ -205,7 +208,7 @@ export default function ThoughtsPage() {
                       <div className="group">
                         <div className="flex justify-between items-start">
                           <p 
-                            className="text-sm whitespace-pre-wrap cursor-pointer hover:text-white/90 transition-colors flex-1"
+                            className="text-sm font-light whitespace-pre-wrap cursor-pointer hover:text-white/90 transition-colors flex-1"
                             onDoubleClick={() => startEditing(thought)}
                           >
                             {thought.content}
@@ -219,7 +222,7 @@ export default function ThoughtsPage() {
                             <TrashIcon className="h-4 w-4" />
                           </Button>
                         </div>
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-[10px] text-white/30 mt-1">
                           {formatDate(thought.createdAt)}
                         </p>
                       </div>
