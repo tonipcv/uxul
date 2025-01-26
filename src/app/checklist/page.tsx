@@ -1,6 +1,6 @@
 /* eslint-disable */
 'use client';
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useLayoutEffect } from 'react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ChevronLeftIcon, ChevronRightIcon, PlusIcon, TrashIcon, CheckIcon } from '@heroicons/react/24/outline';
@@ -39,7 +39,9 @@ export default function ChecklistPage() {
   const [editTitle, setEditTitle] = useState('');
   const [editCategory, setEditCategory] = useState('');
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
+  const [isTodayColumnSticky, setIsTodayColumnSticky] = useState(false);
   const tableRef = useRef<HTMLDivElement>(null);
+  const todayColumnRef = useRef<HTMLTableCellElement>(null);
 
   const categories = [
     { id: 'personal', name: 'Pessoal' },
@@ -106,18 +108,30 @@ export default function ChecklistPage() {
     loadHabits();
   }, [loadHabits]);
 
-  // Add new useEffect for auto-scrolling to today's column
+  // Update isTodayColumnSticky state when the table is scrolled
   useEffect(() => {
-    if (tableRef.current && window.innerWidth < 1024) { // 1024px is the 'lg' breakpoint
-      const todayColumn = tableRef.current.querySelector('[data-today="true"]');
-      if (todayColumn) {
+    const handleScroll = () => {
+      if (todayColumnRef.current && tableRef.current) {
+        const columnRect = todayColumnRef.current.getBoundingClientRect();
         const tableRect = tableRef.current.getBoundingClientRect();
-        const columnRect = todayColumn.getBoundingClientRect();
-        const scrollLeft = columnRect.left - tableRect.left - 192; // 192px is the width of the habit name column
-        tableRef.current.scrollLeft = scrollLeft;
+        
+        if (columnRect.left < tableRect.left + 192) {
+          setIsTodayColumnSticky(true);
+        } else {
+          setIsTodayColumnSticky(false);
+        }
       }
+    };
+
+    if (tableRef.current) {
+      tableRef.current.addEventListener('scroll', handleScroll);
+      handleScroll(); // Initial call in case today is already out of view
     }
-  }, [habits]); // Run when habits are loaded
+
+    return () => {
+      tableRef.current?.removeEventListener('scroll', handleScroll);
+    };
+  }, []);
 
   const toggleHabit = async (habitId: number, date: string) => {
     try {
@@ -339,10 +353,12 @@ export default function ChecklistPage() {
                           <th 
                             key={day.toString()} 
                             data-today={isToday}
+                            ref={isToday ? todayColumnRef : null}
                             className={cn(
                               "p-1 lg:p-2 font-light text-center min-w-[36px] lg:min-w-[40px]",
                               day.getMonth() !== currentDate.getMonth() && "text-muted-foreground/50",
-                              isToday && "sticky lg:static left-[192px] bg-background/50 backdrop-blur supports-[backdrop-filter]:bg-background/30 z-[5]"
+                              isToday && "text-turquoise",
+                              isToday && isTodayColumnSticky && "sticky-today left-[192px]"
                             )}
                           >
                             <div className="flex flex-col items-center">
@@ -393,9 +409,11 @@ export default function ChecklistPage() {
                           return (
                             <td 
                               key={dateStr} 
+                              ref={isToday ? todayColumnRef : null}
                               className={cn(
                                 "p-1 lg:p-2 text-center",
-                                isToday && "sticky lg:static left-[192px] bg-background/50 backdrop-blur supports-[backdrop-filter]:bg-background/30 z-[5]"
+                                isToday && "text-turquoise",
+                                isToday && isTodayColumnSticky && "sticky-today left-[192px]"
                               )}
                             >
                               <Button
