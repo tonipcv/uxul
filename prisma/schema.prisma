@@ -79,6 +79,23 @@ model Task {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
   day           Day      @relation(fields: [dayId], references: [id], onDelete: Cascade)
+
+  @@index([dayId])
+}
+
+model EisenhowerTask {
+  id          String   @id @default(cuid())
+  userId      String
+  title       String
+  dueDate     DateTime
+  isCompleted Boolean  @default(false)
+  importance  Int      @default(1) // 1-4: 1 = Urgente e Importante, 2 = Importante não Urgente, 3 = Urgente não Importante, 4 = Nem Urgente nem Importante
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([dueDate])
 }
 
 model Habit {
@@ -142,9 +159,9 @@ model Session {
 }
 
 model User {
-  id                     String       @id @default(cuid())
+  id                     String          @id @default(cuid())
   name                   String?
-  email                  String?      @unique
+  email                  String?         @unique
   emailVerified          DateTime?
   image                  String?
   password               String?
@@ -157,8 +174,9 @@ model User {
   circles                Circle[]
   cycles                 Cycle[]
   habits                 Habit[]
-  sessions               Session[]
-  thoughts               Thought[]
+  sessions              Session[]
+  thoughts              Thought[]
+  eisenhowerTasks       EisenhowerTask[]
 }
 
 model VerificationToken {

@@ -5,8 +5,10 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { TrashIcon, ArrowRightIcon } from "@heroicons/react/24/outline";
+import { useEditor, EditorContent } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import Underline from '@tiptap/extension-underline';
 
 interface Thought {
   id: string;
@@ -16,10 +18,56 @@ interface Thought {
 
 export default function ThoughtsPage() {
   const [thoughts, setThoughts] = useState<Thought[]>([]);
-  const [newThought, setNewThought] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [editingThought, setEditingThought] = useState<string | null>(null);
-  const [editContent, setEditContent] = useState('');
+
+  const editor = useEditor({
+    extensions: [
+      StarterKit.configure({
+        heading: false,
+        bulletList: false,
+        orderedList: false,
+        codeBlock: false,
+        blockquote: false,
+      }),
+      Underline.configure({
+        HTMLAttributes: {
+          class: 'underline',
+        },
+      }),
+    ],
+    content: '',
+    editorProps: {
+      attributes: {
+        class: 'min-h-[100px] w-full rounded-md border border-white/10 bg-transparent px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:border-turquoise disabled:cursor-not-allowed disabled:opacity-50 font-light',
+        placeholder: 'O que você está pensando? (Use Ctrl+B para negrito, Ctrl+I para itálico, Ctrl+U para sublinhado)',
+      },
+    },
+  });
+
+  const editEditor = useEditor({
+    extensions: [
+      StarterKit.configure({
+        heading: false,
+        bulletList: false,
+        orderedList: false,
+        codeBlock: false,
+        blockquote: false,
+      }),
+      Underline.configure({
+        HTMLAttributes: {
+          class: 'underline',
+        },
+      }),
+    ],
+    content: '',
+    editorProps: {
+      attributes: {
+        class: 'min-h-[100px] w-full rounded-md border border-white/10 bg-transparent px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:border-turquoise disabled:cursor-not-allowed disabled:opacity-50 font-light',
+        placeholder: 'O que você está pensando? (Use Ctrl+B para negrito, Ctrl+I para itálico, Ctrl+U para sublinhado)',
+      },
+    },
+  });
 
   useEffect(() => {
     loadThoughts();
@@ -42,19 +90,19 @@ export default function ThoughtsPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newThought.trim()) return;
+    if (!editor || !editor.getText().trim()) return;
 
     try {
       const response = await fetch('/api/thoughts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: newThought })
+        body: JSON.stringify({ content: editor.getHTML() })
       });
 
       if (response.ok) {
         const thought = await response.json();
         setThoughts(prev => [thought, ...prev]);
-        setNewThought('');
+        editor.commands.setContent('');
       }
     } catch (error) {
       console.error('Error creating thought:', error);
@@ -62,7 +110,7 @@ export default function ThoughtsPage() {
   };
 
   const handleEdit = async (thoughtId: string) => {
-    if (!editContent.trim()) {
+    if (!editEditor || !editEditor.getText().trim()) {
       setEditingThought(null);
       return;
     }
@@ -71,7 +119,7 @@ export default function ThoughtsPage() {
       const response = await fetch(`/api/thoughts/${thoughtId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: editContent })
+        body: JSON.stringify({ content: editEditor.getHTML() })
       });
 
       if (response.ok) {
@@ -80,7 +128,7 @@ export default function ThoughtsPage() {
           t.id === thoughtId ? updatedThought : t
         ));
         setEditingThought(null);
-        setEditContent('');
+        editEditor.commands.setContent('');
       }
     } catch (error) {
       console.error('Error updating thought:', error);
@@ -105,7 +153,9 @@ export default function ThoughtsPage() {
 
   const startEditing = (thought: Thought) => {
     setEditingThought(thought.id);
-    setEditContent(thought.content);
+    if (editEditor) {
+      editEditor.commands.setContent(thought.content);
+    }
   };
 
   const formatDate = (dateStr: string) => {
@@ -141,18 +191,13 @@ export default function ThoughtsPage() {
           {/* Form for new thought */}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="relative">
-              <Textarea
-                value={newThought}
-                onChange={(e) => setNewThought(e.target.value)}
-                placeholder="O que você está pensando?"
-                className="min-h-[100px] text-sm resize-none w-full pr-16 border border-white/10 focus-visible:ring-0 focus-visible:border-turquoise"
-              />
+              <EditorContent editor={editor} />
               <div className="absolute bottom-3 right-3">
                 <Button 
                   type="submit" 
                   size="icon"
                   className="h-8 w-8 rounded-full border-turquoise border bg-transparent hover:bg-turquoise/10 text-white hover:text-white"
-                  disabled={!newThought.trim() || isLoading}
+                  disabled={!editor?.getText().trim() || isLoading}
                 >
                   <ArrowRightIcon className="h-4 w-4" />
                 </Button>
@@ -176,19 +221,14 @@ export default function ThoughtsPage() {
                   <CardContent className="p-4 space-y-2">
                     {editingThought === thought.id ? (
                       <div className="space-y-2">
-                        <Textarea
-                          value={editContent}
-                          onChange={(e) => setEditContent(e.target.value)}
-                          className="min-h-[100px] text-sm resize-none w-full"
-                          autoFocus
-                        />
+                        <EditorContent editor={editEditor} />
                         <div className="flex justify-end gap-2">
                           <Button
                             variant="outline"
                             size="sm"
                             onClick={() => {
                               setEditingThought(null);
-                              setEditContent('');
+                              editEditor?.commands.setContent('');
                             }}
                             className="text-xs"
                           >
@@ -198,7 +238,7 @@ export default function ThoughtsPage() {
                             size="sm"
                             onClick={() => handleEdit(thought.id)}
                             className="text-xs border-turquoise border bg-transparent hover:bg-turquoise/10 text-white hover:text-white"
-                            disabled={!editContent.trim()}
+                            disabled={!editEditor?.getText().trim()}
                           >
                             Salvar
                           </Button>
@@ -207,12 +247,11 @@ export default function ThoughtsPage() {
                     ) : (
                       <div className="group">
                         <div className="flex justify-between items-start">
-                          <p 
-                            className="text-sm font-light whitespace-pre-wrap cursor-pointer hover:text-white/90 transition-colors flex-1"
+                          <div 
+                            className="text-sm font-light cursor-pointer hover:text-white/90 transition-colors flex-1"
                             onDoubleClick={() => startEditing(thought)}
-                          >
-                            {thought.content}
-                          </p>
+                            dangerouslySetInnerHTML={{ __html: thought.content }}
+                          />
                           <Button
                             variant="ghost"
                             size="icon"

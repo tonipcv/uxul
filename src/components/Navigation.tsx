@@ -37,16 +37,22 @@ export default function Navigation() {
       title: "Planejamento",
       items: [
         {
-          href: '/checklist', 
-          label: 'Checklist', 
+          href: '/checklist',
+          label: 'Checklist',
           icon: CheckCircleIcon,
           description: 'Checklist mensal de hábitos'
         },
         {
-          href: '/checkpoints', 
-          label: 'Checkpoints', 
+          href: '/checkpoints',
+          label: 'Checkpoints',
           icon: CheckIcon,
           description: 'Pontos de controle'
+        },
+        {
+          href: '/tasks',
+          label: 'Tarefas',
+          icon: CalendarDaysIcon,
+          description: 'Matriz de Eisenhower'
         },
         {
           href: '/thoughts',
