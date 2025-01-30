@@ -185,9 +185,15 @@ export default function TasksPage() {
 
   // Ordenar tarefas por importância e data
   const sortedTasks = [...tasks].sort((a, b) => {
+    // Primeiro, ordenar por status de conclusão
+    if (a.isCompleted !== b.isCompleted) {
+      return a.isCompleted ? 1 : -1;
+    }
+    // Depois, ordenar por importância
     if (a.importance !== b.importance) {
       return a.importance - b.importance;
     }
+    // Por fim, ordenar por data
     return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
   });
 
@@ -210,7 +216,7 @@ export default function TasksPage() {
   return (
     <div className="min-h-screen bg-background">
       <Card className="min-h-screen lg:min-h-[calc(100vh-4rem)] border-0 lg:border">
-        <CardHeader className="flex flex-col lg:flex-row items-start lg:items-center justify-between space-y-4 lg:space-y-0 pb-4 lg:pb-7 sticky top-0 bg-background/50 backdrop-blur supports-[backdrop-filter]:bg-background/30 z-10 pt-[72px] lg:pt-4">
+        <CardHeader className="flex flex-col lg:flex-row items-start lg:items-center justify-between space-y-4 lg:space-y-0 pb-2 lg:pb-4 sticky top-0 bg-background z-20 pt-[72px] lg:pt-4 border-b border-white/10">
           <div className="flex items-center gap-4">
             <CardTitle className="text-xs font-normal text-white/70">Eisenhower Matrix</CardTitle>
             <Dialog open={isModalOpen} onOpenChange={(open) => {
@@ -312,7 +318,7 @@ export default function TasksPage() {
           </div>
         </CardHeader>
 
-        <CardContent className="pb-24 lg:pb-8 space-y-6 px-4 lg:px-6">
+        <CardContent className="pb-24 lg:pb-8 px-4 lg:px-6">
           {isLoading ? (
             <div className="text-center py-8">
               <span className="text-xs text-muted-foreground">Loading...</span>
@@ -322,11 +328,11 @@ export default function TasksPage() {
               <span className="text-xs text-muted-foreground">No tasks registered</span>
             </div>
           ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 lg:flex lg:overflow-x-auto lg:gap-6 gap-8">
               {sortedDates.map((dateKey) => (
-                <div key={dateKey} className="space-y-4">
-                  <div className="sticky top-[140px] lg:top-[100px] bg-background/50 backdrop-blur supports-[backdrop-filter]:bg-background/30 z-[5] -mx-4 lg:mx-0 px-4 py-1.5 rounded-lg">
-                    <div className="flex items-center justify-between">
+                <div key={dateKey} className="lg:min-w-[350px] lg:max-w-[350px] lg:first:pl-0 lg:last:pr-6">
+                  <div className="bg-background border-b border-white/10 mb-3">
+                    <div className="flex items-center justify-between px-2 py-2">
                       <h2 className="text-sm font-medium text-white/90 capitalize">
                         {format(new Date(dateKey), "EEEE", { locale: enUS })}
                       </h2>
@@ -335,7 +341,7 @@ export default function TasksPage() {
                       </span>
                     </div>
                   </div>
-                  <div className="space-y-2 mt-1">
+                  <div className="space-y-2">
                     {groupedTasks[dateKey].map((task) => (
                       <Card key={task.id} className="border border-white/10 group">
                         <CardContent 
