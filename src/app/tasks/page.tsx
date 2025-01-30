@@ -17,6 +17,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import Pomodoro from '@/components/Pomodoro';
 
 interface Task {
   id: string;
@@ -300,7 +301,8 @@ export default function TasksPage() {
               </DialogContent>
             </Dialog>
           </div>
-          <div className="flex items-center gap-2 w-full lg:w-auto">
+          <div className="flex items-center gap-4 w-full lg:w-auto">
+            <Pomodoro />
             <div className="text-xs text-white/70 flex items-center gap-2 w-full lg:w-auto justify-between lg:justify-start">
               <span>Weekly progress</span>
               <span className="text-turquoise font-medium">
