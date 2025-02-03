@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { PlusIcon, CheckIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, CheckIcon, TrashIcon, StarIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import {
   Dialog,
   DialogContent,
@@ -30,6 +30,10 @@ interface Task {
   updatedAt: string | Date;
 }
 
+interface DayStars {
+  [key: string]: number;
+}
+
 const importanceEmojis = {
   1: '||||',
   2: '|||',
@@ -46,9 +50,11 @@ const importanceLabels = {
 
 export default function TasksPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [dayStars, setDayStars] = useState<DayStars>({});
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [selectedWeek, setSelectedWeek] = useState(startOfWeek(new Date(), { weekStartsOn: 1 }));
   const [newTask, setNewTask] = useState({
     title: '',
     dueDate: format(new Date(), 'yyyy-MM-dd'),
@@ -74,13 +80,23 @@ export default function TasksPage() {
   const loadTasks = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch('/api/tasks');
-      const data = await response.json();
-      if (Array.isArray(data)) {
-        setTasks(data);
+      const [tasksResponse, starsResponse] = await Promise.all([
+        fetch('/api/tasks'),
+        fetch('/api/pomodoro-stars')
+      ]);
+      
+      const [tasksData, starsData] = await Promise.all([
+        tasksResponse.json(),
+        starsResponse.json()
+      ]);
+
+      if (Array.isArray(tasksData)) {
+        setTasks(tasksData);
       }
+      
+      setDayStars(starsData);
     } catch (error) {
-      console.error('Error loading tasks:', error);
+      console.error('Error loading data:', error);
     } finally {
       setIsLoading(false);
     }
@@ -89,6 +105,30 @@ export default function TasksPage() {
   useEffect(() => {
     loadTasks();
   }, []);
+
+  // Função para adicionar estrela ao dia
+  const addStarToDay = async (date: string) => {
+    try {
+      const response = await fetch('/api/pomodoro-stars', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ date })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save pomodoro star');
+      }
+
+      const { totalStars } = await response.json();
+      
+      setDayStars(prev => ({
+        ...prev,
+        [date]: totalStars
+      }));
+    } catch (error) {
+      console.error('Error saving pomodoro star:', error);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -197,21 +237,34 @@ export default function TasksPage() {
     return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
   });
 
-  // Agrupar tarefas por data
+  // Agrupar tarefas por semana e dia
   const groupedTasks = sortedTasks.reduce((groups, task) => {
-    const date = new Date(task.dueDate);
-    const dateKey = format(date, 'yyyy-MM-dd');
-    if (!groups[dateKey]) {
-      groups[dateKey] = [];
+    const taskDate = new Date(task.dueDate);
+    const weekStart = startOfWeek(taskDate, { weekStartsOn: 1 }); // 1 = Monday
+    const weekKey = format(weekStart, 'yyyy-MM-dd');
+    const dayKey = format(taskDate, 'EEEE').toLowerCase();
+    
+    if (!groups[weekKey]) {
+      groups[weekKey] = {
+        monday: [],
+        tuesday: [],
+        wednesday: [],
+        thursday: [],
+        friday: [],
+        saturday: [],
+        sunday: []
+      };
     }
-    groups[dateKey].push(task);
+    groups[weekKey][dayKey].push(task);
     return groups;
-  }, {} as Record<string, Task[]>);
+  }, {} as Record<string, Record<string, Task[]>>);
 
-  // Ordenar as datas
-  const sortedDates = Object.keys(groupedTasks).sort((a, b) => 
+  // Ordenar as semanas
+  const sortedWeeks = Object.keys(groupedTasks).sort((a, b) => 
     new Date(a).getTime() - new Date(b).getTime()
   );
+
+  const weekDays = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
 
   return (
     <div className="min-h-screen bg-background">
@@ -307,18 +360,53 @@ export default function TasksPage() {
               </DialogContent>
             </Dialog>
           </div>
-          <div className="flex items-center gap-4 w-full lg:w-auto">
-            <Pomodoro />
-            <div className="text-xs text-white/70 flex items-center gap-2 w-full lg:w-auto justify-between lg:justify-start">
-              <span>Weekly progress</span>
-              <span className="text-turquoise font-medium">
-                {calculateWeekProgress()}%
-              </span>
+          <div className="flex flex-col lg:flex-row items-start lg:items-center gap-4 w-full lg:w-auto">
+            <div className="flex items-center gap-2 w-full lg:w-auto justify-between lg:justify-start">
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-8 w-8 border-white/20 bg-transparent hover:bg-white/5"
+                  onClick={() => setSelectedWeek(prev => {
+                    const newDate = new Date(prev);
+                    newDate.setDate(newDate.getDate() - 7);
+                    return newDate;
+                  })}
+                >
+                  <ChevronLeftIcon className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  className="border-white/20 bg-transparent hover:bg-white/5 h-8 px-3"
+                  onClick={() => setSelectedWeek(startOfWeek(new Date(), { weekStartsOn: 1 }))}
+                >
+                  <span className="text-xs">Today</span>
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-8 w-8 border-white/20 bg-transparent hover:bg-white/5"
+                  onClick={() => setSelectedWeek(prev => {
+                    const newDate = new Date(prev);
+                    newDate.setDate(newDate.getDate() + 7);
+                    return newDate;
+                  })}
+                >
+                  <ChevronRightIcon className="h-4 w-4" />
+                </Button>
+              </div>
+              <div className="text-xs text-white/70 flex items-center gap-2">
+                <span>Weekly progress</span>
+                <span className="text-turquoise font-medium">
+                  {calculateWeekProgress()}%
+                </span>
+              </div>
             </div>
+            <Pomodoro onComplete={() => addStarToDay(format(new Date(), 'yyyy-MM-dd'))} />
           </div>
         </CardHeader>
 
-        <CardContent className="pb-24 lg:pb-8 px-4 lg:px-6">
+        <CardContent className="pb-24 lg:pb-8 px-0 lg:px-6">
           {isLoading ? (
             <div className="text-center py-8">
               <span className="text-xs text-muted-foreground">Loading...</span>
@@ -328,70 +416,109 @@ export default function TasksPage() {
               <span className="text-xs text-muted-foreground">No tasks registered</span>
             </div>
           ) : (
-            <div className="grid grid-cols-1 lg:flex lg:overflow-x-auto lg:gap-6 gap-8">
-              {sortedDates.map((dateKey) => (
-                <div key={dateKey} className="lg:min-w-[350px] lg:max-w-[350px] lg:first:pl-0 lg:last:pr-6">
-                  <div className="bg-background border-b border-white/10 mb-3">
-                    <div className="flex items-center justify-between px-2 py-2">
-                      <h2 className="text-sm font-medium text-white/90 capitalize">
-                        {format(new Date(dateKey), "EEEE", { locale: enUS })}
-                      </h2>
-                      <span className="text-xs text-white/50">
-                        {format(new Date(dateKey), "MMM d", { locale: enUS })}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    {groupedTasks[dateKey].map((task) => (
-                      <Card key={task.id} className="border border-white/10 group">
-                        <CardContent 
-                          className="p-4 cursor-pointer"
-                          onDoubleClick={() => handleEditTask(task)}
-                        >
-                          <div className="flex items-start justify-between gap-4">
-                            <div className="flex items-start gap-3 flex-1">
-                              <Button
-                                variant="outline"
-                                size="icon"
-                                className={cn(
-                                  "h-6 w-6 rounded-full shrink-0",
-                                  task.isCompleted 
-                                    ? "bg-turquoise border-turquoise text-background hover:bg-turquoise/90" 
-                                    : "hover:border-turquoise/50"
-                                )}
-                                onClick={() => toggleTask(task.id)}
-                              >
-                                {task.isCompleted && <CheckIcon className="h-3 w-3" />}
-                              </Button>
-                              <div className="space-y-1 min-w-0">
-                                <div className="flex items-center gap-2">
-                                  <p className={cn(
-                                    "text-sm font-light break-words flex-1",
-                                    task.isCompleted && "line-through text-white/50"
-                                  )}>
-                                    {task.title}
-                                  </p>
-                                  <span className="text-base font-mono text-turquoise/90 shrink-0">
-                                    {importanceEmojis[task.importance as keyof typeof importanceEmojis]}
-                                  </span>
-                                </div>
-                              </div>
+            <div className="overflow-x-auto scrollbar-hide">
+              <div className="inline-flex gap-4 lg:gap-6 px-4 lg:px-0 min-w-full">
+                {weekDays.map((day, index) => {
+                  const currentDate = new Date(selectedWeek);
+                  currentDate.setDate(currentDate.getDate() + index);
+                  const dateKey = format(currentDate, 'yyyy-MM-dd');
+                  const formattedDate = format(currentDate, 'MMM d');
+                  const dayTasks = sortedTasks.filter(task => 
+                    format(new Date(task.dueDate), 'yyyy-MM-dd') === dateKey
+                  );
+                  const stars = dayStars[dateKey] || 0;
+                  const isToday = format(new Date(), 'yyyy-MM-dd') === dateKey;
+
+                  return (
+                    <div 
+                      key={day} 
+                      className={cn(
+                        "flex-1 min-w-[calc(100vw-2rem)] lg:min-w-[300px] lg:max-w-[350px] first:pl-0 last:pr-6",
+                        isToday && "lg:min-w-[350px]"
+                      )}
+                    >
+                      <div className={cn(
+                        "bg-background border-b border-white/10 mb-3",
+                        isToday && "bg-turquoise/5"
+                      )}>
+                        <div className="flex items-center justify-between px-2 py-2">
+                          <div className="flex items-center gap-2">
+                            <h2 className={cn(
+                              "text-sm font-medium capitalize",
+                              isToday ? "text-turquoise" : "text-white/90"
+                            )}>
+                              {day}
+                            </h2>
+                            <div className="flex items-center gap-0.5">
+                              {stars > 0 && (
+                                <>
+                                  <StarIcon className="w-3 h-3 text-yellow-400" />
+                                  <span className="text-xs text-yellow-400">{stars}</span>
+                                </>
+                              )}
                             </div>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-6 w-6 text-muted-foreground hover:text-white transition-colors shrink-0 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus:opacity-100"
-                              onClick={() => deleteTask(task.id)}
-                            >
-                              <TrashIcon className="h-4 w-4" />
-                            </Button>
                           </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                </div>
-              ))}
+                          <span className={cn(
+                            "text-xs",
+                            isToday ? "text-turquoise" : "text-white/50"
+                          )}>
+                            {formattedDate}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        {dayTasks.map((task) => (
+                          <Card key={task.id} className="border border-white/10 group">
+                            <CardContent 
+                              className="p-3 lg:p-4 cursor-pointer"
+                              onDoubleClick={() => handleEditTask(task)}
+                            >
+                              <div className="flex items-start justify-between gap-3 lg:gap-4">
+                                <div className="flex items-start gap-2 lg:gap-3 flex-1">
+                                  <Button
+                                    variant="outline"
+                                    size="icon"
+                                    className={cn(
+                                      "h-5 w-5 lg:h-6 lg:w-6 rounded-full shrink-0",
+                                      task.isCompleted 
+                                        ? "bg-turquoise border-turquoise text-background hover:bg-turquoise/90" 
+                                        : "hover:border-turquoise/50"
+                                    )}
+                                    onClick={() => toggleTask(task.id)}
+                                  >
+                                    {task.isCompleted && <CheckIcon className="h-3 w-3" />}
+                                  </Button>
+                                  <div className="space-y-1 min-w-0">
+                                    <div className="flex items-center gap-2">
+                                      <p className={cn(
+                                        "text-sm font-light break-words flex-1",
+                                        task.isCompleted && "line-through text-white/50"
+                                      )}>
+                                        {task.title}
+                                      </p>
+                                      <span className="text-base font-mono text-turquoise/90 shrink-0">
+                                        {importanceEmojis[task.importance as keyof typeof importanceEmojis]}
+                                      </span>
+                                    </div>
+                                  </div>
+                                </div>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-5 w-5 lg:h-6 lg:w-6 text-muted-foreground hover:text-white transition-colors shrink-0 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus:opacity-100"
+                                  onClick={() => deleteTask(task.id)}
+                                >
+                                  <TrashIcon className="h-3 w-3 lg:h-4 lg:w-4" />
+                                </Button>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           )}
         </CardContent>

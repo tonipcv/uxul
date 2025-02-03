@@ -89,13 +89,12 @@ model EisenhowerTask {
   title       String
   dueDate     DateTime
   isCompleted Boolean  @default(false)
-  importance  Int      @default(1) // 1-4: 1 = Urgente e Importante, 2 = Importante não Urgente, 3 = Urgente não Importante, 4 = Nem Urgente nem Importante
+  importance  Int      @default(4)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
-  @@index([dueDate])
 }
 
 model Habit {
@@ -174,9 +173,10 @@ model User {
   circles                Circle[]
   cycles                 Cycle[]
   habits                 Habit[]
-  sessions              Session[]
-  thoughts              Thought[]
-  eisenhowerTasks       EisenhowerTask[]
+  sessions               Session[]
+  thoughts               Thought[]
+  eisenhowerTasks        EisenhowerTask[]
+  pomodoroStars          PomodoroStar[]
 }
 
 model VerificationToken {
@@ -204,4 +204,15 @@ model Thought {
   createdAt DateTime @default(now())
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model PomodoroStar {
+  id        String   @id @default(cuid())
+  userId    String
+  date      DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([date])
 }

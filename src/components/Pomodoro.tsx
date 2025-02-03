@@ -1,19 +1,32 @@
+'use client';
+
 import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { PlayIcon, PauseIcon, ArrowPathIcon } from "@heroicons/react/24/outline";
 import { cn } from "@/lib/utils";
 
-export default function Pomodoro() {
+interface PomodoroProps {
+  onComplete?: () => void;
+}
+
+export default function Pomodoro({ onComplete }: PomodoroProps) {
   const [timeLeft, setTimeLeft] = useState(25 * 60); // 25 minutes in seconds
   const [isRunning, setIsRunning] = useState(false);
   const [isBreak, setIsBreak] = useState(false);
 
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    let timer: NodeJS.Timeout;
 
     if (isRunning && timeLeft > 0) {
-      interval = setInterval(() => {
-        setTimeLeft((time) => time - 1);
+      timer = setInterval(() => {
+        setTimeLeft((prevTime) => {
+          if (prevTime <= 1) {
+            setIsRunning(false);
+            onComplete?.(); // Chama o callback quando o timer termina
+            return 25 * 60;
+          }
+          return prevTime - 1;
+        });
       }, 1000);
     } else if (timeLeft === 0) {
       // Play sound when timer ends
@@ -30,8 +43,12 @@ export default function Pomodoro() {
       setIsRunning(false);
     }
 
-    return () => clearInterval(interval);
-  }, [isRunning, timeLeft, isBreak]);
+    return () => {
+      if (timer) {
+        clearInterval(timer);
+      }
+    };
+  }, [isRunning, timeLeft, isBreak, onComplete]);
 
   const toggleTimer = () => {
     setIsRunning(!isRunning);
