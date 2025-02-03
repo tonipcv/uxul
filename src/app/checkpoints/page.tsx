@@ -31,6 +31,9 @@ const emotions = [
   { id: 'super_unproductive', emoji: '😫', label: 'Super improdutivo' },
 ];
 
+// Mover o array de meses para fora do componente
+const months = Array.from({ length: 12 }, (_, i) => new Date(2025, i, 1));
+
 export default function CheckpointDaysPage() {
   const [currentDate, setCurrentDate] = useState(new Date(2025, 0, 1));
   const [progress, setProgress] = useState<DayProgress[]>([]);
@@ -39,24 +42,26 @@ export default function CheckpointDaysPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedEmotion, setSelectedEmotion] = useState<string | null>(null);
 
-  const months = Array.from({ length: 12 }, (_, i) => new Date(2025, i, 1));
-
   const loadCheckpoints = useCallback(async () => {
     try {
       setIsLoading(true);
-      const month = format(currentDate, 'yyyy-MM');
-      const response = await fetch(`/api/checkpoints?month=${month}`);
-      const data = await response.json();
+      const requests = months.map(month => {
+        const monthStr = format(month, 'yyyy-MM');
+        return fetch(`/api/checkpoints?month=${monthStr}`).then(res => res.json());
+      });
       
-      if (Array.isArray(data)) {
-        setProgress(data);
+      const results = await Promise.all(requests);
+      const allCheckpoints = results.flat();
+      
+      if (Array.isArray(allCheckpoints)) {
+        setProgress(allCheckpoints);
       }
     } catch (error) {
       console.error('Error loading checkpoints:', error);
     } finally {
       setIsLoading(false);
     }
-  }, [currentDate]);
+  }, []); // Remover a dependência de months
 
   useEffect(() => {
     loadCheckpoints();
@@ -125,8 +130,6 @@ export default function CheckpointDaysPage() {
             emotion: selectedEmotion
           }];
         });
-
-        await loadCheckpoints();
       }
     } catch (error) {
       console.error('Error toggling checkpoint:', error);
@@ -169,8 +172,6 @@ export default function CheckpointDaysPage() {
             emotion: null
           }];
         });
-
-        await loadCheckpoints();
       }
     } catch (error) {
       console.error('Error toggling checkpoint:', error);
