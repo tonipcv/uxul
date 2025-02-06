@@ -1,7 +1,6 @@
 import './globals.css'
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
-import Navigation from '@/components/Navigation'
 import { ThemeProvider } from '@/components/theme-provider'
 import { NextAuthProvider } from '@/components/NextAuthProvider'
 
@@ -56,12 +55,7 @@ export default function RootLayout({
           forcedTheme="dark"
         >
           <NextAuthProvider>
-            <div className="min-h-[100dvh] h-full">
-              <Navigation />
-              <main className="lg:pl-20 h-full">
-                {children}
-              </main>
-            </div>
+            {children}
           </NextAuthProvider>
         </ThemeProvider>
       </body>
