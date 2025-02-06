@@ -27,8 +27,20 @@ interface NavSection {
 export default function Navigation() {
   const pathname = usePathname();
 
-  // Não mostrar navegação em páginas de autenticação
-  if (pathname?.startsWith('/auth')) {
+  // Lista de rotas protegidas onde a navegação deve aparecer
+  const protectedRoutes = [
+    '/checklist',
+    '/oneweek',
+    '/circles',
+    '/tasks',
+    '/thoughts',
+    '/checkpoints',
+    '/profile'
+  ];
+
+  // Só mostrar navegação em rotas protegidas
+  const isProtectedRoute = protectedRoutes.some(route => pathname?.startsWith(route));
+  if (!isProtectedRoute) {
     return null;
   }
 
