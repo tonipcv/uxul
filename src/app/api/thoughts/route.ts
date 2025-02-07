@@ -21,7 +21,15 @@ export async function GET(request: Request) {
       orderBy: {
         createdAt: 'desc'
       },
-      take: limit
+      take: limit,
+      include: {
+        user: {
+          select: {
+            name: true,
+            image: true
+          }
+        }
+      }
     });
 
     return NextResponse.json(thoughts);
@@ -55,6 +63,14 @@ export async function POST(request: Request) {
       data: {
         content: content.trim(),
         userId: session.user.id
+      },
+      include: {
+        user: {
+          select: {
+            name: true,
+            image: true
+          }
+        }
       }
     });
 

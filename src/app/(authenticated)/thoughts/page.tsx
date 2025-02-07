@@ -5,15 +5,21 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { TrashIcon, ArrowRightIcon } from "@heroicons/react/24/outline";
+import { TrashIcon, ArrowRightIcon, CheckBadgeIcon } from "@heroicons/react/24/outline";
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
+import { useSession } from "next-auth/react";
+import Image from "next/image";
 
 interface Thought {
   id: string;
   content: string;
   createdAt: string;
+  user: {
+    name: string;
+    image: string;
+  };
 }
 
 export default function ThoughtsPage() {
@@ -206,7 +212,7 @@ export default function ThoughtsPage() {
           </form>
 
           {/* List of thoughts */}
-          <div className="space-y-4">
+          <div className="space-y-6">
             {isLoading ? (
               <div className="text-center py-8">
                 <span className="text-xs text-muted-foreground">Carregando...</span>
@@ -217,8 +223,11 @@ export default function ThoughtsPage() {
               </div>
             ) : (
               thoughts.map((thought) => (
-                <Card key={thought.id} className="border border-white/10">
-                  <CardContent className="p-4 space-y-2">
+                <Card 
+                  key={thought.id} 
+                  className="border border-white/10 hover:border-turquoise/50 transition-all duration-300 bg-gradient-to-br from-background to-background/50"
+                >
+                  <CardContent className="p-6 space-y-3">
                     {editingThought === thought.id ? (
                       <div className="space-y-2">
                         <EditorContent editor={editEditor} />
@@ -246,24 +255,56 @@ export default function ThoughtsPage() {
                       </div>
                     ) : (
                       <div className="group">
-                        <div className="flex justify-between items-start">
-                          <div 
-                            className="text-sm font-light cursor-pointer hover:text-white/90 transition-colors flex-1"
-                            onDoubleClick={() => startEditing(thought)}
-                            dangerouslySetInnerHTML={{ __html: thought.content }}
-                          />
+                        <div className="flex items-start gap-3">
+                          {/* User Profile Image */}
+                          <div className="relative w-8 h-8 rounded-full overflow-hidden flex-shrink-0 border border-white/10">
+                            {thought.user?.image ? (
+                              <Image
+                                src={thought.user.image}
+                                alt={thought.user.name || 'Profile'}
+                                fill
+                                className="object-cover"
+                              />
+                            ) : (
+                              <div className="w-full h-full bg-white/5" />
+                            )}
+                          </div>
+
+                          <div className="flex-1 min-w-0">
+                            {/* User Name and Verified Badge */}
+                            <div className="flex items-center gap-1 mb-2">
+                              <span className="text-sm font-medium text-white truncate">
+                                {thought.user?.name || 'Usuário'}
+                              </span>
+                              <CheckBadgeIcon className="h-4 w-4 text-turquoise" />
+                            </div>
+
+                            {/* Thought Content */}
+                            <div 
+                              className="text-base font-light cursor-pointer hover:text-white/90 transition-colors"
+                              onDoubleClick={() => startEditing(thought)}
+                              dangerouslySetInnerHTML={{ __html: thought.content }}
+                            />
+                          </div>
+
+                          {/* Delete Button */}
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-6 w-6 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity -mt-1 -mr-2"
+                            className="h-6 w-6 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity -mt-1 -mr-2 hover:text-red-400 flex-shrink-0"
                             onClick={() => handleDelete(thought.id)}
                           >
                             <TrashIcon className="h-4 w-4" />
                           </Button>
                         </div>
-                        <p className="text-[10px] text-white/30 mt-1">
-                          {formatDate(thought.createdAt)}
-                        </p>
+
+                        {/* Date */}
+                        <div className="flex items-center gap-2 mt-4">
+                          <div className="h-[1px] w-4 bg-turquoise/30" />
+                          <p className="text-[11px] font-medium tracking-wide text-turquoise/50 uppercase">
+                            {formatDate(thought.createdAt)}
+                          </p>
+                        </div>
                       </div>
                     )}
                   </CardContent>

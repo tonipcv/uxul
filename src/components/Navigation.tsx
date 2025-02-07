@@ -11,6 +11,8 @@ import {
 } from '@heroicons/react/24/outline';
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useSession } from "next-auth/react";
+import Image from "next/image";
 
 interface NavItem {
   href: string;
@@ -26,6 +28,7 @@ interface NavSection {
 
 export default function Navigation() {
   const pathname = usePathname();
+  const { data: session } = useSession();
 
   // Lista de rotas protegidas onde a navegação deve aparecer
   const protectedRoutes = [
@@ -91,6 +94,21 @@ export default function Navigation() {
     </Button>
   );
 
+  const UserAvatar = () => (
+    session?.user?.image ? (
+      <div className="relative w-full h-full rounded-full overflow-hidden">
+        <Image
+          src={session.user.image}
+          alt="Profile"
+          fill
+          className="object-cover"
+        />
+      </div>
+    ) : (
+      <UserCircleIcon className="h-3.5 w-3.5 text-white" />
+    )
+  );
+
   return (
     <>
       {/* Desktop Navigation */}
@@ -116,8 +134,8 @@ export default function Navigation() {
           </div>
           <div className="p-6 border-t border-white/10">
             <Link href="/profile">
-              <div className="w-full h-14 flex items-center justify-center cursor-pointer border border-white/10 rounded-md hover:border-white/20">
-                <UserCircleIcon className="h-4 w-4 text-white" />
+              <div className="w-10 h-10 flex items-center justify-center cursor-pointer border border-white/10 rounded-full hover:border-white/20 mx-auto">
+                <UserAvatar />
               </div>
             </Link>
           </div>
@@ -133,8 +151,8 @@ export default function Navigation() {
               <span className="text-sm font-normal text-white tracking-wide">BOOP</span>
             </Link>
             <Link href="/profile">
-              <div className="h-8 w-8 flex items-center justify-center cursor-pointer">
-                <UserCircleIcon className="h-4 w-4 text-white" />
+              <div className="h-7 w-7 flex items-center justify-center cursor-pointer border border-white/10 rounded-full hover:border-white/20">
+                <UserAvatar />
               </div>
             </Link>
           </div>
