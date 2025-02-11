@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { format, startOfWeek, endOfWeek } from 'date-fns';
 import { enUS } from 'date-fns/locale';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -55,16 +55,38 @@ export default function TasksPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [selectedWeek, setSelectedWeek] = useState(startOfWeek(new Date(), { weekStartsOn: 1 }));
+  const [selectedDay, setSelectedDay] = useState(new Date());
+  const scrollRef = useRef<HTMLDivElement>(null);
   const [newTask, setNewTask] = useState({
     title: '',
     dueDate: format(new Date(), 'yyyy-MM-dd'),
     importance: 1
   });
+  const [isMobile, setIsMobile] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  const isMobile = typeof window !== 'undefined' && window.innerWidth < 1024;
   const currentDate = new Date();
   const currentDateKey = format(currentDate, 'yyyy-MM-dd');
   const currentDayName = format(currentDate, 'EEEE').toLowerCase();
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 1024);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  useEffect(() => {
+    if (isMobile && scrollRef.current) {
+      const todayIndex = weekDays.indexOf(currentDayName);
+      const scrollPosition = todayIndex * scrollRef.current.offsetWidth;
+      scrollRef.current.scrollTo({ left: scrollPosition, behavior: 'smooth' });
+    }
+  }, [isMobile, currentDayName]);
 
   // Calcular progresso da semana
   const calculateWeekProgress = () => {
@@ -271,12 +293,55 @@ export default function TasksPage() {
 
   const weekDays = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
 
+  // Reordenar os dias da semana começando pelo dia atual
+  const currentDayIndex = weekDays.indexOf(currentDayName);
+  const reorderedWeekDays = [
+    ...weekDays.slice(currentDayIndex),
+    ...weekDays.slice(0, currentDayIndex)
+  ];
+
+  // Função para mudar o dia
+  const changeDay = (direction: 'prev' | 'next') => {
+    const newDate = new Date(selectedDate);
+    newDate.setDate(newDate.getDate() + (direction === 'next' ? 1 : -1));
+    setSelectedDate(newDate);
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Card className="min-h-screen lg:min-h-[calc(100vh-4rem)] border-0 lg:border">
         <CardHeader className="flex flex-col lg:flex-row items-start lg:items-center justify-between space-y-4 lg:space-y-0 pb-2 lg:pb-4 sticky top-0 bg-background z-20 pt-[72px] lg:pt-4 border-b border-white/10">
           <div className="flex items-center gap-4">
-            <CardTitle className="text-xs font-normal text-white/70">Eisenhower Matrix</CardTitle>
+            <CardTitle className="text-xs font-normal text-white/70">
+              {isMobile ? format(selectedDate, 'EEEE, MMM d') : 'Eisenhower Matrix'}
+            </CardTitle>
+            {isMobile && (
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-8 w-8 border-white/20 bg-transparent hover:bg-white/5"
+                  onClick={() => changeDay('prev')}
+                >
+                  <ChevronLeftIcon className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  className="border-white/20 bg-transparent hover:bg-white/5 h-8 px-3"
+                  onClick={() => setSelectedDate(new Date())}
+                >
+                  <span className="text-xs">Today</span>
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-8 w-8 border-white/20 bg-transparent hover:bg-white/5"
+                  onClick={() => changeDay('next')}
+                >
+                  <ChevronRightIcon className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
             <Dialog open={isModalOpen} onOpenChange={(open) => {
               if (!open) {
                 setEditingTask(null);
@@ -411,7 +476,7 @@ export default function TasksPage() {
           </div>
         </CardHeader>
 
-        <CardContent className="pb-24 lg:pb-8 px-0 lg:px-6">
+        <CardContent className="pb-24 lg:pb-8 px-0">
           {isLoading ? (
             <div className="text-center py-8">
               <span className="text-xs text-muted-foreground">Loading...</span>
@@ -421,142 +486,55 @@ export default function TasksPage() {
               <span className="text-xs text-muted-foreground">No tasks registered</span>
             </div>
           ) : (
-            <>
-              {/* Mobile View - Current Day Only */}
-              <div className="lg:hidden px-4">
-                <div className="bg-background border-b border-white/10 mb-3">
-                  <div className="flex items-center justify-between px-2 py-2">
-                    <div className="flex items-center gap-2">
-                      <h2 className="text-sm font-medium capitalize text-turquoise">
-                        {format(currentDate, 'EEEE')}
-                      </h2>
-                      <div className="flex items-center gap-0.5">
-                        {dayStars[currentDateKey] > 0 && (
-                          <>
-                            <StarIcon className="w-3 h-3 text-yellow-400" />
-                            <span className="text-xs text-yellow-400">{dayStars[currentDateKey]}</span>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                    <span className="text-xs text-turquoise">
-                      {format(currentDate, 'MMM d')}
-                    </span>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  {sortedTasks
-                    .filter(task => format(new Date(task.dueDate), 'yyyy-MM-dd') === currentDateKey)
-                    .map((task) => (
-                      <Card key={task.id} className="border border-white/10 group">
-                        <CardContent 
-                          className="p-3 lg:p-4 cursor-pointer"
-                          onDoubleClick={() => handleEditTask(task)}
-                        >
-                          <div className="flex items-start justify-between gap-3 lg:gap-4">
-                            <div className="flex items-start gap-2 lg:gap-3 flex-1">
-                              <Button
-                                variant="outline"
-                                size="icon"
-                                className={cn(
-                                  "h-5 w-5 lg:h-6 lg:w-6 rounded-full shrink-0",
-                                  task.isCompleted 
-                                    ? "bg-turquoise border-turquoise text-background hover:bg-turquoise/90" 
-                                    : "hover:border-turquoise/50"
-                                )}
-                                onClick={() => toggleTask(task.id)}
-                              >
-                                {task.isCompleted && <CheckIcon className="h-3 w-3" />}
-                              </Button>
-                              <div className="space-y-1 min-w-0">
-                                <div className="flex items-center gap-2">
-                                  <p className={cn(
-                                    "text-sm font-light break-words flex-1",
-                                    task.isCompleted && "line-through text-white/50"
-                                  )}>
-                                    {task.title}
-                                  </p>
-                                  <span className="text-base font-mono text-turquoise/90 shrink-0">
-                                    {importanceEmojis[task.importance as keyof typeof importanceEmojis]}
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-5 w-5 lg:h-6 lg:w-6 text-muted-foreground hover:text-white transition-colors shrink-0 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus:opacity-100"
-                              onClick={() => deleteTask(task.id)}
-                            >
-                              <TrashIcon className="h-3 w-3 lg:h-4 lg:w-4" />
-                            </Button>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                </div>
-              </div>
-
-              {/* Desktop View - Week View */}
-              <div className="hidden lg:block overflow-x-auto scrollbar-hide">
-                <div className="inline-flex gap-4 lg:gap-6 px-4 lg:px-0 min-w-full">
-                  {weekDays.map((day, index) => {
-                    const currentDate = new Date(selectedWeek);
-                    currentDate.setDate(currentDate.getDate() + index);
-                    const dateKey = format(currentDate, 'yyyy-MM-dd');
-                    const formattedDate = format(currentDate, 'MMM d');
-                    const dayTasks = sortedTasks.filter(task => 
-                      format(new Date(task.dueDate), 'yyyy-MM-dd') === dateKey
-                    );
-                    const stars = dayStars[dateKey] || 0;
-                    const isToday = format(new Date(), 'yyyy-MM-dd') === dateKey;
-
-                    return (
-                      <div 
-                        key={day} 
-                        className={cn(
-                          "flex-1 min-w-[300px] lg:max-w-[350px] first:pl-0 last:pr-6",
-                          isToday && "lg:min-w-[350px]"
-                        )}
-                      >
-                        <div className={cn(
-                          "bg-background border-b border-white/10 mb-3",
-                          isToday && "bg-turquoise/5"
-                        )}>
-                          <div className="flex items-center justify-between px-2 py-2">
-                            <div className="flex items-center gap-2">
-                              <h2 className={cn(
-                                "text-sm font-medium capitalize",
-                                isToday ? "text-turquoise" : "text-white/90"
-                              )}>
-                                {day}
-                              </h2>
-                              <div className="flex items-center gap-0.5">
-                                {stars > 0 && (
-                                  <>
-                                    <StarIcon className="w-3 h-3 text-yellow-400" />
-                                    <span className="text-xs text-yellow-400">{stars}</span>
-                                  </>
-                                )}
-                              </div>
-                            </div>
-                            <span className={cn(
-                              "text-xs",
-                              isToday ? "text-turquoise" : "text-white/50"
-                            )}>
-                              {formattedDate}
-                            </span>
+            <div className="overflow-x-auto scrollbar-hide" ref={containerRef}>
+              <div className={cn(
+                "inline-flex gap-3 lg:gap-6 px-4 lg:px-6 min-w-full",
+                isMobile && "snap-x snap-mandatory"
+              )}>
+                {isMobile ? (
+                  // Mobile view - single day
+                  <div className="w-full px-4">
+                    <div className={cn(
+                      "bg-background border border-white/10 rounded-lg h-full",
+                      format(selectedDate, 'yyyy-MM-dd') === currentDateKey && "bg-turquoise/5 border-turquoise/20"
+                    )}>
+                      <div className="flex items-center justify-between px-3 py-2 border-b border-white/10">
+                        <div className="flex items-center gap-2">
+                          <h2 className={cn(
+                            "text-sm font-medium capitalize",
+                            format(selectedDate, 'yyyy-MM-dd') === currentDateKey ? "text-turquoise" : "text-white/90"
+                          )}>
+                            {format(selectedDate, 'EEEE')}
+                          </h2>
+                          <div className="flex items-center gap-0.5">
+                            {dayStars[format(selectedDate, 'yyyy-MM-dd')] > 0 && (
+                              <>
+                                <StarIcon className="w-3 h-3 text-yellow-400" />
+                                <span className="text-xs text-yellow-400">
+                                  {dayStars[format(selectedDate, 'yyyy-MM-dd')]}
+                                </span>
+                              </>
+                            )}
                           </div>
                         </div>
-                        <div className="space-y-2">
-                          {dayTasks.map((task) => (
+                        <span className={cn(
+                          "text-xs",
+                          format(selectedDate, 'yyyy-MM-dd') === currentDateKey ? "text-turquoise" : "text-white/50"
+                        )}>
+                          {format(selectedDate, 'MMM d')}
+                        </span>
+                      </div>
+                      <div className="space-y-2 p-3">
+                        {sortedTasks
+                          .filter(task => format(new Date(task.dueDate), 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd'))
+                          .map((task) => (
                             <Card key={task.id} className="border border-white/10 group">
                               <CardContent 
-                                className="p-3 lg:p-4 cursor-pointer"
+                                className="p-3 cursor-pointer"
                                 onDoubleClick={() => handleEditTask(task)}
                               >
-                                <div className="flex items-start justify-between gap-3 lg:gap-4">
-                                  <div className="flex items-start gap-2 lg:gap-3 flex-1">
+                                <div className="flex items-start justify-between gap-3">
+                                  <div className="flex items-start gap-2 flex-1">
                                     <Button
                                       variant="outline"
                                       size="icon"
@@ -596,13 +574,115 @@ export default function TasksPage() {
                               </CardContent>
                             </Card>
                           ))}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  // Desktop view - week view
+                  weekDays.map((day, index) => {
+                    const dayDate = new Date(selectedWeek);
+                    dayDate.setDate(dayDate.getDate() + index);
+                    const dateKey = format(dayDate, 'yyyy-MM-dd');
+                    const formattedDate = format(dayDate, 'MMM d');
+                    const dayTasks = sortedTasks.filter(task => 
+                      format(new Date(task.dueDate), 'yyyy-MM-dd') === dateKey
+                    );
+                    const stars = dayStars[dateKey] || 0;
+                    const isToday = dateKey === currentDateKey;
+
+                    return (
+                      <div 
+                        key={day} 
+                        className={cn(
+                          "flex-none lg:w-auto lg:flex-1 lg:min-w-[300px] lg:max-w-[350px] first:pl-0 last:pr-4",
+                          isMobile && "w-full snap-center px-4",
+                          isToday && "lg:min-w-[350px]"
+                        )}
+                      >
+                        <div className={cn(
+                          "bg-background border border-white/10 rounded-lg h-full",
+                          isToday && "bg-turquoise/5 border-turquoise/20"
+                        )}>
+                          <div className="flex items-center justify-between px-3 py-2 border-b border-white/10">
+                            <div className="flex items-center gap-2">
+                              <h2 className={cn(
+                                "text-sm font-medium capitalize",
+                                isToday ? "text-turquoise" : "text-white/90"
+                              )}>
+                                {format(dayDate, 'EEEE')}
+                              </h2>
+                              <div className="flex items-center gap-0.5">
+                                {stars > 0 && (
+                                  <>
+                                    <StarIcon className="w-3 h-3 text-yellow-400" />
+                                    <span className="text-xs text-yellow-400">{stars}</span>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                            <span className={cn(
+                              "text-xs",
+                              isToday ? "text-turquoise" : "text-white/50"
+                            )}>
+                              {formattedDate}
+                            </span>
+                          </div>
+                          <div className="space-y-2 p-3">
+                            {dayTasks.map((task) => (
+                              <Card key={task.id} className="border border-white/10 group">
+                                <CardContent 
+                                  className="p-3 cursor-pointer"
+                                  onDoubleClick={() => handleEditTask(task)}
+                                >
+                                  <div className="flex items-start justify-between gap-3">
+                                    <div className="flex items-start gap-2 flex-1">
+                                      <Button
+                                        variant="outline"
+                                        size="icon"
+                                        className={cn(
+                                          "h-5 w-5 lg:h-6 lg:w-6 rounded-full shrink-0",
+                                          task.isCompleted 
+                                            ? "bg-turquoise border-turquoise text-background hover:bg-turquoise/90" 
+                                            : "hover:border-turquoise/50"
+                                        )}
+                                        onClick={() => toggleTask(task.id)}
+                                      >
+                                        {task.isCompleted && <CheckIcon className="h-3 w-3" />}
+                                      </Button>
+                                      <div className="space-y-1 min-w-0">
+                                        <div className="flex items-center gap-2">
+                                          <p className={cn(
+                                            "text-sm font-light break-words flex-1",
+                                            task.isCompleted && "line-through text-white/50"
+                                          )}>
+                                            {task.title}
+                                          </p>
+                                          <span className="text-base font-mono text-turquoise/90 shrink-0">
+                                            {importanceEmojis[task.importance as keyof typeof importanceEmojis]}
+                                          </span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-5 w-5 lg:h-6 lg:w-6 text-muted-foreground hover:text-white transition-colors shrink-0 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus:opacity-100"
+                                      onClick={() => deleteTask(task.id)}
+                                    >
+                                      <TrashIcon className="h-3 w-3 lg:h-4 lg:w-4" />
+                                    </Button>
+                                  </div>
+                                </CardContent>
+                              </Card>
+                            ))}
+                          </div>
                         </div>
                       </div>
                     );
-                  })}
-                </div>
+                  })
+                )}
               </div>
-            </>
+            </div>
           )}
         </CardContent>
       </Card>
