@@ -61,6 +61,11 @@ export default function TasksPage() {
     importance: 1
   });
 
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 1024;
+  const currentDate = new Date();
+  const currentDateKey = format(currentDate, 'yyyy-MM-dd');
+  const currentDayName = format(currentDate, 'EEEE').toLowerCase();
+
   // Calcular progresso da semana
   const calculateWeekProgress = () => {
     const startDate = startOfWeek(new Date());
@@ -362,7 +367,7 @@ export default function TasksPage() {
           </div>
           <div className="flex flex-col lg:flex-row items-start lg:items-center gap-4 w-full lg:w-auto">
             <div className="flex items-center gap-2 w-full lg:w-auto justify-between lg:justify-start">
-              <div className="flex items-center gap-2">
+              <div className="hidden lg:flex items-center gap-2">
                 <Button
                   variant="outline"
                   size="icon"
@@ -416,110 +421,188 @@ export default function TasksPage() {
               <span className="text-xs text-muted-foreground">No tasks registered</span>
             </div>
           ) : (
-            <div className="overflow-x-auto scrollbar-hide">
-              <div className="inline-flex gap-4 lg:gap-6 px-4 lg:px-0 min-w-full">
-                {weekDays.map((day, index) => {
-                  const currentDate = new Date(selectedWeek);
-                  currentDate.setDate(currentDate.getDate() + index);
-                  const dateKey = format(currentDate, 'yyyy-MM-dd');
-                  const formattedDate = format(currentDate, 'MMM d');
-                  const dayTasks = sortedTasks.filter(task => 
-                    format(new Date(task.dueDate), 'yyyy-MM-dd') === dateKey
-                  );
-                  const stars = dayStars[dateKey] || 0;
-                  const isToday = format(new Date(), 'yyyy-MM-dd') === dateKey;
-
-                  return (
-                    <div 
-                      key={day} 
-                      className={cn(
-                        "flex-1 min-w-[calc(100vw-2rem)] lg:min-w-[300px] lg:max-w-[350px] first:pl-0 last:pr-6",
-                        isToday && "lg:min-w-[350px]"
-                      )}
-                    >
-                      <div className={cn(
-                        "bg-background border-b border-white/10 mb-3",
-                        isToday && "bg-turquoise/5"
-                      )}>
-                        <div className="flex items-center justify-between px-2 py-2">
-                          <div className="flex items-center gap-2">
-                            <h2 className={cn(
-                              "text-sm font-medium capitalize",
-                              isToday ? "text-turquoise" : "text-white/90"
-                            )}>
-                              {day}
-                            </h2>
-                            <div className="flex items-center gap-0.5">
-                              {stars > 0 && (
-                                <>
-                                  <StarIcon className="w-3 h-3 text-yellow-400" />
-                                  <span className="text-xs text-yellow-400">{stars}</span>
-                                </>
-                              )}
-                            </div>
-                          </div>
-                          <span className={cn(
-                            "text-xs",
-                            isToday ? "text-turquoise" : "text-white/50"
-                          )}>
-                            {formattedDate}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        {dayTasks.map((task) => (
-                          <Card key={task.id} className="border border-white/10 group">
-                            <CardContent 
-                              className="p-3 lg:p-4 cursor-pointer"
-                              onDoubleClick={() => handleEditTask(task)}
-                            >
-                              <div className="flex items-start justify-between gap-3 lg:gap-4">
-                                <div className="flex items-start gap-2 lg:gap-3 flex-1">
-                                  <Button
-                                    variant="outline"
-                                    size="icon"
-                                    className={cn(
-                                      "h-5 w-5 lg:h-6 lg:w-6 rounded-full shrink-0",
-                                      task.isCompleted 
-                                        ? "bg-turquoise border-turquoise text-background hover:bg-turquoise/90" 
-                                        : "hover:border-turquoise/50"
-                                    )}
-                                    onClick={() => toggleTask(task.id)}
-                                  >
-                                    {task.isCompleted && <CheckIcon className="h-3 w-3" />}
-                                  </Button>
-                                  <div className="space-y-1 min-w-0">
-                                    <div className="flex items-center gap-2">
-                                      <p className={cn(
-                                        "text-sm font-light break-words flex-1",
-                                        task.isCompleted && "line-through text-white/50"
-                                      )}>
-                                        {task.title}
-                                      </p>
-                                      <span className="text-base font-mono text-turquoise/90 shrink-0">
-                                        {importanceEmojis[task.importance as keyof typeof importanceEmojis]}
-                                      </span>
-                                    </div>
-                                  </div>
-                                </div>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-5 w-5 lg:h-6 lg:w-6 text-muted-foreground hover:text-white transition-colors shrink-0 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus:opacity-100"
-                                  onClick={() => deleteTask(task.id)}
-                                >
-                                  <TrashIcon className="h-3 w-3 lg:h-4 lg:w-4" />
-                                </Button>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        ))}
+            <>
+              {/* Mobile View - Current Day Only */}
+              <div className="lg:hidden px-4">
+                <div className="bg-background border-b border-white/10 mb-3">
+                  <div className="flex items-center justify-between px-2 py-2">
+                    <div className="flex items-center gap-2">
+                      <h2 className="text-sm font-medium capitalize text-turquoise">
+                        {format(currentDate, 'EEEE')}
+                      </h2>
+                      <div className="flex items-center gap-0.5">
+                        {dayStars[currentDateKey] > 0 && (
+                          <>
+                            <StarIcon className="w-3 h-3 text-yellow-400" />
+                            <span className="text-xs text-yellow-400">{dayStars[currentDateKey]}</span>
+                          </>
+                        )}
                       </div>
                     </div>
-                  );
-                })}
+                    <span className="text-xs text-turquoise">
+                      {format(currentDate, 'MMM d')}
+                    </span>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  {sortedTasks
+                    .filter(task => format(new Date(task.dueDate), 'yyyy-MM-dd') === currentDateKey)
+                    .map((task) => (
+                      <Card key={task.id} className="border border-white/10 group">
+                        <CardContent 
+                          className="p-3 lg:p-4 cursor-pointer"
+                          onDoubleClick={() => handleEditTask(task)}
+                        >
+                          <div className="flex items-start justify-between gap-3 lg:gap-4">
+                            <div className="flex items-start gap-2 lg:gap-3 flex-1">
+                              <Button
+                                variant="outline"
+                                size="icon"
+                                className={cn(
+                                  "h-5 w-5 lg:h-6 lg:w-6 rounded-full shrink-0",
+                                  task.isCompleted 
+                                    ? "bg-turquoise border-turquoise text-background hover:bg-turquoise/90" 
+                                    : "hover:border-turquoise/50"
+                                )}
+                                onClick={() => toggleTask(task.id)}
+                              >
+                                {task.isCompleted && <CheckIcon className="h-3 w-3" />}
+                              </Button>
+                              <div className="space-y-1 min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <p className={cn(
+                                    "text-sm font-light break-words flex-1",
+                                    task.isCompleted && "line-through text-white/50"
+                                  )}>
+                                    {task.title}
+                                  </p>
+                                  <span className="text-base font-mono text-turquoise/90 shrink-0">
+                                    {importanceEmojis[task.importance as keyof typeof importanceEmojis]}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-5 w-5 lg:h-6 lg:w-6 text-muted-foreground hover:text-white transition-colors shrink-0 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus:opacity-100"
+                              onClick={() => deleteTask(task.id)}
+                            >
+                              <TrashIcon className="h-3 w-3 lg:h-4 lg:w-4" />
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                </div>
               </div>
-            </div>
+
+              {/* Desktop View - Week View */}
+              <div className="hidden lg:block overflow-x-auto scrollbar-hide">
+                <div className="inline-flex gap-4 lg:gap-6 px-4 lg:px-0 min-w-full">
+                  {weekDays.map((day, index) => {
+                    const currentDate = new Date(selectedWeek);
+                    currentDate.setDate(currentDate.getDate() + index);
+                    const dateKey = format(currentDate, 'yyyy-MM-dd');
+                    const formattedDate = format(currentDate, 'MMM d');
+                    const dayTasks = sortedTasks.filter(task => 
+                      format(new Date(task.dueDate), 'yyyy-MM-dd') === dateKey
+                    );
+                    const stars = dayStars[dateKey] || 0;
+                    const isToday = format(new Date(), 'yyyy-MM-dd') === dateKey;
+
+                    return (
+                      <div 
+                        key={day} 
+                        className={cn(
+                          "flex-1 min-w-[300px] lg:max-w-[350px] first:pl-0 last:pr-6",
+                          isToday && "lg:min-w-[350px]"
+                        )}
+                      >
+                        <div className={cn(
+                          "bg-background border-b border-white/10 mb-3",
+                          isToday && "bg-turquoise/5"
+                        )}>
+                          <div className="flex items-center justify-between px-2 py-2">
+                            <div className="flex items-center gap-2">
+                              <h2 className={cn(
+                                "text-sm font-medium capitalize",
+                                isToday ? "text-turquoise" : "text-white/90"
+                              )}>
+                                {day}
+                              </h2>
+                              <div className="flex items-center gap-0.5">
+                                {stars > 0 && (
+                                  <>
+                                    <StarIcon className="w-3 h-3 text-yellow-400" />
+                                    <span className="text-xs text-yellow-400">{stars}</span>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                            <span className={cn(
+                              "text-xs",
+                              isToday ? "text-turquoise" : "text-white/50"
+                            )}>
+                              {formattedDate}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          {dayTasks.map((task) => (
+                            <Card key={task.id} className="border border-white/10 group">
+                              <CardContent 
+                                className="p-3 lg:p-4 cursor-pointer"
+                                onDoubleClick={() => handleEditTask(task)}
+                              >
+                                <div className="flex items-start justify-between gap-3 lg:gap-4">
+                                  <div className="flex items-start gap-2 lg:gap-3 flex-1">
+                                    <Button
+                                      variant="outline"
+                                      size="icon"
+                                      className={cn(
+                                        "h-5 w-5 lg:h-6 lg:w-6 rounded-full shrink-0",
+                                        task.isCompleted 
+                                          ? "bg-turquoise border-turquoise text-background hover:bg-turquoise/90" 
+                                          : "hover:border-turquoise/50"
+                                      )}
+                                      onClick={() => toggleTask(task.id)}
+                                    >
+                                      {task.isCompleted && <CheckIcon className="h-3 w-3" />}
+                                    </Button>
+                                    <div className="space-y-1 min-w-0">
+                                      <div className="flex items-center gap-2">
+                                        <p className={cn(
+                                          "text-sm font-light break-words flex-1",
+                                          task.isCompleted && "line-through text-white/50"
+                                        )}>
+                                          {task.title}
+                                        </p>
+                                        <span className="text-base font-mono text-turquoise/90 shrink-0">
+                                          {importanceEmojis[task.importance as keyof typeof importanceEmojis]}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-5 w-5 lg:h-6 lg:w-6 text-muted-foreground hover:text-white transition-colors shrink-0 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus:opacity-100"
+                                    onClick={() => deleteTask(task.id)}
+                                  >
+                                    <TrashIcon className="h-3 w-3 lg:h-4 lg:w-4" />
+                                  </Button>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </>
           )}
         </CardContent>
       </Card>
