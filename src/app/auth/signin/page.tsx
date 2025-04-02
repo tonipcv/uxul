@@ -33,7 +33,7 @@ export default function SignIn() {
         setError("Email ou senha inválidos");
       } else {
         router.refresh();
-        router.push("/checklist");
+        router.push("/dashboard");
         router.refresh();
       }
     } catch (
@@ -49,7 +49,7 @@ export default function SignIn() {
 
   const handleGoogleSignIn = () => {
     setIsLoading(true);
-    signIn("google", { callbackUrl: "/checklist" });
+    signIn("google", { callbackUrl: "/dashboard" });
   };
 
   return (
