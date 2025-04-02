@@ -8,6 +8,10 @@ import {
   CheckIcon,
   CalendarDaysIcon,
   ChatBubbleLeftIcon,
+  ClockIcon,
+  ChartBarIcon,
+  LinkIcon,
+  UsersIcon,
 } from '@heroicons/react/24/outline';
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -32,12 +36,10 @@ export default function Navigation() {
 
   // Lista de rotas protegidas onde a navegação deve aparecer
   const protectedRoutes = [
-    '/checklist',
-    '/oneweek',
-    '/circles',
-    '/tasks',
-    '/thoughts',
-    '/checkpoints',
+    '/dashboard',
+    '/dashboard/indications',
+    '/dashboard/leads',
+    '/dashboard/pipeline',
     '/profile'
   ];
 
@@ -49,31 +51,31 @@ export default function Navigation() {
 
   const navSections: NavSection[] = [
     {
-      title: "Planejamento",
+      title: "Dashboard",
       items: [
         {
-          href: '/checklist',
-          label: 'Checklist',
-          icon: CheckCircleIcon,
-          description: 'Checklist mensal de hábitos'
+          href: '/dashboard',
+          label: 'Dashboard',
+          icon: ChartBarIcon,
+          description: 'Visão geral'
         },
         {
-          href: '/checkpoints',
-          label: 'Checkpoints',
-          icon: CheckIcon,
-          description: 'Pontos de controle'
+          href: '/dashboard/indications',
+          label: 'Indicações',
+          icon: LinkIcon,
+          description: 'Gerenciar links'
         },
         {
-          href: '/tasks',
-          label: 'Tarefas',
+          href: '/dashboard/leads',
+          label: 'Leads',
+          icon: UsersIcon,
+          description: 'Lista de contatos'
+        },
+        {
+          href: '/dashboard/pipeline',
+          label: 'Pipeline',
           icon: CalendarDaysIcon,
-          description: 'Matriz de Eisenhower'
-        },
-        {
-          href: '/thoughts',
-          label: 'Pensamentos',
-          icon: ChatBubbleLeftIcon,
-          description: 'Registro de pensamentos'
+          description: 'Gestão de status'
         }
       ]
     }
@@ -116,7 +118,7 @@ export default function Navigation() {
         <div className="flex flex-col h-full">
           <div className="p-6 border-b border-white/10">
             <Link href="/" className="flex items-center justify-center">
-              <span className="text-sm font-normal text-white tracking-wide">BOOP</span>
+              <span className="text-sm font-normal text-white tracking-wide">MED1</span>
             </Link>
           </div>
           <div className="flex-1 py-6">
@@ -148,7 +150,7 @@ export default function Navigation() {
         <div className="fixed top-0 left-0 right-0 border-b border-white/10 bg-background/50 backdrop-blur supports-[backdrop-filter]:bg-background/30 z-40">
           <div className="py-4 px-4 flex justify-between items-center">
             <Link href="/" className="flex items-center">
-              <span className="text-sm font-normal text-white tracking-wide">BOOP</span>
+              <span className="text-sm font-normal text-white tracking-wide">MED1</span>
             </Link>
             <Link href="/profile">
               <div className="h-7 w-7 flex items-center justify-center cursor-pointer border border-white/10 rounded-full hover:border-white/20">

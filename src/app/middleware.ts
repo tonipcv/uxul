@@ -1,45 +1,27 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { getToken } from 'next-auth/jwt'
+import { NextRequest, NextResponse } from 'next/server';
 
 // Regex para detectar URLs no formato /{slug}/{indicador}
 const INDICATION_REGEX = /^\/([^\/]+)\/([^\/]+)$/;
 
-// Verificar se o usuário está autenticado
-async function isAuthenticated(req: NextRequest): Promise<boolean> {
-  const session = await getToken({ 
-    req, 
-    secret: process.env.NEXTAUTH_SECRET 
-  });
-  
-  return !!session;
-}
-
 export async function middleware(req: NextRequest) {
-  const { pathname } = new URL(req.url);
+  const url = new URL(req.url);
+  const { pathname, searchParams } = url;
   
-  // Verificar se é uma rota protegida que requer autenticação
-  if (pathname.startsWith('/dashboard') || pathname.startsWith('/profile')) {
-    const isLoggedIn = await isAuthenticated(req);
-    if (!isLoggedIn) {
-      return NextResponse.redirect(new URL('/auth/signin', req.url));
-    }
-    return NextResponse.next();
-  }
-  
-  // Verificar se é uma rota de indicação para rastreamento
+  // Verificar se é uma rota de indicação
   const match = pathname.match(INDICATION_REGEX);
   if (match) {
     const userSlug = match[1];
     const indicationSlug = match[2];
 
-    // Ignorar rotas conhecidas como api, _next, etc.
-    const isSystemRoute = userSlug.startsWith('api') || 
-                          userSlug.startsWith('_next') || 
-                          userSlug.startsWith('static') || 
-                          userSlug === 'favicon.ico';
-    
-    if (!isSystemRoute && userSlug && indicationSlug) {
+    if (userSlug && indicationSlug) {
       try {
+        // Capturar parâmetros UTM
+        const utmSource = searchParams.get('utm_source') || null;
+        const utmMedium = searchParams.get('utm_medium') || null;
+        const utmCampaign = searchParams.get('utm_campaign') || null;
+        const utmTerm = searchParams.get('utm_term') || null;
+        const utmContent = searchParams.get('utm_content') || null;
+
         // Não aguardar a resposta para não atrasar o carregamento da página
         fetch(`${req.nextUrl.origin}/api/track`, {
           method: 'POST',
@@ -52,6 +34,11 @@ export async function middleware(req: NextRequest) {
             type: 'click',
             userSlug,
             indicationSlug,
+            utmSource,
+            utmMedium,
+            utmCampaign,
+            utmTerm,
+            utmContent
           }),
         }).catch(err => {
           // Ignorar erros de rastreamento para não impactar a experiência do usuário
@@ -71,10 +58,7 @@ export async function middleware(req: NextRequest) {
 // Configurar quais caminhos o middleware deve processar
 export const config = {
   matcher: [
-    // Rotas protegidas que requerem autenticação
-    '/dashboard/:path*',
-    '/profile/:path*',
-    // Qualquer rota para capturar padrões de indicação
-    '/:slug/:indication',
+    // Corresponder a qualquer caminho que não comece com api/, _next/, ou static/
+    '/((?!api|_next|static|dashboard|auth|profile|favicon.ico).*)',
   ],
 }; 

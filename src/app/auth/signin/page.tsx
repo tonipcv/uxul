@@ -138,6 +138,15 @@ export default function SignIn() {
             Entrar com Google
             <div className="absolute inset-0 bg-gradient-to-r from-turquoise/0 via-turquoise/10 to-turquoise/0 opacity-0 group-hover:opacity-100 transition-all duration-700" />
           </Button>
+
+          <div className="mt-4 text-center">
+            <Link 
+              href="/auth/register" 
+              className="text-sm text-zinc-400 hover:text-white transition-colors"
+            >
+              Não tem uma conta? Registre-se
+            </Link>
+          </div>
         </CardContent>
       </Card>
     </div>

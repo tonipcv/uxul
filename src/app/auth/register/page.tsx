@@ -15,6 +15,8 @@ export default function Register() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [slug, setSlug] = useState("");
+  const [specialty, setSpecialty] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -27,7 +29,7 @@ export default function Register() {
       const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, password })
+        body: JSON.stringify({ name, email, password, slug, specialty })
       });
 
       const data = await response.json();
@@ -79,6 +81,32 @@ export default function Register() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                className="bg-white/5 border-white/10 focus:border-turquoise/50 focus:ring-turquoise/10 font-light"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="slug" className="text-zinc-400 font-light">Username / Slug</Label>
+              <Input
+                id="slug"
+                type="text"
+                placeholder="drjohn"
+                value={slug}
+                onChange={(e) => setSlug(e.target.value)}
+                required
+                className="bg-white/5 border-white/10 focus:border-turquoise/50 focus:ring-turquoise/10 font-light"
+              />
+              <p className="text-xs text-zinc-500">
+                This will be your personal URL: med1.app/<span className="text-zinc-300">{slug || 'username'}</span>
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="specialty" className="text-zinc-400 font-light">Medical Specialty</Label>
+              <Input
+                id="specialty"
+                type="text"
+                placeholder="Cardiologist"
+                value={specialty}
+                onChange={(e) => setSpecialty(e.target.value)}
                 className="bg-white/5 border-white/10 focus:border-turquoise/50 focus:ring-turquoise/10 font-light"
               />
             </div>

@@ -19,12 +19,12 @@ const transporter = nodemailer.createTransport({
 
 export async function POST(req: Request) {
   try {
-    const { name, email, password } = await req.json();
+    const { name, email, password, slug, specialty } = await req.json();
 
     // Basic validation
-    if (!name || !email || !password) {
+    if (!name || !email || !password || !slug) {
       return NextResponse.json(
-        { message: "Todos os campos são obrigatórios" },
+        { message: "Nome, email, senha e slug são obrigatórios" },
         { status: 400 }
       );
     }
@@ -37,6 +37,18 @@ export async function POST(req: Request) {
     if (existingUser) {
       return NextResponse.json(
         { message: "Este email já está em uso" },
+        { status: 400 }
+      );
+    }
+
+    // Check if slug is already taken
+    const existingSlug = await prisma.user.findUnique({
+      where: { slug },
+    });
+
+    if (existingSlug) {
+      return NextResponse.json(
+        { message: "Este username já está em uso. Por favor, escolha outro." },
         { status: 400 }
       );
     }
@@ -54,7 +66,9 @@ export async function POST(req: Request) {
         name,
         email,
         password: hashedPassword,
-        emailVerified: null
+        emailVerified: null,
+        slug,
+        specialty
       },
     });
 

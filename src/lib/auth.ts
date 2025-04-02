@@ -4,6 +4,8 @@ import GoogleProvider from "next-auth/providers/google";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "@/lib/prisma";
 import { compare } from "bcryptjs";
+import { NextRequest } from 'next/server';
+import { getToken } from 'next-auth/jwt';
 
 declare module "next-auth" {
   interface Session {
@@ -76,4 +78,13 @@ export const authOptions: AuthOptions = {
       return session;
     },
   },
-}; 
+};
+
+export async function isAuthenticated(req: NextRequest): Promise<boolean> {
+  const session = await getToken({ 
+    req, 
+    secret: process.env.NEXTAUTH_SECRET 
+  });
+  
+  return !!session;
+} 

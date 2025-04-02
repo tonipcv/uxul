@@ -12,7 +12,7 @@ export default function Home() {
     if (status === 'loading') return;
 
     if (session) {
-      router.push('/tasks');
+      router.push('/dashboard');
     } else {
       router.push('/auth/signin');
     }
