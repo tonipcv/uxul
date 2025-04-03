@@ -23,6 +23,13 @@ export default {
   			gray: {
   				'750': '#2d2d3d'
   			},
+        navy: {
+          '900': '#0A1029',
+          '800': '#0F1943',
+          '700': '#15215C',
+          '600': '#1C2E7F',
+          '500': '#25369F',
+        },
   			card: {
   				DEFAULT: 'hsl(var(--card))',
   				foreground: 'hsl(var(--card-foreground))'

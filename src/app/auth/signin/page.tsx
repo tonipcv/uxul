@@ -53,21 +53,21 @@ export default function SignIn() {
   };
 
   return (
-    <div className="fixed inset-0 min-h-screen w-full grid place-items-center">
-      <Card className="w-full max-w-[400px] mx-4 bg-black/20 border border-white/10 backdrop-blur-sm">
+    <div className="fixed inset-0 min-h-screen w-full grid place-items-center bg-white">
+      <Card className="w-full max-w-[400px] mx-4 bg-white border border-gray-200 shadow-lg">
         <CardHeader className="space-y-6 pb-6">
           <div className="flex justify-center">
-            <Logo className="text-center" />
+            <Logo className="text-center" variant="dark" />
           </div>
           <div className="space-y-2 text-center">
-            <h2 className="text-2xl font-light tracking-wide">Welcome back</h2>
-            <p className="text-sm text-zinc-400 font-light">Sign in to continue to your account</p>
+            <h2 className="text-2xl font-light tracking-wide text-gray-800">Bem-vindo de volta</h2>
+            <p className="text-sm text-gray-500 font-light">Entre para continuar na sua conta</p>
           </div>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-zinc-400 font-light">Email</Label>
+              <Label htmlFor="email" className="text-gray-600 font-light">Email</Label>
               <Input
                 id="email"
                 type="email"
@@ -75,18 +75,18 @@ export default function SignIn() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="bg-white/5 border-white/10 focus:border-turquoise/50 focus:ring-turquoise/10 font-light"
+                className="border-gray-200 focus:border-blue-700 focus:ring-blue-50 font-light placeholder:text-gray-500 text-gray-800"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-zinc-400 font-light">Password</Label>
+              <Label htmlFor="password" className="text-gray-600 font-light">Senha</Label>
               <Input
                 id="password"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="bg-white/5 border-white/10 focus:border-turquoise/50 focus:ring-turquoise/10 font-light"
+                className="border-gray-200 focus:border-blue-700 focus:ring-blue-50 font-light text-gray-800"
               />
             </div>
             {error && (
@@ -94,20 +94,19 @@ export default function SignIn() {
             )}
             <Button 
               type="submit" 
-              className="w-full relative group bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 transition-all duration-300 text-white"
+              className="w-full bg-blue-700 hover:bg-blue-800 text-white transition-colors disabled:opacity-50"
               disabled={isLoading}
             >
-              {isLoading ? "Signing in..." : "Sign in"}
-              <div className="absolute inset-0 bg-gradient-to-r from-turquoise/0 via-turquoise/10 to-turquoise/0 opacity-0 group-hover:opacity-100 transition-all duration-700" />
+              {isLoading ? "Entrando..." : "Entrar"}
             </Button>
           </form>
 
           <div className="relative my-8">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-white/10"></div>
+              <div className="w-full border-t border-gray-200"></div>
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-2 text-zinc-400 font-light">Or continue with</span>
+              <span className="bg-white px-2 text-gray-500 font-light">Ou continue com</span>
             </div>
           </div>
 
@@ -115,7 +114,7 @@ export default function SignIn() {
             type="button"
             onClick={handleGoogleSignIn}
             disabled={isLoading}
-            className="w-full relative group bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 transition-all duration-300 text-white flex items-center justify-center gap-2"
+            className="w-full bg-white hover:bg-gray-50 border border-gray-200 hover:border-gray-300 transition-colors text-gray-700 flex items-center justify-center gap-2"
           >
             <svg className="h-4 w-4" viewBox="0 0 24 24">
               <path
@@ -136,13 +135,12 @@ export default function SignIn() {
               />
             </svg>
             Entrar com Google
-            <div className="absolute inset-0 bg-gradient-to-r from-turquoise/0 via-turquoise/10 to-turquoise/0 opacity-0 group-hover:opacity-100 transition-all duration-700" />
           </Button>
 
           <div className="mt-4 text-center">
             <Link 
               href="/auth/register" 
-              className="text-sm text-zinc-400 hover:text-white transition-colors"
+              className="text-sm text-gray-500 hover:text-blue-700 transition-colors"
             >
               Não tem uma conta? Registre-se
             </Link>

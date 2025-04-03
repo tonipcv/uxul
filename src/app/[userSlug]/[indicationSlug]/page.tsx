@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardFooter } from "@/components/ui/card";
@@ -32,19 +32,29 @@ export default function IndicationPage() {
   useEffect(() => {
     const fetchDoctorInfo = async () => {
       try {
-        const response = await fetch(`/api/users/${params.userSlug}`);
+        // Define o userSlug padrão se não for fornecido
+        const userSlugToFetch = params.userSlug || 'default';
+        
+        // Verificar se já temos os dados em cache
+        const cachedDoctor = localStorage.getItem(`doctor_${userSlugToFetch}`);
+        if (cachedDoctor) {
+          setDoctor(JSON.parse(cachedDoctor));
+        }
+        
+        // Buscar dados atualizados da API
+        const response = await fetch(`/api/users/${userSlugToFetch}`);
         if (response.ok) {
           const data = await response.json();
           setDoctor(data);
+          // Salvar os dados no localStorage para futuras visitas
+          localStorage.setItem(`doctor_${userSlugToFetch}`, JSON.stringify(data));
         }
       } catch (error) {
         console.error('Erro ao buscar informações do médico:', error);
       }
     };
 
-    if (params.userSlug) {
-      fetchDoctorInfo();
-    }
+    fetchDoctorInfo();
   }, [params.userSlug]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -122,158 +132,167 @@ export default function IndicationPage() {
 
   if (success) {
     return (
-      <div className="min-h-screen w-full flex items-center justify-center bg-gray-50 px-4">
-        <Card className="w-full max-w-[500px] mx-auto bg-white border-gray-100 shadow-sm rounded-xl overflow-hidden">
-          <CardHeader className="space-y-6 pb-6">
-            <div className="flex justify-center">
-              <Logo className="text-center text-turquoise" />
-            </div>
-            
-            {/* Ícone de sucesso */}
-            <div className="flex justify-center">
-              <div className="w-16 h-16 rounded-full bg-green-50 flex items-center justify-center">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
-            </div>
-            
-            <div className="space-y-2 text-center">
-              <h2 className="text-xl font-medium tracking-wide text-gray-800">Obrigado!</h2>
-              <p className="text-gray-600">
-                {doctor?.name ? `${doctor.name} receberá seus dados` : 'Seus dados foram enviados'} e entrará em contato em breve.
-              </p>
-            </div>
-          </CardHeader>
-          <CardFooter className="pt-2 text-center text-xs text-gray-400">
+      <div className="min-h-screen w-full flex items-center justify-center bg-slate-50 p-4 md:p-8">
+        <div className="w-full max-w-3xl mx-auto">
+          <div className="grid grid-cols-1 gap-6">
+            <Card className="bg-white border-0 shadow-sm rounded-xl overflow-hidden">
+              <CardContent className="flex flex-col items-center justify-center p-8 text-center space-y-4">
+                <div className="w-16 h-16 rounded-full bg-green-50 flex items-center justify-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                
+                <h2 className="text-xl font-medium tracking-wide text-gray-800">Obrigado!</h2>
+                <p className="text-gray-600">
+                  {doctor?.name ? `${doctor.name} receberá seus dados` : 'Seus dados foram enviados'} e entrará em contato em breve.
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+          
+          <div className="mt-6 text-center text-xs text-gray-400">
             Powered by <span className="text-turquoise font-medium">med1.app</span>
-          </CardFooter>
-        </Card>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-gray-50 px-4 py-8">
-      <Card className="w-full max-w-[500px] mx-auto bg-white border-gray-100 shadow-sm rounded-xl overflow-hidden">
-        <CardHeader className="space-y-6 pb-4">
-          {/* Logo no topo */}
-          <div className="flex justify-center">
-            <Logo className="text-center text-turquoise" />
-          </div>
+    <div className="min-h-screen w-full bg-white p-4 md:p-8">
+      <div className="w-full max-w-4xl mx-auto">
+        {/* Bento Grid Layout */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Doctor Profile Card - Span 1 column on mobile, 1 column on desktop */}
+          <Card className="bg-white border border-gray-200 shadow-sm rounded-xl overflow-hidden md:col-span-1">
+            <CardContent className="flex flex-col items-center justify-center p-6 space-y-4">
+              {doctor?.image ? (
+                <div className="w-24 h-24 rounded-full overflow-hidden border border-gray-100 shadow-sm">
+                  <Image 
+                    src={doctor.image} 
+                    alt={doctor.name || 'Médico'} 
+                    width={96} 
+                    height={96}
+                    className="object-cover w-full h-full"
+                  />
+                </div>
+              ) : (
+                <div className="w-24 h-24 rounded-full bg-blue-50 flex items-center justify-center text-3xl font-light text-blue-700">
+                  {doctor?.name?.charAt(0) || ''}
+                </div>
+              )}
+              
+              <div className="text-center">
+                <h2 className="text-xl font-medium text-gray-800">
+                  {doctor?.name || 'Carregando...'}
+                </h2>
+                <p className="text-sm font-medium text-gray-600">
+                  {doctor?.specialty || ''}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
           
-          {/* Foto e detalhes do médico */}
-          <div className="flex flex-col items-center space-y-3">
-            {doctor?.image ? (
-              <div className="w-20 h-20 rounded-full overflow-hidden border border-gray-100 shadow-sm">
-                <Image 
-                  src={doctor.image} 
-                  alt={doctor.name || 'Médico'} 
-                  width={80} 
-                  height={80}
-                  className="object-cover w-full h-full"
-                />
+          {/* Welcome Message Card - Span 1 column on mobile, 2 columns on desktop */}
+          <Card className="bg-white border border-gray-200 shadow-sm rounded-xl overflow-hidden md:col-span-2">
+            <CardContent className="p-6">
+              <div className="bg-blue-50 p-5 rounded-xl">
+                <h3 className="text-xl font-medium text-gray-800 mb-2">Bem-vindo!</h3>
+                <p className="text-gray-600">
+                  {doctor?.name 
+                    ? `${doctor.name} te convidou para agendar sua avaliação gratuita` 
+                    : 'Você foi convidado para agendar sua avaliação gratuita'}
+                </p>
               </div>
-            ) : (
-              <div className="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center text-2xl font-light text-gray-500">
-                {doctor?.name?.charAt(0) || ''}
-              </div>
-            )}
-            <div className="text-center">
-              <h2 className="text-xl font-medium text-gray-800">
-                {doctor?.name || 'Carregando...'}
-              </h2>
-              <p className="text-sm font-medium text-gray-600">
-                {doctor?.specialty || ''}
-              </p>
-            </div>
-          </div>
-
-          {/* Mensagem de boas-vindas */}
-          <div className="text-center py-3 px-4 rounded-lg bg-gray-50">
-            <p className="text-gray-600">
-              {doctor?.name 
-                ? `${doctor.name} te convidou para agendar sua avaliação gratuita` 
-                : 'Você foi convidado para agendar sua avaliação gratuita'}
-            </p>
-          </div>
-        </CardHeader>
-
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="name" className="text-gray-600 text-sm">Nome</Label>
-              <Input
-                id="name"
-                type="text"
-                placeholder="Seu nome completo"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-                className="border-gray-200 focus:border-turquoise focus:ring-turquoise/10 h-10 rounded"
-              />
-            </div>
-            
-            <div className="space-y-1.5">
-              <Label htmlFor="phone" className="text-gray-600 text-sm">Telefone</Label>
-              <Input
-                id="phone"
-                type="tel"
-                placeholder="(00) 00000-0000"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                required
-                className="border-gray-200 focus:border-turquoise focus:ring-turquoise/10 h-10 rounded"
-              />
-            </div>
-            
-            <div className="space-y-1.5">
-              <Label htmlFor="interest" className="text-gray-600 text-sm">Interesse</Label>
-              <Select value={interest} onValueChange={setInterest}>
-                <SelectTrigger className="border-gray-200 bg-white focus:border-turquoise focus:ring-turquoise/10 h-10 rounded text-gray-600">
-                  <SelectValue placeholder="Selecione seu interesse" />
-                </SelectTrigger>
-                <SelectContent className="bg-white border-gray-100">
-                  <SelectItem value="consulta" className="text-gray-600 hover:bg-gray-50">Consulta</SelectItem>
-                  <SelectItem value="avaliacao" className="text-gray-600 hover:bg-gray-50">Avaliação</SelectItem>
-                  <SelectItem value="exames" className="text-gray-600 hover:bg-gray-50">Exames</SelectItem>
-                  <SelectItem value="outros" className="text-gray-600 hover:bg-gray-50">Outros</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            {error && (
-              <div className="text-red-500 text-sm bg-red-50 py-2 px-3 rounded">{error}</div>
-            )}
-            
-            {/* Mensagem LGPD */}
-            <div className="flex items-start space-x-2 text-xs text-gray-500 bg-gray-50 p-3 rounded">
-              <ShieldCheckIcon className="h-4 w-4 flex-shrink-0 text-turquoise" />
-              <span>Seus dados estão protegidos de acordo com a LGPD (Lei Geral de Proteção de Dados) e serão utilizados apenas para contato.</span>
-            </div>
-            
-            <Button 
-              type="submit" 
-              className="w-full bg-turquoise hover:bg-turquoise/90 text-white font-medium py-2.5 rounded transition-colors"
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <span className="flex items-center justify-center">
-                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Enviando...
-                </span>
-              ) : "Quero ser atendido"}
-            </Button>
-          </form>
-        </CardContent>
+            </CardContent>
+          </Card>
+          
+          {/* Form Card - Span full width */}
+          <Card className="bg-white border border-gray-200 shadow-sm rounded-xl overflow-hidden md:col-span-3">
+            <CardHeader className="pb-0 pt-6 px-6">
+              <h3 className="text-lg font-medium text-gray-800">Agende sua avaliação</h3>
+            </CardHeader>
+            <CardContent className="p-6">
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="name" className="text-gray-600">Nome</Label>
+                    <Input
+                      id="name"
+                      type="text"
+                      placeholder="Seu nome completo"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      required
+                      className="border-gray-200 focus:border-blue-700 focus:ring-blue-50 text-gray-800 placeholder:text-gray-500"
+                    />
+                  </div>
+                  
+                  <div className="space-y-1.5">
+                    <Label htmlFor="phone" className="text-gray-600">Telefone</Label>
+                    <Input
+                      id="phone"
+                      type="tel"
+                      placeholder="(00) 00000-0000"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      required
+                      className="border-gray-200 focus:border-blue-700 focus:ring-blue-50 text-gray-800 placeholder:text-gray-500"
+                    />
+                  </div>
+                </div>
+                
+                <div className="space-y-1.5">
+                  <Label htmlFor="interest" className="text-gray-600">Interesse</Label>
+                  <Select value={interest} onValueChange={setInterest}>
+                    <SelectTrigger className="border-gray-200 bg-white focus:border-blue-700 focus:ring-blue-50 text-gray-800 [&_[data-placeholder]]:text-gray-500 data-[state=open]:border-blue-700">
+                      <SelectValue placeholder="Selecione seu interesse" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-white border-gray-200 shadow-md">
+                      <SelectItem value="consulta" className="text-gray-800 hover:bg-blue-50 focus:bg-blue-50 focus:text-blue-700">Consulta</SelectItem>
+                      <SelectItem value="avaliacao" className="text-gray-800 hover:bg-blue-50 focus:bg-blue-50 focus:text-blue-700">Avaliação</SelectItem>
+                      <SelectItem value="exames" className="text-gray-800 hover:bg-blue-50 focus:bg-blue-50 focus:text-blue-700">Exames</SelectItem>
+                      <SelectItem value="outros" className="text-gray-800 hover:bg-blue-50 focus:bg-blue-50 focus:text-blue-700">Outros</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                {error && (
+                  <div className="text-red-500 text-sm bg-red-50 py-2 px-3 rounded">{error}</div>
+                )}
+                
+                {/* Mensagem LGPD */}
+                <div className="flex items-start space-x-2 text-xs text-gray-500 bg-gray-50 p-3 rounded">
+                  <ShieldCheckIcon className="h-4 w-4 flex-shrink-0 text-blue-700" />
+                  <span>Seus dados estão protegidos de acordo com a LGPD (Lei Geral de Proteção de Dados) e serão utilizados apenas para contato.</span>
+                </div>
+                
+                <Button 
+                  type="submit" 
+                  className="w-full bg-blue-700 hover:bg-blue-800 text-white transition-colors disabled:opacity-50"
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <span className="flex items-center justify-center">
+                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Enviando...
+                    </span>
+                  ) : "Quero ser atendido"}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
         
-        <CardFooter className="pt-2 text-center text-xs text-gray-400">
-          Powered by <span className="text-turquoise font-medium">med1.app</span>
-        </CardFooter>
-      </Card>
+        {/* Footer */}
+        <div className="mt-6 text-center text-xs text-gray-400">
+          Powered by <span className="text-blue-700 font-medium">med1.app</span>
+        </div>
+      </div>
     </div>
   );
 } 

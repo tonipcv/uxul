@@ -47,7 +47,7 @@ export default function Register() {
   };
 
   return (
-    <div className="fixed inset-0 min-h-screen w-full grid place-items-center">
+    <div className="fixed inset-0 min-h-screen w-full grid place-items-center bg-navy-900">
       <Card className="w-full max-w-[400px] mx-4 bg-black/20 border border-white/10 backdrop-blur-sm">
         <CardHeader className="space-y-6 pb-6">
           <div className="flex justify-center">

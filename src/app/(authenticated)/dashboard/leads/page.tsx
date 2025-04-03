@@ -2,9 +2,20 @@
 
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { MagnifyingGlassIcon, PencilIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import { 
+  MagnifyingGlassIcon, 
+  PencilIcon, 
+  XMarkIcon, 
+  PhoneIcon, 
+  UserIcon, 
+  CalendarIcon,
+  CurrencyDollarIcon,
+  BriefcaseIcon,
+  ClockIcon,
+  ArrowPathIcon
+} from "@heroicons/react/24/outline";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
@@ -16,7 +27,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/components/ui/use-toast";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon } from "@heroicons/react/24/outline";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface Lead {
   id: string;
@@ -62,6 +73,7 @@ export default function LeadsPage() {
   const [isQuickSubmitting, setIsQuickSubmitting] = useState(false);
   const [statusEditLead, setStatusEditLead] = useState<Lead | null>(null);
   const [isStatusMenuOpen, setIsStatusMenuOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("all");
 
   useEffect(() => {
     if (session?.user?.id) {
@@ -149,6 +161,7 @@ export default function LeadsPage() {
         name: formData.name,
         phone: formData.phone,
         interest: formData.interest,
+        status: formData.status,
         potentialValue,
         appointmentDate,
         medicalNotes: formData.medicalNotes
@@ -232,21 +245,18 @@ export default function LeadsPage() {
 
   const handleStatusChange = async (lead: Lead, newStatus: string) => {
     try {
-      // Como o campo status pode não estar disponível no banco de dados, 
-      // vamos atualizar os campos que sabemos que existem
       const response = await fetch(`/api/leads?leadId=${lead.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name: lead.name,
-          phone: lead.phone
+          status: newStatus
         })
       });
 
       if (response.ok) {
         toast({
           title: "Lead atualizado",
-          description: `Operação realizada com sucesso`,
+          description: `Status alterado para ${newStatus}`,
         });
         fetchLeads(); // Recarregar a lista
       } else {
@@ -265,379 +275,490 @@ export default function LeadsPage() {
 
   // Função para renderizar o status com cores diferentes
   const renderStatus = (lead: Lead) => {
-    const status = lead.status || 'Novo';
-    
     const getStatusBadge = () => {
-      switch (status) {
+      switch (lead.status) {
         case 'Novo':
-          return <Badge variant="outline">Novo</Badge>;
-        case 'Em contato':
-          return <Badge className="bg-blue-700/20 text-blue-400 border-blue-700/30">Em contato</Badge>;
+          return <Badge className="bg-blue-50 text-blue-700 border-blue-200">Novo</Badge>;
         case 'Agendado':
-          return <Badge className="bg-green-700/20 text-green-400 border-green-700/30">Agendado</Badge>;
+          return <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200">Agendado</Badge>;
         case 'Compareceu':
-          return <Badge className="bg-emerald-700/20 text-emerald-400 border-emerald-700/30">Compareceu</Badge>;
-        case 'Não veio':
-          return <Badge className="bg-red-700/20 text-red-400 border-red-700/30">Não veio</Badge>;
+          return <Badge className="bg-green-50 text-green-700 border-green-200">Compareceu</Badge>;
         case 'Fechado':
-          return <Badge className="bg-purple-700/20 text-purple-400 border-purple-700/30">Fechado</Badge>;
+          return <Badge className="bg-purple-50 text-purple-700 border-purple-200">Fechado</Badge>;
+        case 'Não veio':
+          return <Badge className="bg-red-50 text-red-700 border-red-200">Não veio</Badge>;
+        case 'Cancelado':
+          return <Badge className="bg-gray-100 text-gray-600 border-gray-200">Cancelado</Badge>;
         default:
-          return <Badge variant="outline">{status}</Badge>;
+          return <Badge className="bg-gray-100 text-gray-600 border-gray-200">{lead.status}</Badge>;
       }
     };
 
     return (
-      <Popover onOpenChange={(open: boolean) => {
-        if (open) setStatusEditLead(lead);
-        else if (!open) setStatusEditLead(null);
+      <Popover open={statusEditLead?.id === lead.id && isStatusMenuOpen} onOpenChange={(open) => {
+        setIsStatusMenuOpen(open);
+        if (!open) setStatusEditLead(null);
       }}>
         <PopoverTrigger asChild>
-          <button className="cursor-pointer hover:opacity-80">
+          <Button 
+            variant="ghost" 
+            className="p-0 h-auto hover:bg-transparent"
+            onClick={() => {
+              setStatusEditLead(lead);
+              setIsStatusMenuOpen(true);
+            }}
+          >
             {getStatusBadge()}
-          </button>
+          </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-48 p-0 bg-zinc-900 border-white/10">
-          <div className="py-1.5">
-            <p className="px-3 py-1.5 text-xs text-zinc-500 border-b border-white/10">Mudar status</p>
-            <div className="divide-y divide-white/5">
-              <button 
-                className={`w-full text-left px-3 py-1.5 text-sm hover:bg-white/5 ${status === 'Novo' ? 'text-turquoise' : 'text-zinc-300'}`}
-                onClick={() => handleStatusChange(lead, 'Novo')}
-              >
-                Novo
-              </button>
-              <button 
-                className={`w-full text-left px-3 py-1.5 text-sm hover:bg-white/5 ${status === 'Em contato' ? 'text-turquoise' : 'text-zinc-300'}`}
-                onClick={() => handleStatusChange(lead, 'Em contato')}
-              >
-                Em contato
-              </button>
-              <button 
-                className={`w-full text-left px-3 py-1.5 text-sm hover:bg-white/5 ${status === 'Agendado' ? 'text-turquoise' : 'text-zinc-300'}`}
-                onClick={() => handleStatusChange(lead, 'Agendado')}
-              >
-                Agendado
-              </button>
-              <button 
-                className={`w-full text-left px-3 py-1.5 text-sm hover:bg-white/5 ${status === 'Compareceu' ? 'text-turquoise' : 'text-zinc-300'}`}
-                onClick={() => handleStatusChange(lead, 'Compareceu')}
-              >
-                Compareceu
-              </button>
-              <button 
-                className={`w-full text-left px-3 py-1.5 text-sm hover:bg-white/5 ${status === 'Não veio' ? 'text-turquoise' : 'text-zinc-300'}`}
-                onClick={() => handleStatusChange(lead, 'Não veio')}
-              >
-                Não veio
-              </button>
-              <button 
-                className={`w-full text-left px-3 py-1.5 text-sm hover:bg-white/5 ${status === 'Fechado' ? 'text-turquoise' : 'text-zinc-300'}`}
-                onClick={() => handleStatusChange(lead, 'Fechado')}
-              >
-                Fechado
-              </button>
-            </div>
+        <PopoverContent className="w-48 p-2">
+          <div className="space-y-1">
+            <Button
+              variant="ghost"
+              className="w-full justify-start text-blue-700 hover:bg-blue-50 hover:text-blue-800"
+              onClick={() => handleStatusChange(lead, 'Novo')}
+            >
+              Novo
+            </Button>
+            <Button
+              variant="ghost"
+              className="w-full justify-start text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800"
+              onClick={() => handleStatusChange(lead, 'Agendado')}
+            >
+              Agendado
+            </Button>
+            <Button
+              variant="ghost"
+              className="w-full justify-start text-green-700 hover:bg-green-50 hover:text-green-800"
+              onClick={() => handleStatusChange(lead, 'Compareceu')}
+            >
+              Compareceu
+            </Button>
+            <Button
+              variant="ghost"
+              className="w-full justify-start text-purple-700 hover:bg-purple-50 hover:text-purple-800"
+              onClick={() => handleStatusChange(lead, 'Fechado')}
+            >
+              Fechado
+            </Button>
+            <Button
+              variant="ghost"
+              className="w-full justify-start text-red-700 hover:bg-red-50 hover:text-red-800"
+              onClick={() => handleStatusChange(lead, 'Não veio')}
+            >
+              Não veio
+            </Button>
+            <Button
+              variant="ghost"
+              className="w-full justify-start text-gray-600 hover:bg-gray-50 hover:text-gray-800"
+              onClick={() => handleStatusChange(lead, 'Cancelado')}
+            >
+              Cancelado
+            </Button>
           </div>
         </PopoverContent>
       </Popover>
     );
   };
 
-  const filteredLeads = leads.filter(lead => 
-    lead.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    lead.phone.includes(searchTerm) ||
-    (lead.status?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
-    (lead.source?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
-    (lead.indication?.name?.toLowerCase() || "").includes(searchTerm.toLowerCase())
-  );
+  // Calcula estatísticas de leads
+  const leadStats = {
+    total: leads.length,
+    novos: leads.filter(lead => lead.status === 'Novo' || !lead.status).length,
+    emContato: leads.filter(lead => lead.status === 'Em contato').length,
+    agendados: leads.filter(lead => lead.status === 'Agendado').length,
+    compareceram: leads.filter(lead => lead.status === 'Compareceu').length,
+    naoVieram: leads.filter(lead => lead.status === 'Não veio').length,
+    fechados: leads.filter(lead => lead.status === 'Fechado').length,
+  };
+
+  // Filtra leads por status e termo de busca
+  const getFilteredLeads = () => {
+    let filteredByStatus = leads;
+    
+    if (activeTab !== 'all') {
+      const statusMap: {[key: string]: string} = {
+        'novos': 'Novo',
+        'emContato': 'Em contato',
+        'agendados': 'Agendado',
+        'compareceram': 'Compareceu',
+        'naoVieram': 'Não veio',
+        'fechados': 'Fechado'
+      };
+      
+      filteredByStatus = leads.filter(lead => 
+        lead.status === statusMap[activeTab] || 
+        (!lead.status && activeTab === 'novos')
+      );
+    }
+    
+    return filteredByStatus.filter(lead => 
+      lead.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      lead.phone.includes(searchTerm) ||
+      (lead.interest?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
+      (lead.source?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
+      (lead.indication?.name?.toLowerCase() || "").includes(searchTerm.toLowerCase())
+    );
+  };
+
+  const filteredLeads = getFilteredLeads();
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="mb-8">
-        <h1 className="text-2xl font-light">Leads</h1>
-        <p className="text-zinc-400">Gerencie seus contatos</p>
+    <div className="container mx-auto p-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-6">
+        <h1 className="text-xl font-medium text-gray-800">Leads</h1>
+        <div className="flex gap-2 items-center w-full md:w-auto">
+          <Input
+            placeholder="Buscar leads..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="flex-1 md:w-64 h-9 border-gray-200 focus:border-blue-700 focus:ring-blue-50"
+          />
+          <Button 
+            onClick={fetchLeads} 
+            size="sm"
+            variant="outline" 
+            className="bg-white border-blue-700 text-blue-700 hover:bg-blue-50 transition-colors h-9 px-3"
+          >
+            <ArrowPathIcon className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
 
-      <Card className="bg-black/20 border-white/10">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-          <CardTitle className="text-lg font-light">Lista de Leads</CardTitle>
-          <div className="relative w-full max-w-sm">
-            <MagnifyingGlassIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
-            <Input
-              placeholder="Buscar leads..."
-              className="pl-9 bg-white/5 border-white/10"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="rounded-md border border-white/10">
-            <div className="grid grid-cols-7 gap-4 p-4 text-zinc-400 text-sm font-medium border-b border-white/10">
-              <div>Nome</div>
-              <div>Telefone</div>
-              <div>Status</div>
-              <div>Origem</div>
-              <div>Valor</div>
-              <div>Consulta</div>
-              <div>Ações</div>
-            </div>
-            
-            {loading ? (
-              <div className="p-4 text-zinc-400">
-                Carregando leads...
-              </div>
-            ) : filteredLeads.length > 0 ? (
-              <div className="divide-y divide-white/5">
-                {filteredLeads.map((lead) => (
-                  <div key={lead.id} className="grid grid-cols-7 gap-4 p-4 text-zinc-300 hover:bg-white/5 transition-colors">
-                    <div className="truncate">
-                      {lead.name}
-                      <div className="text-xs text-zinc-500">
-                        {lead.indication?.name || lead.indication?.slug || "Link principal"}
-                      </div>
-                    </div>
-                    <div>{lead.phone}</div>
-                    <div>{renderStatus(lead)}</div>
-                    <div className="truncate">
-                      {lead.utmSource ? (
-                        <div>
-                          <span className="text-xs text-zinc-400">{lead.utmSource}</span>
-                          {lead.utmMedium && (
-                            <span className="text-xs text-zinc-500"> / {lead.utmMedium}</span>
-                          )}
-                        </div>
-                      ) : (
-                        <span className="text-zinc-400">Direto</span>
-                      )}
-                    </div>
-                    <div>
-                      {lead.potentialValue 
-                        ? <span className="text-green-100">R$ {lead.potentialValue.toFixed(0)}</span>
-                        : <span className="text-zinc-500">-</span>
-                      }
-                    </div>
-                    <div>
-                      {lead.appointmentDate 
-                        ? format(new Date(lead.appointmentDate), "dd/MM HH:mm", { locale: ptBR })
-                        : (
-                          <Popover onOpenChange={(open: boolean) => {
-                            if (open) setQuickEditLead(lead);
-                            else if (!open) setQuickEditLead(null);
-                          }}>
-                            <PopoverTrigger asChild>
-                              <button className="text-zinc-500 hover:text-zinc-300 transition-colors flex items-center gap-1">
-                                <span>Não agendado</span>
-                                <CalendarIcon className="h-3.5 w-3.5" />
-                              </button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-4 bg-zinc-900 border-white/10">
-                              <div className="space-y-4">
-                                <h4 className="font-medium">Agendar consulta para</h4>
-                                <p className="text-sm text-zinc-400">{lead.name}</p>
-                                
-                                <div className="grid grid-cols-2 gap-2">
-                                  <div className="space-y-1">
-                                    <Label htmlFor="quick-date">Data</Label>
-                                    <Input
-                                      id="quick-date"
-                                      type="date"
-                                      className="bg-white/5 border-white/10"
-                                      value={quickAppointmentDate}
-                                      onChange={(e) => setQuickAppointmentDate(e.target.value)}
-                                    />
-                                  </div>
-                                  <div className="space-y-1">
-                                    <Label htmlFor="quick-time">Hora</Label>
-                                    <Input
-                                      id="quick-time"
-                                      type="time"
-                                      className="bg-white/5 border-white/10"
-                                      value={quickAppointmentTime}
-                                      onChange={(e) => setQuickAppointmentTime(e.target.value)}
-                                    />
-                                  </div>
-                                </div>
-                                
-                                <div className="flex justify-end">
-                                  <Button
-                                    className="bg-gradient-to-r from-turquoise/80 to-turquoise/60"
-                                    disabled={isQuickSubmitting || !quickAppointmentDate}
-                                    onClick={handleQuickSchedule}
-                                  >
-                                    {isQuickSubmitting ? "Agendando..." : "Agendar"}
-                                  </Button>
-                                </div>
-                              </div>
-                            </PopoverContent>
-                          </Popover>
-                        )
-                      }
-                    </div>
-                    <div>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="h-8 bg-white/5 hover:bg-white/10 border border-white/10"
-                        title="Editar lead"
-                        onClick={() => openEditModal(lead)}
-                      >
-                        <PencilIcon className="h-3.5 w-3.5" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="p-4 text-zinc-400">
-                Nenhum lead encontrado.
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
-      <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-        <DialogContent className="bg-zinc-900 border-white/10 text-white">
-          <DialogHeader>
-            <div className="flex justify-between items-center">
-              <DialogTitle>Editar Lead</DialogTitle>
-              <Button
-                size="sm"
-                variant="ghost"
-                className="h-8 w-8 p-0"
-                onClick={closeEditModal}
+      <div className="bg-white rounded-lg border border-gray-200">
+        <div className="p-2">
+          <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="hidden md:grid md:grid-cols-6 bg-white border border-gray-200 p-1 rounded-md">
+              <TabsTrigger 
+                value="all" 
+                className="data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700 data-[state=active]:border-b-2 data-[state=active]:border-blue-700 text-gray-500 hover:text-gray-800 transition-colors rounded-md"
               >
-                <XMarkIcon className="h-4 w-4" />
-              </Button>
-            </div>
-          </DialogHeader>
+                Todos ({leadStats.total})
+              </TabsTrigger>
+              <TabsTrigger 
+                value="novos" 
+                className="data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700 data-[state=active]:border-b-2 data-[state=active]:border-blue-700 text-gray-500 hover:text-gray-800 transition-colors rounded-md"
+              >
+                Novos ({leadStats.novos})
+              </TabsTrigger>
+              <TabsTrigger 
+                value="agendados" 
+                className="data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700 data-[state=active]:border-b-2 data-[state=active]:border-blue-700 text-gray-500 hover:text-gray-800 transition-colors rounded-md"
+              >
+                Agendados ({leadStats.agendados})
+              </TabsTrigger>
+              <TabsTrigger 
+                value="compareceram" 
+                className="data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700 data-[state=active]:border-b-2 data-[state=active]:border-blue-700 text-gray-500 hover:text-gray-800 transition-colors rounded-md"
+              >
+                Compareceram ({leadStats.compareceram})
+              </TabsTrigger>
+              <TabsTrigger 
+                value="fechados" 
+                className="data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700 data-[state=active]:border-b-2 data-[state=active]:border-blue-700 text-gray-500 hover:text-gray-800 transition-colors rounded-md"
+              >
+                Fechados ({leadStats.fechados})
+              </TabsTrigger>
+              <TabsTrigger 
+                value="naoVieram" 
+                className="data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700 data-[state=active]:border-b-2 data-[state=active]:border-blue-700 text-gray-500 hover:text-gray-800 transition-colors rounded-md"
+              >
+                Não vieram ({leadStats.naoVieram})
+              </TabsTrigger>
+            </TabsList>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            {/* Mobile Filter */}
+            <div className="md:hidden mb-2">
+              <Select 
+                value={activeTab} 
+                onValueChange={setActiveTab}
+              >
+                <SelectTrigger className="w-full h-9 bg-blue-700 text-white border-blue-700 focus:ring-blue-200 focus:ring-offset-0">
+                  <SelectValue>
+                    {activeTab === 'all' && `Todos (${leadStats.total})`}
+                    {activeTab === 'novos' && `Novos (${leadStats.novos})`}
+                    {activeTab === 'agendados' && `Agendados (${leadStats.agendados})`}
+                    {activeTab === 'compareceram' && `Compareceram (${leadStats.compareceram})`}
+                    {activeTab === 'fechados' && `Fechados (${leadStats.fechados})`}
+                    {activeTab === 'naoVieram' && `Não vieram (${leadStats.naoVieram})`}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent className="bg-white border border-gray-100">
+                  <SelectItem value="all" className="text-gray-800 focus:bg-blue-50 focus:text-blue-700">Todos ({leadStats.total})</SelectItem>
+                  <SelectItem value="novos" className="text-gray-800 focus:bg-blue-50 focus:text-blue-700">Novos ({leadStats.novos})</SelectItem>
+                  <SelectItem value="agendados" className="text-gray-800 focus:bg-blue-50 focus:text-blue-700">Agendados ({leadStats.agendados})</SelectItem>
+                  <SelectItem value="compareceram" className="text-gray-800 focus:bg-blue-50 focus:text-blue-700">Compareceram ({leadStats.compareceram})</SelectItem>
+                  <SelectItem value="fechados" className="text-gray-800 focus:bg-blue-50 focus:text-blue-700">Fechados ({leadStats.fechados})</SelectItem>
+                  <SelectItem value="naoVieram" className="text-gray-800 focus:bg-blue-50 focus:text-blue-700">Não vieram ({leadStats.naoVieram})</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="divide-y divide-gray-100">
+              {loading ? (
+                <div className="text-center py-8">
+                  <div className="animate-spin h-6 w-6 border-2 border-blue-700 border-t-transparent rounded-full mx-auto mb-2" />
+                  <p className="text-sm text-gray-500">Carregando...</p>
+                </div>
+              ) : getFilteredLeads().length > 0 ? (
+                <>
+                  <div className="md:hidden">
+                    {getFilteredLeads().map((lead) => (
+                      <div key={lead.id} className="p-3">
+                        <div className="flex flex-col gap-2">
+                          <div className="flex items-start justify-between gap-2">
+                            <div>
+                              <h3 className="font-medium text-gray-800 mb-0.5">{lead.name}</h3>
+                              <div className="flex flex-wrap gap-2 text-sm text-gray-500">
+                                <span className="flex items-center gap-1">
+                                  <PhoneIcon className="h-3.5 w-3.5" />
+                                  {lead.phone}
+                                </span>
+                                {lead.interest && (
+                                  <span className="flex items-center gap-1">
+                                    <BriefcaseIcon className="h-3.5 w-3.5" />
+                                    {lead.interest}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            {renderStatus(lead)}
+                          </div>
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setQuickEditLead(lead);
+                                setQuickAppointmentDate("");
+                                setQuickAppointmentTime("");
+                              }}
+                              className="flex-1 h-8 px-3 text-sm bg-white border-blue-700 text-blue-700 hover:bg-blue-50"
+                            >
+                              <CalendarIcon className="h-3.5 w-3.5 mr-1.5" />
+                              Agendar
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => openEditModal(lead)}
+                              className="flex-1 h-8 px-3 text-sm bg-white border-gray-200 text-gray-700 hover:border-blue-200 hover:text-blue-700"
+                            >
+                              <PencilIcon className="h-3.5 w-3.5 mr-1.5" />
+                              Editar
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  {/* Desktop List View */}
+                  <div className="hidden md:block">
+                    <table className="w-full">
+                      <tbody>
+                        {getFilteredLeads().map((lead) => (
+                          <tr key={lead.id} className="border-b border-gray-100">
+                            <td className="py-3 pl-4 pr-2 w-[30%]">
+                              <div className="font-medium text-gray-800">{lead.name}</div>
+                            </td>
+                            <td className="py-3 px-2 w-[20%]">
+                              <div className="text-gray-600">{lead.phone}</div>
+                            </td>
+                            <td className="py-3 px-2 w-[20%]">
+                              <div className="text-gray-600">{lead.interest}</div>
+                            </td>
+                            <td className="py-3 px-2 w-[15%]">
+                              {renderStatus(lead)}
+                            </td>
+                            <td className="py-3 pl-2 pr-4 w-[15%]">
+                              <div className="flex justify-end gap-2">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => {
+                                    setQuickEditLead(lead);
+                                    setQuickAppointmentDate("");
+                                    setQuickAppointmentTime("");
+                                  }}
+                                  className="h-8 px-3 text-sm bg-white border-blue-700 text-blue-700 hover:bg-blue-50"
+                                >
+                                  <CalendarIcon className="h-3.5 w-3.5" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => openEditModal(lead)}
+                                  className="h-8 px-3 text-sm bg-white border-gray-200 text-gray-700 hover:border-blue-200 hover:text-blue-700"
+                                >
+                                  <PencilIcon className="h-3.5 w-3.5" />
+                                </Button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
+              ) : (
+                <div className="text-center py-8">
+                  <UserIcon className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                  <p className="text-sm text-gray-500">
+                    Nenhum lead {activeTab !== 'all' ? 'nesta categoria' : ''} encontrado
+                  </p>
+                </div>
+              )}
+            </div>
+          </Tabs>
+        </div>
+      </div>
+
+      {/* Modal de Edição */}
+      <Dialog open={isEditModalOpen} onOpenChange={closeEditModal}>
+        <DialogContent className="sm:max-w-[425px] bg-white p-0 rounded-lg">
+          <div className="p-4 border-b border-gray-100">
+            <DialogTitle className="text-lg font-medium text-gray-800">Editar Lead</DialogTitle>
+          </div>
+          <form onSubmit={handleSubmit} className="space-y-4 p-4">
+            <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Nome</Label>
+                <Label htmlFor="name" className="text-sm text-gray-600">Nome</Label>
                 <Input
                   id="name"
                   name="name"
                   value={formData.name}
                   onChange={handleInputChange}
-                  className="bg-white/5 border-white/10"
+                  className="h-9 border-gray-200"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="phone">Telefone</Label>
+                <Label htmlFor="phone" className="text-sm text-gray-600">Telefone</Label>
                 <Input
                   id="phone"
                   name="phone"
                   value={formData.phone}
                   onChange={handleInputChange}
-                  className="bg-white/5 border-white/10"
+                  className="h-9 border-gray-200"
                 />
               </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="status">Status</Label>
-                <Select
-                  value={formData.status}
-                  onValueChange={(value) => handleSelectChange('status', value)}
-                >
-                  <SelectTrigger className="bg-white/5 border-white/10">
-                    <SelectValue placeholder="Selecione" />
+                <Label htmlFor="status" className="text-sm text-gray-600">Status</Label>
+                <Select name="status" value={formData.status} onValueChange={(value) => handleSelectChange("status", value)}>
+                  <SelectTrigger className="h-9 border-gray-200">
+                    <SelectValue placeholder="Selecione o status" />
                   </SelectTrigger>
-                  <SelectContent className="bg-zinc-900 border-white/10">
+                  <SelectContent>
                     <SelectItem value="Novo">Novo</SelectItem>
-                    <SelectItem value="Em contato">Em contato</SelectItem>
                     <SelectItem value="Agendado">Agendado</SelectItem>
                     <SelectItem value="Compareceu">Compareceu</SelectItem>
-                    <SelectItem value="Não veio">Não veio</SelectItem>
                     <SelectItem value="Fechado">Fechado</SelectItem>
+                    <SelectItem value="Não veio">Não veio</SelectItem>
+                    <SelectItem value="Cancelado">Cancelado</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label htmlFor="appointmentDate" className="text-sm text-gray-600">Data</Label>
+                  <Input
+                    id="appointmentDate"
+                    name="appointmentDate"
+                    type="date"
+                    value={formData.appointmentDate}
+                    onChange={handleInputChange}
+                    className="h-9 border-gray-200"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="appointmentTime" className="text-sm text-gray-600">Hora</Label>
+                  <Input
+                    id="appointmentTime"
+                    name="appointmentTime"
+                    type="time"
+                    value={formData.appointmentTime}
+                    onChange={handleInputChange}
+                    className="h-9 border-gray-200"
+                  />
+                </div>
+              </div>
               <div className="space-y-2">
-                <Label htmlFor="interest">Interesse</Label>
-                <Input
-                  id="interest"
-                  name="interest"
-                  value={formData.interest}
+                <Label htmlFor="medicalNotes" className="text-sm text-gray-600">Anotações</Label>
+                <Textarea
+                  id="medicalNotes"
+                  name="medicalNotes"
+                  value={formData.medicalNotes}
                   onChange={handleInputChange}
-                  className="bg-white/5 border-white/10"
-                  placeholder="Ex: Consulta, Exame..."
+                  className="min-h-[80px] border-gray-200"
+                  placeholder="Adicione observações..."
                 />
               </div>
             </div>
-
-            <div className="grid grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="potentialValue">Valor Potencial (R$)</Label>
-                <Input
-                  id="potentialValue"
-                  name="potentialValue"
-                  value={formData.potentialValue}
-                  onChange={handleInputChange}
-                  className="bg-white/5 border-white/10"
-                  placeholder="Ex: 350.00"
-                  type="number"
-                  step="0.01"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="appointmentDate">Data da Consulta</Label>
-                <Input
-                  id="appointmentDate"
-                  name="appointmentDate"
-                  value={formData.appointmentDate}
-                  onChange={handleInputChange}
-                  className="bg-white/5 border-white/10"
-                  type="date"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="appointmentTime">Hora</Label>
-                <Input
-                  id="appointmentTime"
-                  name="appointmentTime"
-                  value={formData.appointmentTime}
-                  onChange={handleInputChange}
-                  className="bg-white/5 border-white/10"
-                  type="time"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="medicalNotes">Anotações Médicas</Label>
-              <Textarea
-                id="medicalNotes"
-                name="medicalNotes"
-                value={formData.medicalNotes}
-                onChange={handleInputChange}
-                className="bg-white/5 border-white/10 min-h-[100px]"
-                placeholder="Observações sobre o paciente, condição, histórico..."
-              />
-            </div>
-
-            <DialogFooter>
-              <Button 
-                type="button" 
+            <div className="flex justify-end gap-2 pt-2">
+              <Button
+                type="button"
                 variant="outline"
                 onClick={closeEditModal}
-                className="bg-white/5 hover:bg-white/10 border-white/10"
+                className="h-9 px-4 bg-white border-gray-200"
               >
                 Cancelar
               </Button>
-              <Button 
+              <Button
                 type="submit"
-                className="bg-gradient-to-r from-turquoise/80 to-turquoise/60"
                 disabled={isSubmitting}
+                className="h-9 px-4 bg-blue-700 text-white hover:bg-blue-800"
               >
-                {isSubmitting ? "Salvando..." : "Salvar Alterações"}
+                {isSubmitting ? "Salvando..." : "Salvar"}
               </Button>
-            </DialogFooter>
+            </div>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Agendamento Rápido */}
+      <Dialog open={!!quickEditLead} onOpenChange={() => setQuickEditLead(null)}>
+        <DialogContent className="sm:max-w-[360px] bg-white p-0 rounded-lg">
+          <div className="p-4 border-b border-gray-100">
+            <DialogTitle className="text-lg font-medium text-gray-800">Agendar Consulta</DialogTitle>
+            <p className="text-sm text-gray-500 mt-1">{quickEditLead?.name}</p>
+          </div>
+          <div className="p-4 space-y-4">
+            <div className="space-y-2">
+              <Label className="text-sm text-gray-600">Data</Label>
+              <Input
+                type="date"
+                value={quickAppointmentDate}
+                onChange={(e) => setQuickAppointmentDate(e.target.value)}
+                className="h-9 border-gray-200"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm text-gray-600">Hora</Label>
+              <Input
+                type="time"
+                value={quickAppointmentTime}
+                onChange={(e) => setQuickAppointmentTime(e.target.value)}
+                className="h-9 border-gray-200"
+              />
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setQuickEditLead(null)}
+                className="h-9 px-4 bg-white border-gray-200"
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={handleQuickSchedule}
+                disabled={isQuickSubmitting || !quickAppointmentDate}
+                className="h-9 px-4 bg-blue-700 text-white hover:bg-blue-800"
+              >
+                {isQuickSubmitting ? "Agendando..." : "Agendar"}
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

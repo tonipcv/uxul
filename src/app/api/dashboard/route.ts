@@ -3,6 +3,31 @@ import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 
+// Função auxiliar para converter BigInt para Number
+function convertBigIntToNumber(data: any): any {
+  if (data === null || data === undefined) {
+    return data;
+  }
+  
+  if (typeof data === 'bigint') {
+    return Number(data);
+  }
+  
+  if (Array.isArray(data)) {
+    return data.map(convertBigIntToNumber);
+  }
+  
+  if (typeof data === 'object') {
+    const result: any = {};
+    for (const key in data) {
+      result[key] = convertBigIntToNumber(data[key]);
+    }
+    return result;
+  }
+  
+  return data;
+}
+
 export async function GET(req: NextRequest) {
   try {
     // Obter a sessão atual
@@ -76,29 +101,36 @@ export async function GET(req: NextRequest) {
     });
 
     // Buscar as origens de tráfego mais comuns
-    const topSources = await prisma.$queryRaw`
-      SELECT utmSource as source, COUNT(*) as count
-      FROM Lead
-      WHERE userId = ${userId} AND utmSource IS NOT NULL
-      GROUP BY utmSource
-      ORDER BY count DESC
+    const topSourcesRaw = await prisma.$queryRaw`
+      SELECT "utmSource" as "source", COUNT(*) as "count"
+      FROM "public"."Lead"
+      WHERE "userId" = ${userId} AND "utmSource" IS NOT NULL
+      GROUP BY "utmSource"
+      ORDER BY "count" DESC
       LIMIT 5
     `;
 
-    return NextResponse.json({
-      totalLeads,
-      totalIndications,
-      totalClicks,
+    // Converter todos os dados que podem conter BigInt
+    const responseData = {
+      totalLeads: Number(totalLeads),
+      totalIndications: Number(totalIndications),
+      totalClicks: Number(totalClicks),
       conversionRate,
-      recentLeads,
-      topIndications,
-      topSources
-    });
+      recentLeads: convertBigIntToNumber(recentLeads),
+      topIndications: convertBigIntToNumber(topIndications),
+      topSources: convertBigIntToNumber(topSourcesRaw)
+    };
+
+    return NextResponse.json(responseData);
   } catch (error) {
-    console.error('Erro ao buscar dados do dashboard:', error);
-    return NextResponse.json(
-      { error: 'Erro ao processar a solicitação' },
-      { status: 500 }
+    console.error('Erro ao buscar dados do dashboard:', error instanceof Error ? error.message : String(error));
+    
+    return new NextResponse(
+      JSON.stringify({ error: 'Erro ao processar a solicitação' }),
+      { 
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      }
     );
   }
 } 

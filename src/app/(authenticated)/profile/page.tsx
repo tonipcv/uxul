@@ -138,26 +138,26 @@ export default function ProfilePage() {
 
   return (
     <div className="container max-w-3xl mx-auto p-4 pt-20 lg:pt-10">
-      <Card className="bg-background/50 backdrop-blur">
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Seu Perfil</CardTitle>
+      <Card className="bg-white border border-gray-200 shadow-sm">
+        <CardHeader className="flex flex-row items-center justify-between border-b border-gray-100 pb-4">
+          <CardTitle className="text-xl font-medium text-gray-800">Seu Perfil</CardTitle>
           {!isEditing && (
             <Button 
               variant="outline" 
-              className="bg-white/5 hover:bg-white/10 border-white/10"
+              className="bg-white border-blue-700 text-blue-700 hover:bg-blue-50 transition-colors"
               onClick={() => setIsEditing(true)}
             >
               Editar Perfil
             </Button>
           )}
         </CardHeader>
-        <CardContent className="space-y-8">
+        <CardContent className="space-y-8 pt-6">
           {/* Profile Summary */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {/* Profile Image */}
             <div className="flex flex-col items-center space-y-4">
               <div className="relative group">
-                <div className="relative w-32 h-32 rounded-full overflow-hidden border-2 border-turquoise/30 bg-white/5">
+                <div className="relative w-32 h-32 rounded-full overflow-hidden border-2 border-blue-200 bg-gray-50">
                   {image ? (
                     <Image
                       src={image}
@@ -166,13 +166,13 @@ export default function ProfilePage() {
                       className="object-cover"
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-white/5">
-                      <CameraIcon className="h-12 w-12 text-white/30" />
+                    <div className="w-full h-full flex items-center justify-center bg-gray-100">
+                      <CameraIcon className="h-12 w-12 text-gray-400" />
                     </div>
                   )}
                 </div>
                 <label 
-                  className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer rounded-full"
+                  className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer rounded-full"
                   htmlFor="image-upload"
                 >
                   <CameraIcon className="h-8 w-8 text-white" />
@@ -186,12 +186,12 @@ export default function ProfilePage() {
                   disabled={isUploading}
                 />
                 {isUploading && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-turquoise"></div>
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-full">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-700"></div>
                   </div>
                 )}
               </div>
-              <p className="text-sm text-white/50">
+              <p className="text-sm text-gray-500">
                 Clique na imagem para alterar sua foto
               </p>
             </div>
@@ -201,37 +201,41 @@ export default function ProfilePage() {
               {isEditing ? (
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <label className="text-sm text-white/70 font-medium">Nome</label>
+                    <label className="text-sm text-gray-600 font-medium">Nome</label>
                     <Input
                       value={name}
                       onChange={(e) => setName(e.target.value)}
-                      className="bg-white/5 border-white/10"
+                      className="border-gray-200 focus:border-blue-700 focus:ring-blue-50"
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-sm text-white/70 font-medium">Especialidade</label>
+                    <label className="text-sm text-gray-600 font-medium">Especialidade</label>
                     <Input
                       value={specialty}
                       onChange={(e) => setSpecialty(e.target.value)}
-                      className="bg-white/5 border-white/10"
+                      className="border-gray-200 focus:border-blue-700 focus:ring-blue-50"
                       placeholder="Ex: Cardiologista, Nutricionista..."
                     />
                   </div>
                   
                   <div className="space-y-2">
-                    <label className="text-sm text-white/70 font-medium">Email</label>
-                    <p className="text-lg text-white/80">{email}</p>
+                    <label className="text-sm text-gray-600 font-medium">Email</label>
+                    <p className="text-lg text-gray-700">{email}</p>
                   </div>
 
                   <div className="pt-4 flex gap-3">
                     <Button 
                       onClick={() => handleSave()}
-                      className="bg-gradient-to-r from-turquoise/80 to-turquoise/60"
+                      className="bg-blue-700 hover:bg-blue-800 text-white transition-colors"
                     >
                       Salvar Alterações
                     </Button>
-                    <Button variant="outline" onClick={() => setIsEditing(false)}>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setIsEditing(false)}
+                      className="border-gray-200 text-gray-700 hover:bg-gray-50"
+                    >
                       Cancelar
                     </Button>
                   </div>
@@ -239,30 +243,30 @@ export default function ProfilePage() {
               ) : (
                 <div className="space-y-5">
                   <div>
-                    <h2 className="text-2xl font-light">{name}</h2>
-                    <p className="text-turquoise/80">{specialty}</p>
+                    <h2 className="text-2xl font-light text-gray-800">{name}</h2>
+                    <p className="text-blue-700">{specialty}</p>
                   </div>
                   
                   <div className="space-y-2">
-                    <div className="flex items-center text-white/70">
+                    <div className="flex items-center text-gray-600">
                       <UserIcon className="h-4 w-4 mr-2" />
-                      <span>Username: <span className="text-white font-medium">{slug}</span></span>
+                      <span>Username: <span className="text-gray-800 font-medium">{slug}</span></span>
                     </div>
                     
-                    <div className="flex items-center text-white/70">
+                    <div className="flex items-center text-gray-600">
                       <LinkIcon className="h-4 w-4 mr-2" />
-                      <span>Seu link: <span className="text-white">{baseUrl}/{slug}</span></span>
+                      <span>Seu link: <span className="text-gray-800">{baseUrl}/{slug}</span></span>
                       <Button 
                         variant="ghost" 
                         size="sm" 
-                        className="ml-2 h-6 w-6 p-0"
+                        className="ml-2 h-6 w-6 p-0 hover:bg-blue-50 hover:text-blue-700"
                         onClick={copyProfileLinkToClipboard}
                       >
                         <ClipboardDocumentIcon className="h-4 w-4" />
                       </Button>
                     </div>
                     
-                    <div className="text-white/70">
+                    <div className="text-gray-600">
                       <span className="mr-4">
                         <UserGroupIcon className="h-4 w-4 inline mr-1" />
                         {leadCount} leads
@@ -279,27 +283,27 @@ export default function ProfilePage() {
           </div>
           
           {/* Estatísticas e Resumo */}
-          <Card className="bg-white/5 border-white/10">
-            <CardHeader>
-              <CardTitle className="text-lg font-light">Resumo da Atividade</CardTitle>
+          <Card className="bg-white border border-gray-200">
+            <CardHeader className="border-b border-gray-100">
+              <CardTitle className="text-lg font-medium text-gray-800">Resumo da Atividade</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-6">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="bg-white/5 p-4 rounded-lg text-center">
-                  <p className="text-2xl font-light text-turquoise">{leadCount}</p>
-                  <p className="text-xs text-white/50">Leads Totais</p>
+                <div className="bg-blue-50 p-4 rounded-lg text-center">
+                  <p className="text-2xl font-light text-blue-700">{leadCount}</p>
+                  <p className="text-sm text-gray-600">Leads Totais</p>
                 </div>
-                <div className="bg-white/5 p-4 rounded-lg text-center">
-                  <p className="text-2xl font-light text-turquoise">{indicationCount}</p>
-                  <p className="text-xs text-white/50">Links de Indicação</p>
+                <div className="bg-blue-50 p-4 rounded-lg text-center">
+                  <p className="text-2xl font-light text-blue-700">{indicationCount}</p>
+                  <p className="text-sm text-gray-600">Links de Indicação</p>
                 </div>
-                <div className="bg-white/5 p-4 rounded-lg text-center">
-                  <p className="text-2xl font-light text-turquoise/80">0</p>
-                  <p className="text-xs text-white/50">Taxa de Conversão</p>
+                <div className="bg-blue-50 p-4 rounded-lg text-center">
+                  <p className="text-2xl font-light text-blue-700">0</p>
+                  <p className="text-sm text-gray-600">Taxa de Conversão</p>
                 </div>
-                <div className="bg-white/5 p-4 rounded-lg text-center">
-                  <p className="text-2xl font-light text-turquoise/80">0</p>
-                  <p className="text-xs text-white/50">Cliques Totais</p>
+                <div className="bg-blue-50 p-4 rounded-lg text-center">
+                  <p className="text-2xl font-light text-blue-700">0</p>
+                  <p className="text-sm text-gray-600">Cliques Totais</p>
                 </div>
               </div>
             </CardContent>
@@ -308,8 +312,8 @@ export default function ProfilePage() {
           {/* Botão de Logout */}
           <div className="pt-4">
             <Button 
-              variant="ghost" 
-              className="w-full text-white/70 hover:text-white"
+              variant="outline" 
+              className="w-full border-gray-200 text-gray-600 hover:bg-gray-50 hover:text-gray-800 transition-colors"
               onClick={() => signOut({ callbackUrl: '/auth/signin' })}
             >
               <ArrowRightOnRectangleIcon className="h-4 w-4 mr-2" />
