@@ -1,8 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getToken } from 'next-auth/jwt'
+import { prisma } from './lib/prisma'
 
 // Regex para detectar URLs no formato /{slug}/{indicador}
 const INDICATION_REGEX = /^\/([^\/]+)\/([^\/]+)$/;
+
+// Lista de rotas que requerem plano premium
+const PREMIUM_ROUTES = [
+  '/reports',
+  '/analytics',
+  '/dashboard/analytics',
+  '/advanced-settings',
+  '/dashboard',
+  '/dashboard/indications',
+  '/dashboard/leads',
+  '/dashboard/pipeline'
+];
+
+// Lista de rotas que devem ser acessíveis por todos os usuários autenticados
+const AUTH_ROUTES = [
+  '/profile'
+];
 
 // Verificar se o usuário está autenticado
 async function isAuthenticated(req: NextRequest): Promise<boolean> {
@@ -14,15 +32,74 @@ async function isAuthenticated(req: NextRequest): Promise<boolean> {
   return !!session;
 }
 
+// Verificar o plano do usuário
+async function getUserPlan(userId: string): Promise<string> {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { 
+        plan: true,
+        planExpiresAt: true
+      }
+    });
+
+    if (!user) return 'free';
+
+    // Verificar se o plano premium expirou
+    if (user.plan === 'premium' && 
+        user.planExpiresAt && 
+        new Date(user.planExpiresAt) < new Date()) {
+      // Atualizar usuário para plano gratuito (será feito pela API, não aqui para evitar atrasos)
+      return 'free';
+    }
+
+    return user.plan || 'free';
+  } catch (error) {
+    console.error('Erro ao verificar plano do usuário:', error);
+    return 'free'; // Em caso de erro, assumir plano gratuito
+  }
+}
+
 export async function middleware(req: NextRequest) {
   const { pathname } = new URL(req.url);
+  console.log('Middleware: Processando rota', pathname);
   
-  // Verificar se é uma rota protegida que requer autenticação
-  if (pathname.startsWith('/dashboard') || pathname.startsWith('/profile')) {
-    const isLoggedIn = await isAuthenticated(req);
-    if (!isLoggedIn) {
+  // Verificar se é uma rota premium
+  const isPremiumRoute = PREMIUM_ROUTES.some(route => pathname.startsWith(route));
+  if (isPremiumRoute) {
+    console.log('Middleware: Rota premium detectada', pathname);
+    const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
+    
+    if (!token?.sub) { // sub contém o ID do usuário
+      console.log('Middleware: Usuário não autenticado, redirecionando para login');
       return NextResponse.redirect(new URL('/auth/signin', req.url));
     }
+    
+    const userPlan = await getUserPlan(token.sub);
+    console.log('Middleware: Plano do usuário:', userPlan);
+    
+    if (userPlan !== 'premium') {
+      console.log('Middleware: Usuário não é premium, redirecionando para página de bloqueio');
+      return NextResponse.redirect(new URL('/bloqueado', req.url));
+    }
+    
+    console.log('Middleware: Usuário premium, permitindo acesso');
+    return NextResponse.next();
+  }
+  
+  // Verificar se é uma rota protegida que requer apenas autenticação
+  const isAuthRoute = AUTH_ROUTES.some(route => pathname.startsWith(route)) || 
+                     pathname.startsWith('/dashboard') || 
+                     pathname.startsWith('/profile');
+  
+  if (isAuthRoute) {
+    console.log('Middleware: Rota autenticada detectada', pathname);
+    const isLoggedIn = await isAuthenticated(req);
+    if (!isLoggedIn) {
+      console.log('Middleware: Usuário não autenticado, redirecionando para login');
+      return NextResponse.redirect(new URL('/auth/signin', req.url));
+    }
+    console.log('Middleware: Usuário autenticado, permitindo acesso');
     return NextResponse.next();
   }
   
@@ -74,6 +151,11 @@ export const config = {
     // Rotas protegidas que requerem autenticação
     '/dashboard/:path*',
     '/profile/:path*',
+    // Rotas premium
+    '/reports/:path*',
+    '/analytics/:path*',
+    '/dashboard/analytics',
+    '/advanced-settings/:path*',
     // Qualquer rota para capturar padrões de indicação
     '/:slug/:indication',
   ],

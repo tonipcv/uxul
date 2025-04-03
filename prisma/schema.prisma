@@ -25,6 +25,8 @@ model User {
   verificationCode       String?
   verificationCodeExpiry DateTime?
   createdAt              DateTime        @default(now())
+  plan                   String          @default("free") // Pode ser "free" ou "premium"
+  planExpiresAt          DateTime?       // Data de expiração do plano premium
   
   // Relações existentes
   accounts               Account[]

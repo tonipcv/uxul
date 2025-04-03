@@ -1,7 +1,7 @@
 {
-  "name": "BOOP",
-  "short_name": "BOOP",
-  "description": "Track your habits, achieve your goals, and unlock your full potential with BOOP.",
+  "name": "MED1",
+  "short_name": "MED1",
+  "description": "Track your habits, achieve your goals, and unlock your full potential with MED1.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#000000",

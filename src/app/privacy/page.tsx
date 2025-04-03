@@ -6,7 +6,7 @@ export default function PrivacyPage() {
       <section className="mb-8">
         <h2 className="text-2xl font-semibold mb-4">1. Introdução</h2>
         <p className="text-gray-500 dark:text-gray-400 mb-4">
-          Esta política de privacidade descreve como o BOOP (&ldquo;nós&rdquo;, &ldquo;nosso&rdquo; ou &ldquo;aplicativo&rdquo;) coleta, usa e protege suas informações pessoais.
+          Esta política de privacidade descreve como o MED1 (&ldquo;nós&rdquo;, &ldquo;nosso&rdquo; ou &ldquo;aplicativo&rdquo;) coleta, usa e protege suas informações pessoais.
           Ao usar nosso aplicativo, você concorda com a coleta e uso de informações de acordo com esta política.
         </p>
       </section>
@@ -103,7 +103,7 @@ export default function PrivacyPage() {
       <section className="mb-8">
         <h2 className="text-2xl font-semibold mb-4">7. Contato</h2>
         <p className="text-gray-500 dark:text-gray-400">
-          Para questões sobre esta política ou sobre seus dados pessoais, entre em contato através do e-mail: privacy@boop.app
+          Para questões sobre esta política ou sobre seus dados pessoais, entre em contato através do e-mail: privacy@med1.app
         </p>
       </section>
 

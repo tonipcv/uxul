@@ -5,14 +5,19 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState, useEffect } from "react";
-import { ArrowRightOnRectangleIcon, CameraIcon, LinkIcon, UserIcon, UserGroupIcon, ClipboardDocumentIcon } from '@heroicons/react/24/outline';
+import { ArrowRightOnRectangleIcon, CameraIcon, LinkIcon, UserIcon, UserGroupIcon, ClipboardDocumentIcon, SparklesIcon, ShoppingCartIcon } from '@heroicons/react/24/outline';
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { toast } from "@/components/ui/use-toast";
+import { Badge } from "@/components/ui/badge";
+import { useUserPlan } from "@/hooks/use-user-plan";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 export default function ProfilePage() {
   const router = useRouter();
   const { data: session, update } = useSession();
+  const { isPremium, isLoading: isPlanLoading, planExpiresAt, daysRemaining } = useUserPlan();
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState(session?.user?.name || '');
   const [email] = useState(session?.user?.email || '');
@@ -141,15 +146,27 @@ export default function ProfilePage() {
       <Card className="bg-white border border-gray-200 shadow-sm">
         <CardHeader className="flex flex-row items-center justify-between border-b border-gray-100 pb-4">
           <CardTitle className="text-xl font-medium text-gray-800">Seu Perfil</CardTitle>
-          {!isEditing && (
-            <Button 
-              variant="outline" 
-              className="bg-white border-blue-700 text-blue-700 hover:bg-blue-50 transition-colors"
-              onClick={() => setIsEditing(true)}
-            >
-              Editar Perfil
-            </Button>
-          )}
+          <div className="flex items-center gap-2">
+            {isPremium ? (
+              <Badge className="bg-blue-600 text-white border-0 mr-2">
+                <SparklesIcon className="h-3.5 w-3.5 mr-1" />
+                Premium
+              </Badge>
+            ) : (
+              <Badge className="bg-gray-200 text-gray-700 border-0 mr-2">
+                Free
+              </Badge>
+            )}
+            {!isEditing && (
+              <Button 
+                variant="outline" 
+                className="bg-white border-blue-700 text-blue-700 hover:bg-blue-50 transition-colors"
+                onClick={() => setIsEditing(true)}
+              >
+                Editar Perfil
+              </Button>
+            )}
+          </div>
         </CardHeader>
         <CardContent className="space-y-8 pt-6">
           {/* Profile Summary */}
@@ -166,13 +183,13 @@ export default function ProfilePage() {
                       className="object-cover"
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-gray-100">
-                      <CameraIcon className="h-12 w-12 text-gray-400" />
+                    <div className="w-full h-full flex items-center justify-center bg-blue-50">
+                      <CameraIcon className="h-12 w-12 text-blue-300" />
                     </div>
                   )}
                 </div>
                 <label 
-                  className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer rounded-full"
+                  className="absolute inset-0 flex items-center justify-center bg-blue-600/40 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer rounded-full"
                   htmlFor="image-upload"
                 >
                   <CameraIcon className="h-8 w-8 text-white" />
@@ -186,8 +203,8 @@ export default function ProfilePage() {
                   disabled={isUploading}
                 />
                 {isUploading && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-full">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-700"></div>
+                  <div className="absolute inset-0 flex items-center justify-center bg-blue-600/40 rounded-full">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
                   </div>
                 )}
               </div>
@@ -282,6 +299,61 @@ export default function ProfilePage() {
             </div>
           </div>
           
+          {/* Plano do Usuário */}
+          <Card className="bg-white border border-gray-200">
+            <CardHeader className="border-b border-gray-100">
+              <CardTitle className="text-lg font-medium text-gray-800">Seu Plano</CardTitle>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <div className="flex flex-col md:flex-row md:items-center justify-between">
+                <div className="space-y-2">
+                  {isPremium ? (
+                    <>
+                      <div className="flex items-center">
+                        <SparklesIcon className="h-5 w-5 text-blue-600 mr-2" />
+                        <h3 className="text-xl font-medium text-blue-700">Plano Premium</h3>
+                      </div>
+                      <p className="text-gray-600">
+                        Acesso total a todos os recursos da plataforma
+                      </p>
+                      {planExpiresAt && (
+                        <p className="text-sm text-gray-500">
+                          Expira em: {format(planExpiresAt, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+                          {daysRemaining !== null && daysRemaining <= 30 && (
+                            <span className="ml-2 text-amber-600">
+                              ({daysRemaining} {daysRemaining === 1 ? 'dia' : 'dias'} restantes)
+                            </span>
+                          )}
+                        </p>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex items-center">
+                        <svg className="h-5 w-5 text-gray-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <h3 className="text-xl font-medium text-gray-700">Plano Gratuito</h3>
+                      </div>
+                      <p className="text-gray-600">
+                        Acesso básico com recursos limitados
+                      </p>
+                    </>
+                  )}
+                </div>
+                <div className="mt-4 md:mt-0">
+                  <Button 
+                    onClick={() => router.push('/pricing')}
+                    className={isPremium ? "bg-white border border-blue-600 text-blue-600 hover:bg-blue-50" : "bg-blue-600 text-white hover:bg-blue-700"}
+                  >
+                    <ShoppingCartIcon className="h-4 w-4 mr-2" />
+                    {isPremium ? "Gerenciar Assinatura" : "Fazer Upgrade"}
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
           {/* Estatísticas e Resumo */}
           <Card className="bg-white border border-gray-200">
             <CardHeader className="border-b border-gray-100">
@@ -313,7 +385,7 @@ export default function ProfilePage() {
           <div className="pt-4">
             <Button 
               variant="outline" 
-              className="w-full border-gray-200 text-gray-600 hover:bg-gray-50 hover:text-gray-800 transition-colors"
+              className="w-full border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors"
               onClick={() => signOut({ callbackUrl: '/auth/signin' })}
             >
               <ArrowRightOnRectangleIcon className="h-4 w-4 mr-2" />

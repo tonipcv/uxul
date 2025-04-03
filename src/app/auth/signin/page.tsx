@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Logo } from "@/components/ui/logo";
@@ -53,21 +52,21 @@ export default function SignIn() {
   };
 
   return (
-    <div className="fixed inset-0 min-h-screen w-full grid place-items-center bg-white">
-      <Card className="w-full max-w-[400px] mx-4 bg-white border border-gray-200 shadow-lg">
-        <CardHeader className="space-y-6 pb-6">
-          <div className="flex justify-center">
-            <Logo className="text-center" variant="dark" />
-          </div>
-          <div className="space-y-2 text-center">
-            <h2 className="text-2xl font-light tracking-wide text-gray-800">Bem-vindo de volta</h2>
-            <p className="text-sm text-gray-500 font-light">Entre para continuar na sua conta</p>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
+    <div className="min-h-[100dvh] bg-gradient-to-br from-blue-800 via-blue-700 to-blue-900 flex flex-col items-center justify-center px-4">
+      <div className="w-full max-w-[400px] mx-auto">
+        <div className="flex justify-center mb-8">
+          <Logo className="scale-150" variant="light" />
+        </div>
+        
+        <div className="space-y-2 text-center mb-8">
+          <h2 className="text-2xl font-light text-white">Bem-vindo de volta</h2>
+          <p className="text-blue-100/80 font-light">Entre para continuar na sua conta</p>
+        </div>
+
+        <div className="bg-white/10 backdrop-blur-sm border-2 border-white/30 rounded-xl p-8">
+          <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-gray-600 font-light">Email</Label>
+              <Label htmlFor="email" className="text-white font-light">Email</Label>
               <Input
                 id="email"
                 type="email"
@@ -75,38 +74,38 @@ export default function SignIn() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="border-gray-200 focus:border-blue-700 focus:ring-blue-50 font-light placeholder:text-gray-500 text-gray-800"
+                className="bg-white/10 backdrop-blur-sm border-2 border-white/30 text-white placeholder:text-white/60 focus:ring-2 focus:ring-white/50 focus:border-transparent"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-gray-600 font-light">Senha</Label>
+              <Label htmlFor="password" className="text-white font-light">Senha</Label>
               <Input
                 id="password"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="border-gray-200 focus:border-blue-700 focus:ring-blue-50 font-light text-gray-800"
+                className="bg-white/10 backdrop-blur-sm border-2 border-white/30 text-white placeholder:text-white/60 focus:ring-2 focus:ring-white/50 focus:border-transparent"
               />
             </div>
             {error && (
-              <div className="text-red-500 text-sm font-light">{error}</div>
+              <div className="text-red-300 text-sm font-light">{error}</div>
             )}
             <Button 
               type="submit" 
-              className="w-full bg-blue-700 hover:bg-blue-800 text-white transition-colors disabled:opacity-50"
+              className="w-full bg-white text-blue-700 hover:bg-white/90 transition-all border-none shadow-lg"
               disabled={isLoading}
             >
               {isLoading ? "Entrando..." : "Entrar"}
             </Button>
           </form>
 
-          <div className="relative my-8">
+          <div className="relative my-6">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-200"></div>
+              <div className="w-full border-t border-white/20"></div>
             </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-white px-2 text-gray-500 font-light">Ou continue com</span>
+            <div className="relative flex justify-center text-xs">
+              <span className="bg-transparent px-2 text-white/60">Ou continue com</span>
             </div>
           </div>
 
@@ -114,7 +113,7 @@ export default function SignIn() {
             type="button"
             onClick={handleGoogleSignIn}
             disabled={isLoading}
-            className="w-full bg-white hover:bg-gray-50 border border-gray-200 hover:border-gray-300 transition-colors text-gray-700 flex items-center justify-center gap-2"
+            className="w-full bg-white/10 backdrop-blur-sm border-2 border-white/30 text-white hover:bg-white/20 transition-all flex items-center justify-center gap-2"
           >
             <svg className="h-4 w-4" viewBox="0 0 24 24">
               <path
@@ -137,16 +136,16 @@ export default function SignIn() {
             Entrar com Google
           </Button>
 
-          <div className="mt-4 text-center">
+          <div className="mt-6 text-center">
             <Link 
               href="/auth/register" 
-              className="text-sm text-gray-500 hover:text-blue-700 transition-colors"
+              className="text-white/80 hover:text-white transition-colors text-sm"
             >
               Não tem uma conta? Registre-se
             </Link>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 } 

@@ -35,6 +35,7 @@
     "clsx": "^2.1.1",
     "cuid": "^3.0.0",
     "date-fns": "^4.1.0",
+    "framer-motion": "^12.6.3",
     "heic-convert": "^2.1.0",
     "jsonwebtoken": "^9.0.2",
     "lucide-react": "^0.469.0",

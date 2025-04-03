@@ -3,7 +3,6 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Logo } from "@/components/ui/logo";
@@ -47,33 +46,33 @@ export default function Register() {
   };
 
   return (
-    <div className="fixed inset-0 min-h-screen w-full grid place-items-center bg-navy-900">
-      <Card className="w-full max-w-[400px] mx-4 bg-black/20 border border-white/10 backdrop-blur-sm">
-        <CardHeader className="space-y-6 pb-6">
-          <div className="flex justify-center">
-            <Logo className="text-center" />
-          </div>
-          <div className="space-y-2 text-center">
-            <h2 className="text-2xl font-light tracking-wide">Create an account</h2>
-            <p className="text-sm text-zinc-400 font-light">Enter your information to get started</p>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
+    <div className="min-h-[100dvh] bg-gradient-to-br from-blue-800 via-blue-700 to-blue-900 flex flex-col items-center justify-center px-4">
+      <div className="w-full max-w-[400px] mx-auto">
+        <div className="flex justify-center mb-6">
+          <Logo className="scale-150" variant="light" />
+        </div>
+        
+        <div className="space-y-2 text-center mb-6">
+          <h2 className="text-2xl font-light text-white">Criar uma conta</h2>
+          <p className="text-blue-100/80 font-light">Insira suas informações para começar</p>
+        </div>
+
+        <div className="bg-white/10 backdrop-blur-sm border-2 border-white/30 rounded-xl p-8">
+          <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-2">
-              <Label htmlFor="name" className="text-zinc-400 font-light">Name</Label>
+              <Label htmlFor="name" className="text-white font-light">Nome</Label>
               <Input
                 id="name"
                 type="text"
-                placeholder="John Doe"
+                placeholder="João Silva"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
-                className="bg-white/5 border-white/10 focus:border-turquoise/50 focus:ring-turquoise/10 font-light"
+                className="bg-white/10 backdrop-blur-sm border-2 border-white/30 text-white placeholder:text-white/60 focus:ring-2 focus:ring-white/50 focus:border-transparent"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-zinc-400 font-light">Email</Label>
+              <Label htmlFor="email" className="text-white font-light">Email</Label>
               <Input
                 id="email"
                 type="email"
@@ -81,69 +80,68 @@ export default function Register() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="bg-white/5 border-white/10 focus:border-turquoise/50 focus:ring-turquoise/10 font-light"
+                className="bg-white/10 backdrop-blur-sm border-2 border-white/30 text-white placeholder:text-white/60 focus:ring-2 focus:ring-white/50 focus:border-transparent"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="slug" className="text-zinc-400 font-light">Username / Slug</Label>
+              <Label htmlFor="slug" className="text-white font-light">Nome de usuário</Label>
               <Input
                 id="slug"
                 type="text"
-                placeholder="drjohn"
+                placeholder="drjoao"
                 value={slug}
                 onChange={(e) => setSlug(e.target.value)}
                 required
-                className="bg-white/5 border-white/10 focus:border-turquoise/50 focus:ring-turquoise/10 font-light"
+                className="bg-white/10 backdrop-blur-sm border-2 border-white/30 text-white placeholder:text-white/60 focus:ring-2 focus:ring-white/50 focus:border-transparent"
               />
-              <p className="text-xs text-zinc-500">
-                This will be your personal URL: med1.app/<span className="text-zinc-300">{slug || 'username'}</span>
+              <p className="text-xs text-white/60">
+                Esta será sua URL pessoal: med1.app/<span className="text-white">{slug || 'username'}</span>
               </p>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="specialty" className="text-zinc-400 font-light">Medical Specialty</Label>
+              <Label htmlFor="specialty" className="text-white font-light">Especialidade Médica</Label>
               <Input
                 id="specialty"
                 type="text"
-                placeholder="Cardiologist"
+                placeholder="Cardiologista"
                 value={specialty}
                 onChange={(e) => setSpecialty(e.target.value)}
-                className="bg-white/5 border-white/10 focus:border-turquoise/50 focus:ring-turquoise/10 font-light"
+                className="bg-white/10 backdrop-blur-sm border-2 border-white/30 text-white placeholder:text-white/60 focus:ring-2 focus:ring-white/50 focus:border-transparent"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-zinc-400 font-light">Password</Label>
+              <Label htmlFor="password" className="text-white font-light">Senha</Label>
               <Input
                 id="password"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="bg-white/5 border-white/10 focus:border-turquoise/50 focus:ring-turquoise/10 font-light"
+                className="bg-white/10 backdrop-blur-sm border-2 border-white/30 text-white placeholder:text-white/60 focus:ring-2 focus:ring-white/50 focus:border-transparent"
               />
             </div>
             {error && (
-              <div className="text-red-500 text-sm font-light">{error}</div>
+              <div className="text-red-300 text-sm font-light">{error}</div>
             )}
             <Button 
               type="submit" 
-              className="w-full relative group bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 transition-all duration-300 text-white"
+              className="w-full bg-white text-blue-700 hover:bg-white/90 transition-all border-none shadow-lg"
               disabled={isLoading}
             >
-              {isLoading ? "Creating account..." : "Create account"}
-              <div className="absolute inset-0 bg-gradient-to-r from-turquoise/0 via-turquoise/10 to-turquoise/0 opacity-0 group-hover:opacity-100 transition-all duration-700" />
+              {isLoading ? "Criando conta..." : "Criar conta"}
             </Button>
 
             <div className="text-center">
               <Link 
                 href="/auth/signin" 
-                className="text-sm text-zinc-400 hover:text-white transition-colors"
+                className="text-white/80 hover:text-white transition-colors text-sm"
               >
-                Already have an account? Sign in
+                Já tem uma conta? Entrar
               </Link>
             </div>
           </form>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 } 

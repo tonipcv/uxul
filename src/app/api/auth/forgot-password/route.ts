@@ -81,7 +81,7 @@ export async function POST(req: Request) {
       // Send email with reset link
       await transporter.sendMail({
         from: {
-          name: 'BOOP',
+          name: 'MED1',
           address: process.env.SMTP_FROM as string
         },
         to: email,

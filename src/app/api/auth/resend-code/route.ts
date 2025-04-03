@@ -70,7 +70,7 @@ export async function POST(req: Request) {
 
       await transporter.sendMail({
         from: {
-          name: 'BOOP',
+          name: 'MED1',
           address: 'ai@booplabs.com'
         },
         to: email,
