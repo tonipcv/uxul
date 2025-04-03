@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useSession } from 'next-auth/react';
@@ -10,7 +10,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Logo } from '@/components/ui/logo';
 
-export default function PricingPage() {
+function PricingPageContent() {
   const { data: session } = useSession();
   const { isPremium } = useUserPlan();
   const [loading, setLoading] = useState(false);
@@ -196,5 +196,19 @@ export default function PricingPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function PricingPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-[100dvh] bg-gradient-to-br from-blue-800 via-blue-700 to-blue-900 flex items-center justify-center">
+        <div className="text-white text-center">
+          <p>Carregando...</p>
+        </div>
+      </div>
+    }>
+      <PricingPageContent />
+    </Suspense>
   );
 } 
