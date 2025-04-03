@@ -35,6 +35,7 @@
     "cuid": "^3.0.0",
     "date-fns": "^4.1.0",
     "heic-convert": "^2.1.0",
+    "jsonwebtoken": "^9.0.2",
     "lucide-react": "^0.469.0",
     "minio": "^8.0.4",
     "nanoid": "^5.0.9",
