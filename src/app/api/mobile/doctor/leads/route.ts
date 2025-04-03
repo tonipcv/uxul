@@ -8,10 +8,10 @@ export async function GET(req: NextRequest) {
   // Validar o token de autenticação
   const validation = await validateToken(req);
   
-  if (!validation.isValid) {
+  if (!validation.isValid || !validation.user) {
     return NextResponse.json(
-      { error: validation.error },
-      { status: validation.status }
+      { error: validation.error || "Usuário não autenticado" },
+      { status: validation.status || 401 }
     );
   }
 
@@ -72,10 +72,10 @@ export async function POST(req: NextRequest) {
   // Validar o token de autenticação
   const validation = await validateToken(req);
   
-  if (!validation.isValid) {
+  if (!validation.isValid || !validation.user) {
     return NextResponse.json(
-      { error: validation.error },
-      { status: validation.status }
+      { error: validation.error || "Usuário não autenticado" },
+      { status: validation.status || 401 }
     );
   }
 

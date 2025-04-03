@@ -4,29 +4,28 @@ import { validateToken } from "../../../middleware";
 
 const prisma = new PrismaClient();
 
+// GET route handler
 export async function GET(
-  req: NextRequest,
-  { params }: { params: { id: string } }
+  request: NextRequest,
+  { params }: any
 ) {
-  // Validar o token de autenticação
-  const validation = await validateToken(req);
+  const id = params.id;
   
-  if (!validation.isValid) {
+  // Validar o token de autenticação
+  const validation = await validateToken(request);
+  
+  if (!validation.isValid || !validation.user) {
     return NextResponse.json(
-      { error: validation.error },
-      { status: validation.status }
+      { error: validation.error || "Usuário não autenticado" },
+      { status: validation.status || 401 }
     );
   }
 
   try {
     // Buscar lead específico
     const lead = await prisma.lead.findUnique({
-      where: {
-        id: params.id
-      },
-      include: {
-        indication: true
-      }
+      where: { id },
+      include: { indication: true }
     });
 
     if (!lead) {
@@ -54,26 +53,27 @@ export async function GET(
   }
 }
 
+// PUT route handler
 export async function PUT(
-  req: NextRequest,
-  { params }: { params: { id: string } }
+  request: NextRequest,
+  { params }: any
 ) {
-  // Validar o token de autenticação
-  const validation = await validateToken(req);
+  const id = params.id;
   
-  if (!validation.isValid) {
+  // Validar o token de autenticação
+  const validation = await validateToken(request);
+  
+  if (!validation.isValid || !validation.user) {
     return NextResponse.json(
-      { error: validation.error },
-      { status: validation.status }
+      { error: validation.error || "Usuário não autenticado" },
+      { status: validation.status || 401 }
     );
   }
 
   try {
     // Verificar se o lead existe e pertence ao médico
     const existingLead = await prisma.lead.findUnique({
-      where: {
-        id: params.id
-      }
+      where: { id }
     });
 
     if (!existingLead) {
@@ -90,41 +90,25 @@ export async function PUT(
       );
     }
 
-    const {
-      name,
-      phone,
-      interest,
-      indicationId,
-      status,
-      potentialValue,
-      appointmentDate,
-      medicalNotes,
-      utmSource,
-      utmMedium,
-      utmCampaign,
-      utmTerm,
-      utmContent
-    } = await req.json();
+    const data = await request.json();
 
     // Atualizar o lead
     const updatedLead = await prisma.lead.update({
-      where: {
-        id: params.id
-      },
+      where: { id },
       data: {
-        name: name || undefined,
-        phone: phone || undefined,
-        interest: interest !== undefined ? interest : undefined,
-        indicationId: indicationId !== undefined ? indicationId : undefined,
-        status: status || undefined,
-        potentialValue: potentialValue !== undefined ? parseFloat(String(potentialValue)) : undefined,
-        appointmentDate: appointmentDate !== undefined ? new Date(appointmentDate) : undefined,
-        medicalNotes: medicalNotes !== undefined ? medicalNotes : undefined,
-        utmSource: utmSource !== undefined ? utmSource : undefined,
-        utmMedium: utmMedium !== undefined ? utmMedium : undefined,
-        utmCampaign: utmCampaign !== undefined ? utmCampaign : undefined,
-        utmTerm: utmTerm !== undefined ? utmTerm : undefined,
-        utmContent: utmContent !== undefined ? utmContent : undefined
+        name: data.name || undefined,
+        phone: data.phone || undefined,
+        interest: data.interest !== undefined ? data.interest : undefined,
+        indicationId: data.indicationId !== undefined ? data.indicationId : undefined,
+        status: data.status || undefined,
+        potentialValue: data.potentialValue !== undefined ? parseFloat(String(data.potentialValue)) : undefined,
+        appointmentDate: data.appointmentDate !== undefined ? new Date(data.appointmentDate) : undefined,
+        medicalNotes: data.medicalNotes !== undefined ? data.medicalNotes : undefined,
+        utmSource: data.utmSource !== undefined ? data.utmSource : undefined,
+        utmMedium: data.utmMedium !== undefined ? data.utmMedium : undefined,
+        utmCampaign: data.utmCampaign !== undefined ? data.utmCampaign : undefined,
+        utmTerm: data.utmTerm !== undefined ? data.utmTerm : undefined,
+        utmContent: data.utmContent !== undefined ? data.utmContent : undefined
       },
       include: {
         indication: true
@@ -141,26 +125,27 @@ export async function PUT(
   }
 }
 
+// DELETE route handler
 export async function DELETE(
-  req: NextRequest,
-  { params }: { params: { id: string } }
+  request: NextRequest,
+  { params }: any
 ) {
-  // Validar o token de autenticação
-  const validation = await validateToken(req);
+  const id = params.id;
   
-  if (!validation.isValid) {
+  // Validar o token de autenticação
+  const validation = await validateToken(request);
+  
+  if (!validation.isValid || !validation.user) {
     return NextResponse.json(
-      { error: validation.error },
-      { status: validation.status }
+      { error: validation.error || "Usuário não autenticado" },
+      { status: validation.status || 401 }
     );
   }
 
   try {
     // Verificar se o lead existe e pertence ao médico
     const lead = await prisma.lead.findUnique({
-      where: {
-        id: params.id
-      }
+      where: { id }
     });
 
     if (!lead) {
@@ -179,9 +164,7 @@ export async function DELETE(
 
     // Excluir o lead
     await prisma.lead.delete({
-      where: {
-        id: params.id
-      }
+      where: { id }
     });
 
     return NextResponse.json(
@@ -195,4 +178,4 @@ export async function DELETE(
       { status: 500 }
     );
   }
-}
+} 
