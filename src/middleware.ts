@@ -10,9 +10,9 @@ const INDICATION_REGEX = /^\/([^\/]+)\/([^\/]+)$/;
 const PREMIUM_ROUTES = [
   '/reports',
   '/analytics',
+  '/dashboard', // Adicionado novamente para bloquear acesso ao dashboard para usuários free
   '/dashboard/analytics',
   '/advanced-settings',
-  '/dashboard',
   '/dashboard/indications',
   '/dashboard/leads',
   '/dashboard/pipeline'
@@ -21,6 +21,7 @@ const PREMIUM_ROUTES = [
 // Lista de rotas que devem ser acessíveis por todos os usuários autenticados
 const AUTH_ROUTES = [
   '/profile'
+  // Dashboard removido para que seja verificado apenas como rota premium
 ];
 
 // Verificar se o usuário está autenticado
@@ -33,12 +34,16 @@ async function isAuthenticated(req: NextRequest): Promise<boolean> {
   return !!session;
 }
 
-// Modificar a função para não usar Prisma, já que não é suportado no Edge Runtime
-async function getUserPlan(userId: string): Promise<string> {
+// Modificar a função para incluir o parâmetro req
+async function getUserPlan(userId: string, req?: NextRequest): Promise<string> {
   try {
-    // SOLUÇÃO TEMPORÁRIA: Retornar 'premium' para todos os usuários
-    // Isso é apenas uma correção temporária até implementar uma solução adequada
-    return 'premium';
+    // Para teste, verificamos se é o email específico que deve ser premium
+    if (userId === 'cm8zamrep0000lb0420xkta5z') { // ID do xppsalvador@gmail.com
+      return 'premium';
+    }
+    
+    // Para todos os outros, retornar free
+    return 'free';
     
     /* Código original com Prisma que não funciona no Edge Runtime
     const user = await prisma.user.findUnique({
@@ -63,7 +68,7 @@ async function getUserPlan(userId: string): Promise<string> {
     */
   } catch (error) {
     console.error('Erro ao verificar plano do usuário:', error);
-    return 'premium'; // Em caso de erro, assume premium para evitar bloqueios indevidos
+    return 'free'; // Em caso de erro, assumir free para segurança
   }
 }
 
@@ -82,7 +87,7 @@ export async function middleware(req: NextRequest) {
       return NextResponse.redirect(new URL('/auth/signin', req.url));
     }
     
-    const userPlan = await getUserPlan(token.sub);
+    const userPlan = await getUserPlan(token.sub, req);
     console.log('Middleware: Plano do usuário:', userPlan);
     
     if (userPlan !== 'premium') {
@@ -96,7 +101,6 @@ export async function middleware(req: NextRequest) {
   
   // Verificar se é uma rota protegida que requer apenas autenticação
   const isAuthRoute = AUTH_ROUTES.some(route => pathname.startsWith(route)) || 
-                     pathname.startsWith('/dashboard') || 
                      pathname.startsWith('/profile');
   
   if (isAuthRoute) {
