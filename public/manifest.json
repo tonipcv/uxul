@@ -4,8 +4,8 @@
   "description": "Track your habits, achieve your goals, and unlock your full potential with MED1.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#000000",
-  "theme_color": "#000000",
+  "background_color": "#1e40af",
+  "theme_color": "#1e40af",
   "orientation": "portrait",
   "icons": [
     {

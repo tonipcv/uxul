@@ -9,7 +9,7 @@ const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
   title: 'MED1 | Unlock Your Potential',
-  description: 'Track your habits, achieve your goals, and unlock your full potential with MED1.',
+  description: 'Track your sales and unlock your full potential with MED1.',
   manifest: '/manifest.json',
   icons: {
     icon: [
@@ -30,7 +30,7 @@ export const metadata: Metadata = {
     initialScale: 1,
     maximumScale: 1,
   },
-  themeColor: '#000000',
+  themeColor: '#1e40af',
 }
 
 export default function RootLayout({
