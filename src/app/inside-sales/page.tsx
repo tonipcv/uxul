@@ -167,7 +167,7 @@ export default function InsideSalesPage() {
           value={formData.name} 
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
-          className="bg-white/5 backdrop-blur-sm border border-white/20 text-white text-2xl py-6 px-4 placeholder:text-white/40 w-full focus:ring-1 focus:ring-blue-400/50 focus:border-transparent rounded-lg"
+          className="bg-white/5 backdrop-blur-sm border border-white/20 text-blue-900 text-2xl py-6 px-4 placeholder:text-white/40 w-full focus:ring-1 focus:ring-blue-400/50 focus:border-transparent rounded-lg appearance-none"
           placeholder="Digite seu nome"
           autoFocus
         />
@@ -204,7 +204,7 @@ export default function InsideSalesPage() {
           value={formData.email} 
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
-          className="bg-white/5 backdrop-blur-sm border border-white/20 text-white text-2xl py-6 px-4 placeholder:text-white/40 w-full focus:ring-1 focus:ring-blue-400/50 focus:border-transparent rounded-lg"
+          className="bg-white/5 backdrop-blur-sm border border-white/20 text-blue-900 text-2xl py-6 px-4 placeholder:text-white/40 w-full focus:ring-1 focus:ring-blue-400/50 focus:border-transparent rounded-lg appearance-none"
           placeholder="Digite seu e-mail"
           autoFocus
         />
@@ -241,7 +241,7 @@ export default function InsideSalesPage() {
           value={formData.whatsapp} 
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
-          className="bg-white/5 backdrop-blur-sm border border-white/20 text-white text-2xl py-6 px-4 placeholder:text-white/40 w-full focus:ring-1 focus:ring-blue-400/50 focus:border-transparent rounded-lg"
+          className="bg-white/5 backdrop-blur-sm border border-white/20 text-blue-900 text-2xl py-6 px-4 placeholder:text-white/40 w-full focus:ring-1 focus:ring-blue-400/50 focus:border-transparent rounded-lg appearance-none"
           placeholder="Ex: (11) 98765-4321"
         />
       </div>
@@ -277,7 +277,7 @@ export default function InsideSalesPage() {
           value={formData.instagram} 
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
-          className="bg-white/5 backdrop-blur-sm border border-white/20 text-white text-2xl py-6 px-4 placeholder:text-white/40 w-full focus:ring-1 focus:ring-blue-400/50 focus:border-transparent rounded-lg"
+          className="bg-white/5 backdrop-blur-sm border border-white/20 text-blue-900 text-2xl py-6 px-4 placeholder:text-white/40 w-full focus:ring-1 focus:ring-blue-400/50 focus:border-transparent rounded-lg appearance-none"
           placeholder="@seuinstagram"
           autoFocus
         />
