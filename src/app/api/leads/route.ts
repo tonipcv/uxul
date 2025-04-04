@@ -3,45 +3,121 @@ import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 
+/**
+ * @swagger
+ * /api/leads:
+ *   get:
+ *     summary: Lista leads do usuário com opções de filtro e ordenação
+ *     parameters:
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *         description: Termo para buscar por nome, email ou telefone
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [new, contacted, converted, lost]
+ *         description: Filtrar por status do lead
+ *       - in: query
+ *         name: indication
+ *         schema:
+ *           type: string
+ *         description: ID da indicação para filtrar
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Página atual
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *         description: Quantidade de registros por página
+ *       - in: query
+ *         name: sortBy
+ *         schema:
+ *           type: string
+ *           enum: [createdAt, name, status]
+ *           default: createdAt
+ *         description: Campo para ordenação
+ *       - in: query
+ *         name: sortOrder
+ *         schema:
+ *           type: string
+ *           enum: [asc, desc]
+ *           default: desc
+ *         description: Direção da ordenação
+ *     responses:
+ *       200:
+ *         description: Lista de leads obtida com sucesso
+ *       401:
+ *         description: Não autorizado
+ */
 export async function GET(req: NextRequest) {
   try {
-    const { searchParams } = new URL(req.url);
-    const userId = searchParams.get('userId');
-
     // Obter a sessão atual
     const session = await getServerSession(authOptions);
 
-    // Se não tiver userId como parâmetro, usar o userId da sessão
-    const targetUserId = userId || session?.user?.id;
-
-    if (!targetUserId) {
+    if (!session?.user?.id) {
       return NextResponse.json(
-        { error: 'Usuário não autenticado ou ID não fornecido' },
+        { error: 'Usuário não autenticado' },
         { status: 401 }
       );
     }
 
-    // Se o usuário estiver tentando acessar dados de outro usuário sem ser admin
-    if (userId && userId !== session?.user?.id) {
-      // Verificar se o usuário atual tem permissão (implementar lógica de admins se necessário)
-      // Por enquanto, só permitimos acessar os próprios leads
-      return NextResponse.json(
-        { error: 'Permissão negada' },
-        { status: 403 }
-      );
+    // Extrair parâmetros da query
+    const url = new URL(req.url);
+    const search = url.searchParams.get('search') || '';
+    const status = url.searchParams.get('status') || undefined;
+    const indicationId = url.searchParams.get('indication') || undefined;
+    const page = parseInt(url.searchParams.get('page') || '1');
+    const limit = parseInt(url.searchParams.get('limit') || '10');
+    const sortBy = url.searchParams.get('sortBy') || 'createdAt';
+    const sortOrder = url.searchParams.get('sortOrder') || 'desc';
+
+    // Calcular o offset para paginação
+    const skip = (page - 1) * limit;
+
+    // Construir a condição where
+    const where: any = {
+      userId: session.user.id
+    };
+
+    // Adicionar filtro de busca
+    if (search) {
+      where.OR = [
+        { name: { contains: search, mode: 'insensitive' } },
+        { email: { contains: search, mode: 'insensitive' } },
+        { phone: { contains: search, mode: 'insensitive' } }
+      ];
     }
 
-    // Buscar os leads do usuário
+    // Adicionar filtro de status
+    if (status) {
+      where.status = status;
+    }
+
+    // Adicionar filtro de indicação
+    if (indicationId) {
+      where.indicationId = indicationId;
+    }
+
+    // Buscar leads com paginação e ordenação
     const leads = await prisma.lead.findMany({
-      where: { 
-        userId: targetUserId 
-      },
-      orderBy: { 
-        createdAt: 'desc' 
+      where,
+      skip,
+      take: limit,
+      orderBy: {
+        [sortBy]: sortOrder
       },
       include: {
         indication: {
           select: {
+            id: true,
             name: true,
             slug: true
           }
@@ -49,9 +125,124 @@ export async function GET(req: NextRequest) {
       }
     });
 
-    return NextResponse.json(leads);
+    // Contar o total para paginação
+    const total = await prisma.lead.count({ where });
+
+    // Calcular metadados de paginação
+    const totalPages = Math.ceil(total / limit);
+    const hasNextPage = page < totalPages;
+    const hasPrevPage = page > 1;
+
+    return NextResponse.json({
+      data: leads,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+        hasNextPage,
+        hasPrevPage
+      }
+    });
   } catch (error) {
     console.error('Erro ao buscar leads:', error);
+    return NextResponse.json(
+      { error: 'Erro ao processar a solicitação' },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * @swagger
+ * /api/leads:
+ *   put:
+ *     summary: Atualiza o status de um ou mais leads
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               ids:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *               status:
+ *                 type: string
+ *                 enum: [new, contacted, converted, lost]
+ *     responses:
+ *       200:
+ *         description: Status atualizado com sucesso
+ *       400:
+ *         description: Dados inválidos
+ *       401:
+ *         description: Não autorizado
+ */
+export async function PUT(req: NextRequest) {
+  try {
+    // Obter a sessão atual
+    const session = await getServerSession(authOptions);
+
+    if (!session?.user?.id) {
+      return NextResponse.json(
+        { error: 'Usuário não autenticado' },
+        { status: 401 }
+      );
+    }
+
+    // Extrair dados do corpo da requisição
+    const { ids, status } = await req.json();
+
+    // Validar dados
+    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+      return NextResponse.json(
+        { error: 'IDs de leads inválidos' },
+        { status: 400 }
+      );
+    }
+
+    if (!status || !['new', 'contacted', 'converted', 'lost'].includes(status)) {
+      return NextResponse.json(
+        { error: 'Status inválido' },
+        { status: 400 }
+      );
+    }
+
+    // Verificar se todos os leads pertencem ao usuário
+    const count = await prisma.lead.count({
+      where: {
+        id: { in: ids },
+        userId: session.user.id
+      }
+    });
+
+    if (count !== ids.length) {
+      return NextResponse.json(
+        { error: 'Um ou mais leads não pertencem ao usuário' },
+        { status: 403 }
+      );
+    }
+
+    // Atualizar o status dos leads
+    const updatedLeads = await prisma.lead.updateMany({
+      where: {
+        id: { in: ids },
+        userId: session.user.id
+      },
+      data: {
+        status
+      }
+    });
+
+    return NextResponse.json({
+      success: true,
+      count: updatedLeads.count,
+      message: `Status de ${updatedLeads.count} lead(s) atualizado com sucesso`
+    });
+  } catch (error) {
+    console.error('Erro ao atualizar status de leads:', error);
     return NextResponse.json(
       { error: 'Erro ao processar a solicitação' },
       { status: 500 }

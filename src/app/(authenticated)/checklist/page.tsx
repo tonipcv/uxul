@@ -58,7 +58,7 @@ export default function ChecklistPage() {
     const firstDayOfWeek = start.getDay();
     
     // Adicionar dias do mês anterior para completar a primeira semana
-    const previousMonthDays = [];
+    const previousMonthDays: Date[] = [];
     for (let i = firstDayOfWeek - 1; i >= 0; i--) {
       const date = new Date(start);
       date.setDate(date.getDate() - (i + 1));
@@ -67,7 +67,7 @@ export default function ChecklistPage() {
 
     // Adicionar dias do próximo mês para completar a última semana
     const lastDayOfWeek = end.getDay();
-    const nextMonthDays = [];
+    const nextMonthDays: Date[] = [];
     for (let i = 1; i < 7 - lastDayOfWeek; i++) {
       const date = new Date(end);
       date.setDate(date.getDate() + i);

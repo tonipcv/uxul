@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Buscar a indicação (se existir)
-    let indication = null;
+    let indication: { id: string; name: string | null; slug: string; createdAt: Date; userId: string; } | null = null;
     if (indicationSlug) {
       indication = await prisma.indication.findFirst({
         where: {

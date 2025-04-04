@@ -28,7 +28,7 @@ export function useUserPlan(): UserPlan {
         if (response.ok) {
           const data = await response.json();
           
-          let daysRemaining = null;
+          let daysRemaining: number | null = null;
           if (data.planExpiresAt) {
             const expiryDate = new Date(data.planExpiresAt);
             const today = new Date();

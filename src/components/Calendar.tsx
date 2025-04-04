@@ -21,7 +21,7 @@ export default function Calendar({ onDateSelect, selectedDate, habits }: Calenda
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     const firstDayOfMonth = new Date(year, month, 1).getDay();
     
-    const days = [];
+    const days: Array<{ date: Date; isCurrentMonth: boolean }> = [];
     // Adicionar dias do mês anterior
     const prevMonthDays = new Date(year, month, 0).getDate();
     for (let i = firstDayOfMonth - 1; i >= 0; i--) {

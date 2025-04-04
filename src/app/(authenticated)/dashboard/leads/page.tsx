@@ -145,7 +145,7 @@ export default function LeadsPage() {
     setIsSubmitting(true);
     try {
       // Montar a data da consulta combinando data e hora
-      let appointmentDate = undefined;
+      let appointmentDate: string | undefined = undefined;
       if (formData.appointmentDate) {
         const dateStr = formData.appointmentDate;
         const timeStr = formData.appointmentTime || "00:00";
@@ -202,7 +202,7 @@ export default function LeadsPage() {
     setIsQuickSubmitting(true);
     try {
       // Montar a data da consulta combinando data e hora
-      let appointmentDate = undefined;
+      let appointmentDate: string | undefined = undefined;
       if (quickAppointmentDate) {
         const dateStr = quickAppointmentDate;
         const timeStr = quickAppointmentTime || "00:00";
