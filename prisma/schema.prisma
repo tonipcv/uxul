@@ -267,3 +267,35 @@ model PomodoroStar {
   date      DateTime
   createdAt DateTime @default(now())
 }
+
+model LeadForm {
+  id             String   @id @default(cuid())
+  name           String
+  email          String
+  whatsapp       String
+  instagram      String?
+  area           String   // Odontologia, Medicina, Psicologia, Outra
+  employees      String   // Somente eu, 1-10, 10-50, Mais de 50
+  revenue        String   // 0 - 30 mil / mês, 30 mil a 100 mil / mês, etc
+  useTechnology  String   // Sim, Ainda não!
+  status         String   @default("Novo") // Novo, Contatado, Qualificado, Convertido, Perdido
+  notes          String?  // Notas comerciais adicionais
+  followUpDate   DateTime? // Data para próximo contato
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model InsideSalesLead {
+  id             String   @id @default(cuid())
+  name           String
+  email          String
+  whatsapp       String
+  instagram      String?
+  area           String   
+  employees      String   
+  revenue        String   
+  useTechnology  String   
+  status         String   @default("new") 
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt @default(now())
+}

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+import { db } from '@/lib/db';
 
 /**
  * @swagger
@@ -59,95 +60,35 @@ import { authOptions } from '@/lib/auth';
  */
 export async function GET(req: NextRequest) {
   try {
-    // Obter a sessão atual
-    const session = await getServerSession(authOptions);
-
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Usuário não autenticado' },
-        { status: 401 }
-      );
+    console.log('[API] GET /api/leads: Iniciando busca');
+    
+    // Tentar usar o modelo Prisma primeiro
+    try {
+      const leads = await prisma.lead.findMany({
+        orderBy: { createdAt: 'desc' }
+      });
+      
+      console.log(`[API] Encontrados ${leads.length} leads através do modelo Prisma`);
+      return NextResponse.json({ success: true, data: leads });
+    } catch (modelError) {
+      console.error('[API] Erro ao usar modelo Prisma:', modelError);
+      
+      // Fallback para SQL direto
+      const results = await db.$queryRaw`
+        SELECT * FROM "LeadForm" 
+        ORDER BY "createdAt" DESC
+      `;
+      
+      console.log(`[API] Encontrados ${Array.isArray(results) ? results.length : 0} leads com SQL direto`);
+      return NextResponse.json({ success: true, data: results });
     }
-
-    // Extrair parâmetros da query
-    const url = new URL(req.url);
-    const search = url.searchParams.get('search') || '';
-    const status = url.searchParams.get('status') || undefined;
-    const indicationId = url.searchParams.get('indication') || undefined;
-    const page = parseInt(url.searchParams.get('page') || '1');
-    const limit = parseInt(url.searchParams.get('limit') || '10');
-    const sortBy = url.searchParams.get('sortBy') || 'createdAt';
-    const sortOrder = url.searchParams.get('sortOrder') || 'desc';
-
-    // Calcular o offset para paginação
-    const skip = (page - 1) * limit;
-
-    // Construir a condição where
-    const where: any = {
-      userId: session.user.id
-    };
-
-    // Adicionar filtro de busca
-    if (search) {
-      where.OR = [
-        { name: { contains: search, mode: 'insensitive' } },
-        { email: { contains: search, mode: 'insensitive' } },
-        { phone: { contains: search, mode: 'insensitive' } }
-      ];
-    }
-
-    // Adicionar filtro de status
-    if (status) {
-      where.status = status;
-    }
-
-    // Adicionar filtro de indicação
-    if (indicationId) {
-      where.indicationId = indicationId;
-    }
-
-    // Buscar leads com paginação e ordenação
-    const leads = await prisma.lead.findMany({
-      where,
-      skip,
-      take: limit,
-      orderBy: {
-        [sortBy]: sortOrder
-      },
-      include: {
-        indication: {
-          select: {
-            id: true,
-            name: true,
-            slug: true
-          }
-        }
-      }
-    });
-
-    // Contar o total para paginação
-    const total = await prisma.lead.count({ where });
-
-    // Calcular metadados de paginação
-    const totalPages = Math.ceil(total / limit);
-    const hasNextPage = page < totalPages;
-    const hasPrevPage = page > 1;
-
-    return NextResponse.json({
-      data: leads,
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages,
-        hasNextPage,
-        hasPrevPage
-      }
-    });
   } catch (error) {
-    console.error('Erro ao buscar leads:', error);
+    console.error('[API] Erro ao buscar leads:', error);
     return NextResponse.json(
-      { error: 'Erro ao processar a solicitação' },
+      { 
+        error: 'Erro ao buscar leads', 
+        details: error instanceof Error ? error.message : String(error) 
+      },
       { status: 500 }
     );
   }
