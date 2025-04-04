@@ -278,19 +278,19 @@ export default function LeadsPage() {
     const getStatusBadge = () => {
       switch (lead.status) {
         case 'Novo':
-          return <Badge className="bg-blue-50 text-blue-700 border-blue-200">Novo</Badge>;
+          return <Badge className="bg-blue-500/20 text-blue-100 border-blue-300/40">Novo</Badge>;
         case 'Agendado':
-          return <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200">Agendado</Badge>;
+          return <Badge className="bg-emerald-500/20 text-emerald-100 border-emerald-300/40">Agendado</Badge>;
         case 'Compareceu':
-          return <Badge className="bg-green-50 text-green-700 border-green-200">Compareceu</Badge>;
+          return <Badge className="bg-green-500/20 text-green-100 border-green-300/40">Compareceu</Badge>;
         case 'Fechado':
-          return <Badge className="bg-purple-50 text-purple-700 border-purple-200">Fechado</Badge>;
+          return <Badge className="bg-purple-500/20 text-purple-100 border-purple-300/40">Fechado</Badge>;
         case 'Não veio':
-          return <Badge className="bg-red-50 text-red-700 border-red-200">Não veio</Badge>;
+          return <Badge className="bg-red-500/20 text-red-100 border-red-300/40">Não veio</Badge>;
         case 'Cancelado':
-          return <Badge className="bg-gray-100 text-gray-600 border-gray-200">Cancelado</Badge>;
+          return <Badge className="bg-white/20 text-white/80 border-white/40">Cancelado</Badge>;
         default:
-          return <Badge className="bg-gray-100 text-gray-600 border-gray-200">{lead.status}</Badge>;
+          return <Badge className="bg-white/20 text-white/80 border-white/40">{lead.status}</Badge>;
       }
     };
 
@@ -311,46 +311,46 @@ export default function LeadsPage() {
             {getStatusBadge()}
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-48 p-2">
+        <PopoverContent className="w-48 p-2 bg-blue-800/80 backdrop-blur-sm border border-white/20">
           <div className="space-y-1">
             <Button
               variant="ghost"
-              className="w-full justify-start text-blue-700 hover:bg-blue-50 hover:text-blue-800"
+              className="w-full justify-start text-blue-100 hover:bg-blue-700/50"
               onClick={() => handleStatusChange(lead, 'Novo')}
             >
               Novo
             </Button>
             <Button
               variant="ghost"
-              className="w-full justify-start text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800"
+              className="w-full justify-start text-emerald-100 hover:bg-emerald-700/50"
               onClick={() => handleStatusChange(lead, 'Agendado')}
             >
               Agendado
             </Button>
             <Button
               variant="ghost"
-              className="w-full justify-start text-green-700 hover:bg-green-50 hover:text-green-800"
+              className="w-full justify-start text-green-100 hover:bg-green-700/50"
               onClick={() => handleStatusChange(lead, 'Compareceu')}
             >
               Compareceu
             </Button>
             <Button
               variant="ghost"
-              className="w-full justify-start text-purple-700 hover:bg-purple-50 hover:text-purple-800"
+              className="w-full justify-start text-purple-100 hover:bg-purple-700/50"
               onClick={() => handleStatusChange(lead, 'Fechado')}
             >
               Fechado
             </Button>
             <Button
               variant="ghost"
-              className="w-full justify-start text-red-700 hover:bg-red-50 hover:text-red-800"
+              className="w-full justify-start text-red-100 hover:bg-red-700/50"
               onClick={() => handleStatusChange(lead, 'Não veio')}
             >
               Não veio
             </Button>
             <Button
               variant="ghost"
-              className="w-full justify-start text-gray-600 hover:bg-gray-50 hover:text-gray-800"
+              className="w-full justify-start text-white/80 hover:bg-white/10"
               onClick={() => handleStatusChange(lead, 'Cancelado')}
             >
               Cancelado
@@ -406,62 +406,62 @@ export default function LeadsPage() {
   return (
     <div className="container mx-auto p-4">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-6">
-        <h1 className="text-xl font-medium text-gray-800">Leads</h1>
+        <h1 className="text-xl font-medium text-white">Leads</h1>
         <div className="flex gap-2 items-center w-full md:w-auto">
           <Input
             placeholder="Buscar leads..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="flex-1 md:w-64 h-9 border-gray-200 focus:border-blue-700 focus:ring-blue-50"
+            className="flex-1 md:w-64 h-9 bg-white/10 backdrop-blur-sm border-2 border-white/30 text-white placeholder:text-white/60 focus:ring-2 focus:ring-white/50 focus:border-transparent"
           />
           <Button 
             onClick={fetchLeads} 
             size="sm"
             variant="outline" 
-            className="bg-white border-blue-700 text-blue-700 hover:bg-blue-50 transition-colors h-9 px-3"
+            className="bg-white/10 backdrop-blur-sm border-blue-300/30 text-blue-100 hover:bg-blue-600/30 transition-colors h-9 px-3"
           >
             <ArrowPathIcon className="h-4 w-4" />
           </Button>
         </div>
       </div>
 
-      <div className="bg-white rounded-lg border border-gray-200">
+      <div className="bg-white/10 backdrop-blur-sm rounded-lg border border-white/30 shadow-md">
         <div className="p-2">
           <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="hidden md:grid md:grid-cols-6 bg-white border border-gray-200 p-1 rounded-md">
+            <TabsList className="hidden md:grid md:grid-cols-6 bg-transparent border border-blue-500/30 p-1 rounded-md">
               <TabsTrigger 
                 value="all" 
-                className="data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700 data-[state=active]:border-b-2 data-[state=active]:border-blue-700 text-gray-500 hover:text-gray-800 transition-colors rounded-md"
+                className="data-[state=active]:bg-blue-600/40 data-[state=active]:text-white data-[state=active]:border-b-2 data-[state=active]:border-blue-300 text-blue-100/70 hover:text-blue-100 transition-colors rounded-md"
               >
                 Todos ({leadStats.total})
               </TabsTrigger>
               <TabsTrigger 
                 value="novos" 
-                className="data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700 data-[state=active]:border-b-2 data-[state=active]:border-blue-700 text-gray-500 hover:text-gray-800 transition-colors rounded-md"
+                className="data-[state=active]:bg-blue-600/40 data-[state=active]:text-white data-[state=active]:border-b-2 data-[state=active]:border-blue-300 text-blue-100/70 hover:text-blue-100 transition-colors rounded-md"
               >
                 Novos ({leadStats.novos})
               </TabsTrigger>
               <TabsTrigger 
                 value="agendados" 
-                className="data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700 data-[state=active]:border-b-2 data-[state=active]:border-blue-700 text-gray-500 hover:text-gray-800 transition-colors rounded-md"
+                className="data-[state=active]:bg-blue-600/40 data-[state=active]:text-white data-[state=active]:border-b-2 data-[state=active]:border-blue-300 text-blue-100/70 hover:text-blue-100 transition-colors rounded-md"
               >
                 Agendados ({leadStats.agendados})
               </TabsTrigger>
               <TabsTrigger 
                 value="compareceram" 
-                className="data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700 data-[state=active]:border-b-2 data-[state=active]:border-blue-700 text-gray-500 hover:text-gray-800 transition-colors rounded-md"
+                className="data-[state=active]:bg-blue-600/40 data-[state=active]:text-white data-[state=active]:border-b-2 data-[state=active]:border-blue-300 text-blue-100/70 hover:text-blue-100 transition-colors rounded-md"
               >
                 Compareceram ({leadStats.compareceram})
               </TabsTrigger>
               <TabsTrigger 
                 value="fechados" 
-                className="data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700 data-[state=active]:border-b-2 data-[state=active]:border-blue-700 text-gray-500 hover:text-gray-800 transition-colors rounded-md"
+                className="data-[state=active]:bg-blue-600/40 data-[state=active]:text-white data-[state=active]:border-b-2 data-[state=active]:border-blue-300 text-blue-100/70 hover:text-blue-100 transition-colors rounded-md"
               >
                 Fechados ({leadStats.fechados})
               </TabsTrigger>
               <TabsTrigger 
                 value="naoVieram" 
-                className="data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700 data-[state=active]:border-b-2 data-[state=active]:border-blue-700 text-gray-500 hover:text-gray-800 transition-colors rounded-md"
+                className="data-[state=active]:bg-blue-600/40 data-[state=active]:text-white data-[state=active]:border-b-2 data-[state=active]:border-blue-300 text-blue-100/70 hover:text-blue-100 transition-colors rounded-md"
               >
                 Não vieram ({leadStats.naoVieram})
               </TabsTrigger>
@@ -473,7 +473,7 @@ export default function LeadsPage() {
                 value={activeTab} 
                 onValueChange={setActiveTab}
               >
-                <SelectTrigger className="w-full h-9 bg-blue-700 text-white border-blue-700 focus:ring-blue-200 focus:ring-offset-0">
+                <SelectTrigger className="w-full h-9 bg-blue-600/40 backdrop-blur-sm text-white border-blue-500/30 focus:ring-blue-600/40 focus:ring-offset-0">
                   <SelectValue>
                     {activeTab === 'all' && `Todos (${leadStats.total})`}
                     {activeTab === 'novos' && `Novos (${leadStats.novos})`}
@@ -483,33 +483,33 @@ export default function LeadsPage() {
                     {activeTab === 'naoVieram' && `Não vieram (${leadStats.naoVieram})`}
                   </SelectValue>
                 </SelectTrigger>
-                <SelectContent className="bg-white border border-gray-100">
-                  <SelectItem value="all" className="text-gray-800 focus:bg-blue-50 focus:text-blue-700">Todos ({leadStats.total})</SelectItem>
-                  <SelectItem value="novos" className="text-gray-800 focus:bg-blue-50 focus:text-blue-700">Novos ({leadStats.novos})</SelectItem>
-                  <SelectItem value="agendados" className="text-gray-800 focus:bg-blue-50 focus:text-blue-700">Agendados ({leadStats.agendados})</SelectItem>
-                  <SelectItem value="compareceram" className="text-gray-800 focus:bg-blue-50 focus:text-blue-700">Compareceram ({leadStats.compareceram})</SelectItem>
-                  <SelectItem value="fechados" className="text-gray-800 focus:bg-blue-50 focus:text-blue-700">Fechados ({leadStats.fechados})</SelectItem>
-                  <SelectItem value="naoVieram" className="text-gray-800 focus:bg-blue-50 focus:text-blue-700">Não vieram ({leadStats.naoVieram})</SelectItem>
+                <SelectContent className="bg-blue-800/80 backdrop-blur-sm border border-blue-500/30 text-white">
+                  <SelectItem value="all" className="text-blue-100 focus:bg-blue-700/50">Todos ({leadStats.total})</SelectItem>
+                  <SelectItem value="novos" className="text-blue-100 focus:bg-blue-700/50">Novos ({leadStats.novos})</SelectItem>
+                  <SelectItem value="agendados" className="text-blue-100 focus:bg-blue-700/50">Agendados ({leadStats.agendados})</SelectItem>
+                  <SelectItem value="compareceram" className="text-blue-100 focus:bg-blue-700/50">Compareceram ({leadStats.compareceram})</SelectItem>
+                  <SelectItem value="fechados" className="text-blue-100 focus:bg-blue-700/50">Fechados ({leadStats.fechados})</SelectItem>
+                  <SelectItem value="naoVieram" className="text-blue-100 focus:bg-blue-700/50">Não vieram ({leadStats.naoVieram})</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
-            <div className="divide-y divide-gray-100">
+            <div className="divide-y divide-blue-500/20">
               {loading ? (
                 <div className="text-center py-8">
-                  <div className="animate-spin h-6 w-6 border-2 border-blue-700 border-t-transparent rounded-full mx-auto mb-2" />
-                  <p className="text-sm text-gray-500">Carregando...</p>
+                  <div className="animate-spin h-6 w-6 border-2 border-blue-300 border-t-transparent rounded-full mx-auto mb-2" />
+                  <p className="text-sm text-blue-100/80">Carregando...</p>
                 </div>
               ) : getFilteredLeads().length > 0 ? (
                 <>
                   <div className="md:hidden">
                     {getFilteredLeads().map((lead) => (
-                      <div key={lead.id} className="p-3">
+                      <div key={lead.id} className="p-3 border-b border-blue-500/20">
                         <div className="flex flex-col gap-2">
                           <div className="flex items-start justify-between gap-2">
                             <div>
-                              <h3 className="font-medium text-gray-800 mb-0.5">{lead.name}</h3>
-                              <div className="flex flex-wrap gap-2 text-sm text-gray-500">
+                              <h3 className="font-medium text-white mb-0.5">{lead.name}</h3>
+                              <div className="flex flex-wrap gap-2 text-sm text-blue-100/80">
                                 <span className="flex items-center gap-1">
                                   <PhoneIcon className="h-3.5 w-3.5" />
                                   {lead.phone}
@@ -533,7 +533,7 @@ export default function LeadsPage() {
                                 setQuickAppointmentDate("");
                                 setQuickAppointmentTime("");
                               }}
-                              className="flex-1 h-8 px-3 text-sm bg-white border-blue-700 text-blue-700 hover:bg-blue-50"
+                              className="flex-1 h-8 px-3 text-sm bg-white text-blue-700 hover:bg-white/90 border-none"
                             >
                               <CalendarIcon className="h-3.5 w-3.5 mr-1.5" />
                               Agendar
@@ -542,7 +542,7 @@ export default function LeadsPage() {
                               size="sm"
                               variant="outline"
                               onClick={() => openEditModal(lead)}
-                              className="flex-1 h-8 px-3 text-sm bg-white border-gray-200 text-gray-700 hover:border-blue-200 hover:text-blue-700"
+                              className="flex-1 h-8 px-3 text-sm bg-blue-700/30 border-blue-500/30 text-blue-100 hover:bg-blue-600/40"
                             >
                               <PencilIcon className="h-3.5 w-3.5 mr-1.5" />
                               Editar
@@ -558,15 +558,15 @@ export default function LeadsPage() {
                     <table className="w-full">
                       <tbody>
                         {getFilteredLeads().map((lead) => (
-                          <tr key={lead.id} className="border-b border-gray-100">
+                          <tr key={lead.id} className="border-b border-blue-500/20">
                             <td className="py-3 pl-4 pr-2 w-[30%]">
-                              <div className="font-medium text-gray-800">{lead.name}</div>
+                              <div className="font-medium text-white">{lead.name}</div>
                             </td>
                             <td className="py-3 px-2 w-[20%]">
-                              <div className="text-gray-600">{lead.phone}</div>
+                              <div className="text-blue-100/80">{lead.phone}</div>
                             </td>
                             <td className="py-3 px-2 w-[20%]">
-                              <div className="text-gray-600">{lead.interest}</div>
+                              <div className="text-blue-100/80">{lead.interest}</div>
                             </td>
                             <td className="py-3 px-2 w-[15%]">
                               {renderStatus(lead)}
@@ -581,7 +581,7 @@ export default function LeadsPage() {
                                     setQuickAppointmentDate("");
                                     setQuickAppointmentTime("");
                                   }}
-                                  className="h-8 px-3 text-sm bg-white border-blue-700 text-blue-700 hover:bg-blue-50"
+                                  className="h-8 px-3 text-sm bg-white text-blue-700 hover:bg-white/90 border-none"
                                 >
                                   <CalendarIcon className="h-3.5 w-3.5" />
                                 </Button>
@@ -589,7 +589,7 @@ export default function LeadsPage() {
                                   size="sm"
                                   variant="outline"
                                   onClick={() => openEditModal(lead)}
-                                  className="h-8 px-3 text-sm bg-white border-gray-200 text-gray-700 hover:border-blue-200 hover:text-blue-700"
+                                  className="h-8 px-3 text-sm bg-blue-700/30 border-blue-500/30 text-blue-100 hover:bg-blue-600/40"
                                 >
                                   <PencilIcon className="h-3.5 w-3.5" />
                                 </Button>
@@ -603,8 +603,8 @@ export default function LeadsPage() {
                 </>
               ) : (
                 <div className="text-center py-8">
-                  <UserIcon className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                  <p className="text-sm text-gray-500">
+                  <UserIcon className="h-8 w-8 text-blue-300/60 mx-auto mb-2" />
+                  <p className="text-sm text-blue-100/80">
                     Nenhum lead {activeTab !== 'all' ? 'nesta categoria' : ''} encontrado
                   </p>
                 </div>
@@ -616,80 +616,80 @@ export default function LeadsPage() {
 
       {/* Modal de Edição */}
       <Dialog open={isEditModalOpen} onOpenChange={closeEditModal}>
-        <DialogContent className="sm:max-w-[425px] bg-white p-0 rounded-lg">
-          <div className="p-4 border-b border-gray-100">
-            <DialogTitle className="text-lg font-medium text-gray-800">Editar Lead</DialogTitle>
+        <DialogContent className="sm:max-w-[425px] bg-blue-800/90 backdrop-blur-sm p-0 rounded-lg border border-white/30">
+          <div className="p-4 border-b border-blue-500/30">
+            <DialogTitle className="text-lg font-medium text-white">Editar Lead</DialogTitle>
           </div>
           <form onSubmit={handleSubmit} className="space-y-4 p-4">
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="name" className="text-sm text-gray-600">Nome</Label>
+                <Label htmlFor="name" className="text-sm text-blue-100">Nome</Label>
                 <Input
                   id="name"
                   name="name"
                   value={formData.name}
                   onChange={handleInputChange}
-                  className="h-9 border-gray-200"
+                  className="h-9 bg-white/10 backdrop-blur-sm border-white/30 text-white"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="phone" className="text-sm text-gray-600">Telefone</Label>
+                <Label htmlFor="phone" className="text-sm text-blue-100">Telefone</Label>
                 <Input
                   id="phone"
                   name="phone"
                   value={formData.phone}
                   onChange={handleInputChange}
-                  className="h-9 border-gray-200"
+                  className="h-9 bg-white/10 backdrop-blur-sm border-white/30 text-white"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="status" className="text-sm text-gray-600">Status</Label>
+                <Label htmlFor="status" className="text-sm text-blue-100">Status</Label>
                 <Select name="status" value={formData.status} onValueChange={(value) => handleSelectChange("status", value)}>
-                  <SelectTrigger className="h-9 border-gray-200">
+                  <SelectTrigger className="h-9 bg-white/10 backdrop-blur-sm border-white/30 text-white">
                     <SelectValue placeholder="Selecione o status" />
                   </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Novo">Novo</SelectItem>
-                    <SelectItem value="Agendado">Agendado</SelectItem>
-                    <SelectItem value="Compareceu">Compareceu</SelectItem>
-                    <SelectItem value="Fechado">Fechado</SelectItem>
-                    <SelectItem value="Não veio">Não veio</SelectItem>
-                    <SelectItem value="Cancelado">Cancelado</SelectItem>
+                  <SelectContent className="bg-blue-800/80 backdrop-blur-sm border border-blue-500/30 text-white">
+                    <SelectItem value="Novo" className="text-blue-100 focus:bg-blue-700/50">Novo</SelectItem>
+                    <SelectItem value="Agendado" className="text-blue-100 focus:bg-blue-700/50">Agendado</SelectItem>
+                    <SelectItem value="Compareceu" className="text-blue-100 focus:bg-blue-700/50">Compareceu</SelectItem>
+                    <SelectItem value="Fechado" className="text-blue-100 focus:bg-blue-700/50">Fechado</SelectItem>
+                    <SelectItem value="Não veio" className="text-blue-100 focus:bg-blue-700/50">Não veio</SelectItem>
+                    <SelectItem value="Cancelado" className="text-blue-100 focus:bg-blue-700/50">Cancelado</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
-                  <Label htmlFor="appointmentDate" className="text-sm text-gray-600">Data</Label>
+                  <Label htmlFor="appointmentDate" className="text-sm text-blue-100">Data</Label>
                   <Input
                     id="appointmentDate"
                     name="appointmentDate"
                     type="date"
                     value={formData.appointmentDate}
                     onChange={handleInputChange}
-                    className="h-9 border-gray-200"
+                    className="h-9 bg-white/10 backdrop-blur-sm border-white/30 text-white"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="appointmentTime" className="text-sm text-gray-600">Hora</Label>
+                  <Label htmlFor="appointmentTime" className="text-sm text-blue-100">Hora</Label>
                   <Input
                     id="appointmentTime"
                     name="appointmentTime"
                     type="time"
                     value={formData.appointmentTime}
                     onChange={handleInputChange}
-                    className="h-9 border-gray-200"
+                    className="h-9 bg-white/10 backdrop-blur-sm border-white/30 text-white"
                   />
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="medicalNotes" className="text-sm text-gray-600">Anotações</Label>
+                <Label htmlFor="medicalNotes" className="text-sm text-blue-100">Anotações</Label>
                 <Textarea
                   id="medicalNotes"
                   name="medicalNotes"
                   value={formData.medicalNotes}
                   onChange={handleInputChange}
-                  className="min-h-[80px] border-gray-200"
+                  className="min-h-[80px] bg-white/10 backdrop-blur-sm border-white/30 text-white placeholder:text-white/50"
                   placeholder="Adicione observações..."
                 />
               </div>
@@ -699,14 +699,14 @@ export default function LeadsPage() {
                 type="button"
                 variant="outline"
                 onClick={closeEditModal}
-                className="h-9 px-4 bg-white border-gray-200"
+                className="h-9 px-4 bg-blue-700/30 border-blue-500/30 text-blue-100 hover:bg-blue-600/40"
               >
                 Cancelar
               </Button>
               <Button
                 type="submit"
                 disabled={isSubmitting}
-                className="h-9 px-4 bg-blue-700 text-white hover:bg-blue-800"
+                className="h-9 px-4 bg-white text-blue-700 hover:bg-white/90 border-none"
               >
                 {isSubmitting ? "Salvando..." : "Salvar"}
               </Button>
@@ -717,28 +717,28 @@ export default function LeadsPage() {
 
       {/* Modal de Agendamento Rápido */}
       <Dialog open={!!quickEditLead} onOpenChange={() => setQuickEditLead(null)}>
-        <DialogContent className="sm:max-w-[360px] bg-white p-0 rounded-lg">
-          <div className="p-4 border-b border-gray-100">
-            <DialogTitle className="text-lg font-medium text-gray-800">Agendar Consulta</DialogTitle>
-            <p className="text-sm text-gray-500 mt-1">{quickEditLead?.name}</p>
+        <DialogContent className="sm:max-w-[360px] bg-blue-800/90 backdrop-blur-sm p-0 rounded-lg border border-white/30">
+          <div className="p-4 border-b border-blue-500/30">
+            <DialogTitle className="text-lg font-medium text-white">Agendar Consulta</DialogTitle>
+            <p className="text-sm text-blue-100/80 mt-1">{quickEditLead?.name}</p>
           </div>
           <div className="p-4 space-y-4">
             <div className="space-y-2">
-              <Label className="text-sm text-gray-600">Data</Label>
+              <Label className="text-sm text-blue-100">Data</Label>
               <Input
                 type="date"
                 value={quickAppointmentDate}
                 onChange={(e) => setQuickAppointmentDate(e.target.value)}
-                className="h-9 border-gray-200"
+                className="h-9 bg-white/10 backdrop-blur-sm border-white/30 text-white"
               />
             </div>
             <div className="space-y-2">
-              <Label className="text-sm text-gray-600">Hora</Label>
+              <Label className="text-sm text-blue-100">Hora</Label>
               <Input
                 type="time"
                 value={quickAppointmentTime}
                 onChange={(e) => setQuickAppointmentTime(e.target.value)}
-                className="h-9 border-gray-200"
+                className="h-9 bg-white/10 backdrop-blur-sm border-white/30 text-white"
               />
             </div>
             <div className="flex justify-end gap-2 pt-2">
@@ -746,14 +746,14 @@ export default function LeadsPage() {
                 type="button"
                 variant="outline"
                 onClick={() => setQuickEditLead(null)}
-                className="h-9 px-4 bg-white border-gray-200"
+                className="h-9 px-4 bg-blue-700/30 border-blue-500/30 text-blue-100 hover:bg-blue-600/40"
               >
                 Cancelar
               </Button>
               <Button
                 onClick={handleQuickSchedule}
                 disabled={isQuickSubmitting || !quickAppointmentDate}
-                className="h-9 px-4 bg-blue-700 text-white hover:bg-blue-800"
+                className="h-9 px-4 bg-white text-blue-700 hover:bg-white/90 border-none"
               >
                 {isQuickSubmitting ? "Agendando..." : "Agendar"}
               </Button>

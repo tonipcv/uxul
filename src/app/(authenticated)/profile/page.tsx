@@ -143,24 +143,24 @@ export default function ProfilePage() {
 
   return (
     <div className="container max-w-3xl mx-auto p-4 pt-20 lg:pt-10">
-      <Card className="bg-white border border-gray-200 shadow-sm">
-        <CardHeader className="flex flex-row items-center justify-between border-b border-gray-100 pb-4">
-          <CardTitle className="text-xl font-medium text-gray-800">Seu Perfil</CardTitle>
+      <Card className="bg-white/10 backdrop-blur-sm border border-white/30 shadow-md">
+        <CardHeader className="flex flex-row items-center justify-between border-b border-blue-500/20 pb-4">
+          <CardTitle className="text-xl font-medium text-white">Seu Perfil</CardTitle>
           <div className="flex items-center gap-2">
             {isPremium ? (
-              <Badge className="bg-blue-600 text-white border-0 mr-2">
+              <Badge className="bg-blue-500/30 text-blue-100 border-blue-400/30 mr-2">
                 <SparklesIcon className="h-3.5 w-3.5 mr-1" />
                 Premium
               </Badge>
             ) : (
-              <Badge className="bg-gray-200 text-gray-700 border-0 mr-2">
+              <Badge className="bg-white/20 text-white/80 border-white/30 mr-2">
                 Free
               </Badge>
             )}
             {!isEditing && (
               <Button 
                 variant="outline" 
-                className="bg-white border-blue-700 text-blue-700 hover:bg-blue-50 transition-colors"
+                className="bg-white text-blue-700 hover:bg-white/90 transition-colors border-none"
                 onClick={() => setIsEditing(true)}
               >
                 Editar Perfil
@@ -174,7 +174,7 @@ export default function ProfilePage() {
             {/* Profile Image */}
             <div className="flex flex-col items-center space-y-4">
               <div className="relative group">
-                <div className="relative w-32 h-32 rounded-full overflow-hidden border-2 border-blue-200 bg-gray-50">
+                <div className="relative w-32 h-32 rounded-full overflow-hidden border-2 border-blue-300/40 bg-blue-900/30">
                   {image ? (
                     <Image
                       src={image}
@@ -183,13 +183,13 @@ export default function ProfilePage() {
                       className="object-cover"
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-blue-50">
-                      <CameraIcon className="h-12 w-12 text-blue-300" />
+                    <div className="w-full h-full flex items-center justify-center bg-blue-800/30">
+                      <CameraIcon className="h-12 w-12 text-blue-200" />
                     </div>
                   )}
                 </div>
                 <label 
-                  className="absolute inset-0 flex items-center justify-center bg-blue-600/40 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer rounded-full"
+                  className="absolute inset-0 flex items-center justify-center bg-blue-600/50 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer rounded-full"
                   htmlFor="image-upload"
                 >
                   <CameraIcon className="h-8 w-8 text-white" />
@@ -203,12 +203,12 @@ export default function ProfilePage() {
                   disabled={isUploading}
                 />
                 {isUploading && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-blue-600/40 rounded-full">
+                  <div className="absolute inset-0 flex items-center justify-center bg-blue-600/50 rounded-full">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
                   </div>
                 )}
               </div>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-blue-100/80">
                 Clique na imagem para alterar sua foto
               </p>
             </div>
@@ -218,40 +218,40 @@ export default function ProfilePage() {
               {isEditing ? (
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <label className="text-sm text-gray-600 font-medium">Nome</label>
+                    <label className="text-sm text-blue-100 font-medium">Nome</label>
                     <Input
                       value={name}
                       onChange={(e) => setName(e.target.value)}
-                      className="border-gray-200 focus:border-blue-700 focus:ring-blue-50"
+                      className="bg-white/10 backdrop-blur-sm border-2 border-white/30 text-white placeholder:text-white/60 focus:ring-2 focus:ring-white/50 focus:border-transparent"
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-sm text-gray-600 font-medium">Especialidade</label>
+                    <label className="text-sm text-blue-100 font-medium">Especialidade</label>
                     <Input
                       value={specialty}
                       onChange={(e) => setSpecialty(e.target.value)}
-                      className="border-gray-200 focus:border-blue-700 focus:ring-blue-50"
+                      className="bg-white/10 backdrop-blur-sm border-2 border-white/30 text-white placeholder:text-white/60 focus:ring-2 focus:ring-white/50 focus:border-transparent"
                       placeholder="Ex: Cardiologista, Nutricionista..."
                     />
                   </div>
                   
                   <div className="space-y-2">
-                    <label className="text-sm text-gray-600 font-medium">Email</label>
-                    <p className="text-lg text-gray-700">{email}</p>
+                    <label className="text-sm text-blue-100 font-medium">Email</label>
+                    <p className="text-lg text-white">{email}</p>
                   </div>
 
                   <div className="pt-4 flex gap-3">
                     <Button 
                       onClick={() => handleSave()}
-                      className="bg-blue-700 hover:bg-blue-800 text-white transition-colors"
+                      className="bg-white text-blue-700 hover:bg-white/90 border-none"
                     >
                       Salvar Alterações
                     </Button>
                     <Button 
                       variant="outline" 
                       onClick={() => setIsEditing(false)}
-                      className="border-gray-200 text-gray-700 hover:bg-gray-50"
+                      className="bg-blue-700/30 border-blue-500/30 text-blue-100 hover:bg-blue-600/40"
                     >
                       Cancelar
                     </Button>
@@ -260,30 +260,30 @@ export default function ProfilePage() {
               ) : (
                 <div className="space-y-5">
                   <div>
-                    <h2 className="text-2xl font-light text-gray-800">{name}</h2>
-                    <p className="text-blue-700">{specialty}</p>
+                    <h2 className="text-2xl font-light text-white">{name}</h2>
+                    <p className="text-blue-200">{specialty}</p>
                   </div>
                   
                   <div className="space-y-2">
-                    <div className="flex items-center text-gray-600">
+                    <div className="flex items-center text-blue-100/80">
                       <UserIcon className="h-4 w-4 mr-2" />
-                      <span>Username: <span className="text-gray-800 font-medium">{slug}</span></span>
+                      <span>Username: <span className="text-white font-medium">{slug}</span></span>
                     </div>
                     
-                    <div className="flex items-center text-gray-600">
+                    <div className="flex items-center text-blue-100/80">
                       <LinkIcon className="h-4 w-4 mr-2" />
-                      <span>Seu link: <span className="text-gray-800">{baseUrl}/{slug}</span></span>
+                      <span>Seu link: <span className="text-white">{baseUrl}/{slug}</span></span>
                       <Button 
                         variant="ghost" 
                         size="sm" 
-                        className="ml-2 h-6 w-6 p-0 hover:bg-blue-50 hover:text-blue-700"
+                        className="ml-2 h-6 w-6 p-0 hover:bg-blue-600/30 text-blue-200"
                         onClick={copyProfileLinkToClipboard}
                       >
                         <ClipboardDocumentIcon className="h-4 w-4" />
                       </Button>
                     </div>
                     
-                    <div className="text-gray-600">
+                    <div className="text-blue-100/80">
                       <span className="mr-4">
                         <UserGroupIcon className="h-4 w-4 inline mr-1" />
                         {leadCount} leads
@@ -300,9 +300,9 @@ export default function ProfilePage() {
           </div>
           
           {/* Plano do Usuário */}
-          <Card className="bg-white border border-gray-200">
-            <CardHeader className="border-b border-gray-100">
-              <CardTitle className="text-lg font-medium text-gray-800">Seu Plano</CardTitle>
+          <Card className="bg-white/10 backdrop-blur-sm border border-white/30">
+            <CardHeader className="border-b border-blue-500/20">
+              <CardTitle className="text-lg font-medium text-white">Seu Plano</CardTitle>
             </CardHeader>
             <CardContent className="pt-6">
               <div className="flex flex-col md:flex-row md:items-center justify-between">
@@ -310,17 +310,17 @@ export default function ProfilePage() {
                   {isPremium ? (
                     <>
                       <div className="flex items-center">
-                        <SparklesIcon className="h-5 w-5 text-blue-600 mr-2" />
-                        <h3 className="text-xl font-medium text-blue-700">Plano Premium</h3>
+                        <SparklesIcon className="h-5 w-5 text-blue-300 mr-2" />
+                        <h3 className="text-xl font-medium text-blue-200">Plano Premium</h3>
                       </div>
-                      <p className="text-gray-600">
+                      <p className="text-blue-100/80">
                         Acesso total a todos os recursos da plataforma
                       </p>
                       {planExpiresAt && (
-                        <p className="text-sm text-gray-500">
+                        <p className="text-sm text-blue-100/60">
                           Expira em: {format(planExpiresAt, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
                           {daysRemaining !== null && daysRemaining <= 30 && (
-                            <span className="ml-2 text-amber-600">
+                            <span className="ml-2 text-amber-300">
                               ({daysRemaining} {daysRemaining === 1 ? 'dia' : 'dias'} restantes)
                             </span>
                           )}
@@ -330,12 +330,12 @@ export default function ProfilePage() {
                   ) : (
                     <>
                       <div className="flex items-center">
-                        <svg className="h-5 w-5 text-gray-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg className="h-5 w-5 text-blue-200/70 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
-                        <h3 className="text-xl font-medium text-gray-700">Plano Gratuito</h3>
+                        <h3 className="text-xl font-medium text-blue-200">Plano Gratuito</h3>
                       </div>
-                      <p className="text-gray-600">
+                      <p className="text-blue-100/80">
                         Acesso básico com recursos limitados
                       </p>
                     </>
@@ -344,7 +344,7 @@ export default function ProfilePage() {
                 <div className="mt-4 md:mt-0">
                   <Button 
                     onClick={() => router.push('/pricing')}
-                    className={isPremium ? "bg-white border border-blue-600 text-blue-600 hover:bg-blue-50" : "bg-blue-600 text-white hover:bg-blue-700"}
+                    className={isPremium ? "bg-blue-600/30 border border-blue-400/30 text-blue-100 hover:bg-blue-600/40" : "bg-white text-blue-700 hover:bg-white/90 border-none"}
                   >
                     <ShoppingCartIcon className="h-4 w-4 mr-2" />
                     {isPremium ? "Gerenciar Assinatura" : "Fazer Upgrade"}
@@ -355,27 +355,27 @@ export default function ProfilePage() {
           </Card>
           
           {/* Estatísticas e Resumo */}
-          <Card className="bg-white border border-gray-200">
-            <CardHeader className="border-b border-gray-100">
-              <CardTitle className="text-lg font-medium text-gray-800">Resumo da Atividade</CardTitle>
+          <Card className="bg-white/10 backdrop-blur-sm border border-white/30">
+            <CardHeader className="border-b border-blue-500/20">
+              <CardTitle className="text-lg font-medium text-white">Resumo da Atividade</CardTitle>
             </CardHeader>
             <CardContent className="pt-6">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="bg-blue-50 p-4 rounded-lg text-center">
-                  <p className="text-2xl font-light text-blue-700">{leadCount}</p>
-                  <p className="text-sm text-gray-600">Leads Totais</p>
+                <div className="bg-blue-600/20 backdrop-blur-sm p-4 rounded-lg text-center border border-blue-500/30">
+                  <p className="text-2xl font-light text-white">{leadCount}</p>
+                  <p className="text-sm text-blue-100/80">Leads Totais</p>
                 </div>
-                <div className="bg-blue-50 p-4 rounded-lg text-center">
-                  <p className="text-2xl font-light text-blue-700">{indicationCount}</p>
-                  <p className="text-sm text-gray-600">Links de Indicação</p>
+                <div className="bg-blue-600/20 backdrop-blur-sm p-4 rounded-lg text-center border border-blue-500/30">
+                  <p className="text-2xl font-light text-white">{indicationCount}</p>
+                  <p className="text-sm text-blue-100/80">Links de Indicação</p>
                 </div>
-                <div className="bg-blue-50 p-4 rounded-lg text-center">
-                  <p className="text-2xl font-light text-blue-700">0</p>
-                  <p className="text-sm text-gray-600">Taxa de Conversão</p>
+                <div className="bg-blue-600/20 backdrop-blur-sm p-4 rounded-lg text-center border border-blue-500/30">
+                  <p className="text-2xl font-light text-white">0</p>
+                  <p className="text-sm text-blue-100/80">Taxa de Conversão</p>
                 </div>
-                <div className="bg-blue-50 p-4 rounded-lg text-center">
-                  <p className="text-2xl font-light text-blue-700">0</p>
-                  <p className="text-sm text-gray-600">Cliques Totais</p>
+                <div className="bg-blue-600/20 backdrop-blur-sm p-4 rounded-lg text-center border border-blue-500/30">
+                  <p className="text-2xl font-light text-white">0</p>
+                  <p className="text-sm text-blue-100/80">Cliques Totais</p>
                 </div>
               </div>
             </CardContent>
@@ -385,7 +385,7 @@ export default function ProfilePage() {
           <div className="pt-4">
             <Button 
               variant="outline" 
-              className="w-full border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors"
+              className="w-full bg-red-500/20 border-red-400/30 text-red-100 hover:bg-red-500/30 transition-colors"
               onClick={() => signOut({ callbackUrl: '/auth/signin' })}
             >
               <ArrowRightOnRectangleIcon className="h-4 w-4 mr-2" />

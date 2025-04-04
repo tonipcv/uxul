@@ -3,13 +3,14 @@
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { DragDropContext, Droppable, Draggable, DroppableProvided, DraggableProvided, DropResult } from "@hello-pangea/dnd";
-import { PhoneIcon, BriefcaseIcon, CalendarIcon, PencilIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import { PhoneIcon, BriefcaseIcon, CalendarIcon, PencilIcon, XMarkIcon, LinkIcon } from "@heroicons/react/24/outline";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/components/ui/use-toast";
+import Link from "next/link";
 
 interface Lead {
   id: string;
@@ -20,14 +21,18 @@ interface Lead {
   appointmentDate?: string;
   createdAt?: string;
   source?: string;
+  indication?: {
+    name?: string;
+    slug: string;
+  };
 }
 
 const columns = [
-  { id: 'novos', title: 'Novos', color: 'bg-blue-50/80 border-blue-100' },
-  { id: 'agendados', title: 'Agendados', color: 'bg-blue-50 border-blue-200' },
-  { id: 'compareceram', title: 'Compareceram', color: 'bg-blue-100/80 border-blue-200' },
-  { id: 'fechados', title: 'Fechados', color: 'bg-blue-100 border-blue-200' },
-  { id: 'naoVieram', title: 'Não vieram', color: 'bg-red-50/80 border-red-100' }
+  { id: 'novos', title: 'Novos', color: 'bg-blue-500/20 border-blue-300/30' },
+  { id: 'agendados', title: 'Agendados', color: 'bg-blue-600/20 border-blue-400/30' },
+  { id: 'compareceram', title: 'Compareceram', color: 'bg-blue-700/20 border-blue-500/30' },
+  { id: 'fechados', title: 'Fechados', color: 'bg-blue-800/20 border-blue-600/30' },
+  { id: 'naoVieram', title: 'Não vieram', color: 'bg-red-500/20 border-red-300/30' }
 ];
 
 const statusMap: { [key: string]: string } = {
@@ -159,49 +164,49 @@ export default function PipelinePage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen bg-slate-50">
-        <div className="animate-spin h-6 w-6 border-2 border-blue-700 border-t-transparent rounded-full" />
+      <div className="flex items-center justify-center h-screen">
+        <div className="animate-spin h-6 w-6 border-2 border-blue-300 border-t-transparent rounded-full" />
       </div>
     );
   }
 
   return (
     <DragDropContext onDragEnd={handleDragEnd}>
-      <div className="h-[100dvh] bg-slate-50 flex flex-col">
+      <div className="flex flex-col">
         {/* Header */}
-        <div className="bg-slate-50 px-6 pt-6 pb-4">
-          <h1 className="text-xl font-semibold text-gray-800">Pipeline</h1>
+        <div className="px-6 pt-2 pb-4">
+          <h1 className="text-xl font-medium text-white">Pipeline</h1>
         </div>
 
         {/* Pipeline Content */}
-        <div className="flex-1 flex flex-col overflow-hidden">
+        <div className="flex flex-col overflow-x-hidden overflow-y-hidden">
           {/* Mobile Column Selector */}
-          <div className="md:hidden px-6 py-3 bg-white border-y border-blue-100">
-            <div className="flex overflow-x-auto gap-3 -mx-6 px-6">
+          <div className="md:hidden px-6 py-3 bg-white/10 backdrop-blur-sm border-y border-blue-500/30">
+            <div className="flex overflow-x-auto gap-3 -mx-6 px-6 pb-1">
               {columns.map(column => (
                 <div 
                   key={column.id} 
-                  className={`flex-none px-4 py-2 rounded-full ${column.color} border shadow-sm`}
+                  className={`flex-none px-4 py-2 rounded-full ${column.color} backdrop-blur-sm border shadow-sm`}
                 >
-                  <span className="text-sm font-medium text-gray-800">{column.title}</span>
-                  <span className="ml-2 text-xs text-gray-500">{getColumnLeads(column.id).length}</span>
+                  <span className="text-sm font-medium text-white">{column.title}</span>
+                  <span className="ml-2 text-xs text-blue-100/80">{getColumnLeads(column.id).length}</span>
                 </div>
               ))}
             </div>
           </div>
 
           {/* Columns Layout */}
-          <div className="flex-1 overflow-x-auto">
-            <div className="flex gap-6 px-6 py-4 h-full min-w-full md:min-w-0">
+          <div className="overflow-x-auto pb-2">
+            <div className="flex gap-6 px-6 py-4 min-w-full md:min-w-0 min-h-[70vh]">
               {columns.map(column => (
                 <div 
                   key={column.id} 
-                  className="flex-none md:flex-1 w-[85vw] md:w-auto md:min-w-[320px]"
+                  className="flex-none md:flex-1 w-[85vw] md:w-auto md:min-w-[280px]"
                 >
-                  <div className={`rounded-xl ${column.color} border shadow-sm h-full flex flex-col`}>
-                    <div className="flex items-center justify-between px-4 py-3 border-b border-inherit bg-white/50">
-                      <h3 className="font-medium text-gray-800">{column.title}</h3>
-                      <span className="text-sm text-gray-500">{getColumnLeads(column.id).length}</span>
+                  <div className={`rounded-xl ${column.color} backdrop-blur-sm border shadow-sm flex flex-col h-full`}>
+                    <div className="flex items-center justify-between px-4 py-3 border-b border-inherit bg-white/5">
+                      <h3 className="font-medium text-white">{column.title}</h3>
+                      <span className="text-sm text-blue-100/80">{getColumnLeads(column.id).length}</span>
                     </div>
                     
                     <Droppable droppableId={column.id}>
@@ -209,7 +214,7 @@ export default function PipelinePage() {
                         <div
                           ref={provided.innerRef}
                           {...provided.droppableProps}
-                          className="flex-1 overflow-y-auto p-4 space-y-3"
+                          className="flex-1 overflow-y-auto p-4 space-y-3 min-h-[200px]"
                         >
                           {getColumnLeads(column.id).map((lead, index) => (
                             <Draggable key={lead.id} draggableId={lead.id} index={index}>
@@ -218,7 +223,7 @@ export default function PipelinePage() {
                                   ref={provided.innerRef}
                                   {...provided.draggableProps}
                                   {...provided.dragHandleProps}
-                                  className="group bg-white rounded-lg shadow-sm border border-blue-100/50 p-4 touch-manipulation hover:border-blue-200 transition-all relative"
+                                  className="group bg-white/10 backdrop-blur-sm rounded-lg shadow-sm border border-white/20 p-4 touch-manipulation hover:border-blue-300/40 transition-all relative"
                                 >
                                   {/* Botões flutuantes que aparecem no hover */}
                                   <div className="absolute right-2 top-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -226,9 +231,9 @@ export default function PipelinePage() {
                                       size="sm"
                                       variant="ghost"
                                       onClick={() => {/* TODO: Implement quick schedule */}}
-                                      className="h-8 w-8 p-0 hover:bg-blue-50"
+                                      className="h-8 w-8 p-0 hover:bg-blue-600/30 text-blue-200"
                                     >
-                                      <CalendarIcon className="h-4 w-4 text-blue-600" />
+                                      <CalendarIcon className="h-4 w-4" />
                                     </Button>
                                     <Button
                                       size="sm"
@@ -237,44 +242,46 @@ export default function PipelinePage() {
                                         setEditingLead(lead);
                                         setIsEditModalOpen(true);
                                       }}
-                                      className="h-8 w-8 p-0 hover:bg-gray-50"
+                                      className="h-8 w-8 p-0 hover:bg-blue-600/30 text-blue-200"
                                     >
-                                      <PencilIcon className="h-4 w-4 text-gray-600" />
+                                      <PencilIcon className="h-4 w-4" />
                                     </Button>
                                   </div>
 
                                   {/* Informações do Lead */}
                                   <div className="space-y-3">
                                     <div>
-                                      <h4 className="font-medium text-gray-800 mb-1 truncate" title={lead.name}>{lead.name}</h4>
-                                      <div className="flex items-center gap-2 text-sm text-gray-500">
+                                      <h4 className="font-medium text-white mb-1 truncate" title={lead.name}>{lead.name}</h4>
+                                      <div className="flex items-center gap-2 text-sm text-blue-100/80">
                                         <PhoneIcon className="flex-shrink-0 h-3.5 w-3.5" />
                                         <span className="truncate">{lead.phone}</span>
                                       </div>
                                     </div>
 
-                                    <div className="pt-2 border-t border-gray-100">
+                                    {/* Adicionar um indicador de origem/indicação na parte superior do card */}
+                                    {(lead.indication?.name || lead.source) && (
+                                      <div className="flex items-center gap-1.5 bg-blue-600/30 px-2 py-1 rounded-md">
+                                        <LinkIcon className="h-3.5 w-3.5 text-blue-200" />
+                                        <span className="text-xs font-medium text-blue-100 truncate">
+                                          {lead.indication?.name || (lead.source?.includes('/') 
+                                            ? lead.source.split('/').filter(Boolean)[1] 
+                                            : lead.source)}
+                                        </span>
+                                      </div>
+                                    )}
+
+                                    <div className="pt-2 border-t border-blue-500/20">
                                       <div className="grid grid-cols-2 gap-3 text-sm">
                                         {lead.interest && (
                                           <div>
-                                            <p className="text-xs font-medium text-gray-500 mb-0.5">Interesse</p>
-                                            <p className="text-gray-700 truncate" title={lead.interest}>{lead.interest}</p>
-                                          </div>
-                                        )}
-                                        {lead.source && (
-                                          <div>
-                                            <p className="text-xs font-medium text-gray-500 mb-0.5">Origem</p>
-                                            <p className="text-gray-700 truncate" title={lead.source}>
-                                              {lead.source.includes('/') 
-                                                ? lead.source.split('/').filter(Boolean)[1] 
-                                                : lead.source}
-                                            </p>
+                                            <p className="text-xs font-medium text-blue-100/60 mb-0.5">Interesse</p>
+                                            <p className="text-blue-100 truncate" title={lead.interest}>{lead.interest}</p>
                                           </div>
                                         )}
                                         {lead.appointmentDate && (
                                           <div>
-                                            <p className="text-xs font-medium text-gray-500 mb-0.5">Agendamento</p>
-                                            <p className="text-gray-700 truncate">
+                                            <p className="text-xs font-medium text-blue-100/60 mb-0.5">Agendamento</p>
+                                            <p className="text-blue-100 truncate">
                                               {new Date(lead.appointmentDate).toLocaleDateString('pt-BR', {
                                                 day: '2-digit',
                                                 month: '2-digit',
@@ -286,8 +293,8 @@ export default function PipelinePage() {
                                         )}
                                         {lead.createdAt && (
                                           <div>
-                                            <p className="text-xs font-medium text-gray-500 mb-0.5">Criado em</p>
-                                            <p className="text-gray-700 truncate">
+                                            <p className="text-xs font-medium text-blue-100/60 mb-0.5">Criado em</p>
+                                            <p className="text-blue-100 truncate">
                                               {new Date(lead.createdAt).toLocaleDateString('pt-BR', {
                                                 day: '2-digit',
                                                 month: '2-digit'
@@ -315,83 +322,83 @@ export default function PipelinePage() {
 
         {/* Modal de Edição */}
         <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-          <DialogContent className="sm:max-w-[425px]">
-            <DialogHeader>
-              <DialogTitle>Editar Lead</DialogTitle>
+          <DialogContent className="sm:max-w-[425px] bg-blue-800/90 backdrop-blur-sm p-0 rounded-lg border border-white/30">
+            <DialogHeader className="p-4 border-b border-blue-500/30">
+              <DialogTitle className="text-lg font-medium text-white">Editar Lead</DialogTitle>
             </DialogHeader>
             {editingLead && (
               <form onSubmit={(e) => {
                 e.preventDefault();
                 if (!editingLead) return;
                 handleEditLead(editingLead);
-              }} className="space-y-4 py-4">
+              }} className="space-y-4 p-4">
                 <div className="space-y-2">
-                  <Label htmlFor="name">Nome</Label>
+                  <Label htmlFor="name" className="text-sm text-blue-100">Nome</Label>
                   <Input
                     id="name"
                     value={editingLead.name}
                     onChange={(e) => setEditingLead({ ...editingLead, name: e.target.value })}
-                    className="w-full"
+                    className="w-full h-9 bg-white/10 backdrop-blur-sm border-white/30 text-white"
                   />
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="phone">Telefone</Label>
+                  <Label htmlFor="phone" className="text-sm text-blue-100">Telefone</Label>
                   <Input
                     id="phone"
                     value={editingLead.phone}
                     onChange={(e) => setEditingLead({ ...editingLead, phone: e.target.value })}
-                    className="w-full"
+                    className="w-full h-9 bg-white/10 backdrop-blur-sm border-white/30 text-white"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="interest">Interesse</Label>
+                  <Label htmlFor="interest" className="text-sm text-blue-100">Interesse</Label>
                   <Input
                     id="interest"
                     value={editingLead.interest || ''}
                     onChange={(e) => setEditingLead({ ...editingLead, interest: e.target.value })}
-                    className="w-full"
+                    className="w-full h-9 bg-white/10 backdrop-blur-sm border-white/30 text-white"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="status">Status</Label>
+                  <Label htmlFor="status" className="text-sm text-blue-100">Status</Label>
                   <Select 
                     value={editingLead.status || 'Novo'}
                     onValueChange={(value) => setEditingLead({ ...editingLead, status: value })}
                   >
-                    <SelectTrigger className="w-full">
+                    <SelectTrigger className="w-full h-9 bg-white/10 backdrop-blur-sm border-white/30 text-white">
                       <SelectValue placeholder="Selecione o status" />
                     </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Novo">Novo</SelectItem>
-                      <SelectItem value="Agendado">Agendado</SelectItem>
-                      <SelectItem value="Compareceu">Compareceu</SelectItem>
-                      <SelectItem value="Fechado">Fechado</SelectItem>
-                      <SelectItem value="Não veio">Não veio</SelectItem>
+                    <SelectContent className="bg-blue-800/80 backdrop-blur-sm border border-blue-500/30 text-white">
+                      <SelectItem value="Novo" className="text-blue-100 focus:bg-blue-700/50">Novo</SelectItem>
+                      <SelectItem value="Agendado" className="text-blue-100 focus:bg-blue-700/50">Agendado</SelectItem>
+                      <SelectItem value="Compareceu" className="text-blue-100 focus:bg-blue-700/50">Compareceu</SelectItem>
+                      <SelectItem value="Fechado" className="text-blue-100 focus:bg-blue-700/50">Fechado</SelectItem>
+                      <SelectItem value="Não veio" className="text-blue-100 focus:bg-blue-700/50">Não veio</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="appointmentDate">Data do Agendamento</Label>
+                  <Label htmlFor="appointmentDate" className="text-sm text-blue-100">Data do Agendamento</Label>
                   <Input
                     id="appointmentDate"
                     type="datetime-local"
                     value={editingLead.appointmentDate || ''}
                     onChange={(e) => setEditingLead({ ...editingLead, appointmentDate: e.target.value })}
-                    className="w-full"
+                    className="w-full h-9 bg-white/10 backdrop-blur-sm border-white/30 text-white"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="source">Origem</Label>
+                  <Label htmlFor="source" className="text-sm text-blue-100">Origem</Label>
                   <Input
                     id="source"
                     value={editingLead.source || ''}
                     onChange={(e) => setEditingLead({ ...editingLead, source: e.target.value })}
-                    className="w-full"
+                    className="w-full h-9 bg-white/10 backdrop-blur-sm border-white/30 text-white"
                   />
                 </div>
 
@@ -400,10 +407,14 @@ export default function PipelinePage() {
                     type="button"
                     variant="outline"
                     onClick={() => setIsEditModalOpen(false)}
+                    className="h-9 px-4 bg-blue-700/30 border-blue-500/30 text-blue-100 hover:bg-blue-600/40"
                   >
                     Cancelar
                   </Button>
-                  <Button type="submit">
+                  <Button 
+                    type="submit"
+                    className="h-9 px-4 bg-white text-blue-700 hover:bg-white/90 border-none"
+                  >
                     Salvar alterações
                   </Button>
                 </div>

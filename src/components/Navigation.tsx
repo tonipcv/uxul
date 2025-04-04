@@ -85,14 +85,14 @@ export default function Navigation() {
     <Button
       variant="outline"
       className={cn(
-        "w-full h-14 flex items-center justify-center bg-transparent transition-colors",
+        "w-full h-14 flex items-center justify-center bg-transparent transition-colors border-transparent",
         pathname === item.href 
-          ? "border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100/80" 
-          : "border-gray-200 text-gray-500 hover:border-blue-200 hover:text-blue-600 hover:bg-blue-50/50",
+          ? "bg-blue-600/30 text-blue-100 border-blue-500/30 hover:bg-blue-600/40" 
+          : "text-blue-200/70 hover:text-blue-100 hover:bg-blue-600/20",
         className
       )}
     >
-      <item.icon className="h-4 w-4 stroke-current" />
+      <item.icon className="h-5 w-5 stroke-current" />
     </Button>
   );
 
@@ -107,18 +107,18 @@ export default function Navigation() {
         />
       </div>
     ) : (
-      <UserCircleIcon className="h-3.5 w-3.5 text-blue-600" />
+      <UserCircleIcon className="h-4 w-4 text-blue-200" />
     )
   );
 
   return (
     <>
       {/* Desktop Navigation */}
-      <nav className="fixed left-0 top-0 bottom-0 w-20 border-r border-blue-100 bg-white shadow-sm hidden lg:block z-40">
+      <nav className="fixed left-0 top-0 bottom-0 w-20 border-r border-blue-500/20 bg-blue-900/30 backdrop-blur-sm shadow-md hidden lg:block z-40">
         <div className="flex flex-col h-full">
-          <div className="p-6 border-b border-blue-100">
+          <div className="p-6 border-b border-blue-500/20">
             <Link href="/" className="flex items-center justify-center">
-              <span className="text-sm font-medium text-blue-700 tracking-wide">MED1</span>
+              <span className="text-sm font-medium text-blue-200 tracking-wide">MED1</span>
             </Link>
           </div>
           <div className="flex-1 py-6">
@@ -134,9 +134,9 @@ export default function Navigation() {
               ))}
             </nav>
           </div>
-          <div className="p-6 border-t border-blue-100">
+          <div className="p-6 border-t border-blue-500/20">
             <Link href="/profile">
-              <div className="w-10 h-10 flex items-center justify-center cursor-pointer border border-blue-200 rounded-full hover:border-blue-300 hover:bg-blue-50 transition-colors mx-auto">
+              <div className="w-10 h-10 flex items-center justify-center cursor-pointer border border-blue-400/30 rounded-full hover:border-blue-400/50 hover:bg-blue-600/20 transition-colors mx-auto">
                 <UserAvatar />
               </div>
             </Link>
@@ -147,13 +147,13 @@ export default function Navigation() {
       {/* Mobile Navigation */}
       <div className="lg:hidden">
         {/* Mobile Header */}
-        <div className="fixed top-0 left-0 right-0 border-b border-blue-100 bg-white shadow-sm z-40">
+        <div className="fixed top-0 left-0 right-0 border-b border-blue-500/20 bg-blue-900/30 backdrop-blur-sm shadow-md z-40">
           <div className="py-4 px-4 flex justify-between items-center">
             <Link href="/" className="flex items-center">
-              <span className="text-sm font-medium text-blue-700 tracking-wide">MED1</span>
+              <span className="text-sm font-medium text-blue-200 tracking-wide">MED1</span>
             </Link>
             <Link href="/profile">
-              <div className="h-7 w-7 flex items-center justify-center cursor-pointer border border-blue-200 rounded-full hover:border-blue-300 hover:bg-blue-50 transition-colors">
+              <div className="h-7 w-7 flex items-center justify-center cursor-pointer border border-blue-400/30 rounded-full hover:border-blue-400/50 hover:bg-blue-600/20 transition-colors">
                 <UserAvatar />
               </div>
             </Link>
@@ -161,7 +161,7 @@ export default function Navigation() {
         </div>
 
         {/* Mobile Navigation Bar */}
-        <nav className="fixed bottom-0 left-0 right-0 border-t border-blue-100 bg-white shadow-sm z-40">
+        <nav className="fixed bottom-0 left-0 right-0 border-t border-blue-500/20 bg-blue-900/30 backdrop-blur-sm shadow-md z-40">
           <div className="py-3 px-4">
             <div className="flex items-center justify-around gap-2">
               {navSections.flatMap(section => section.items).map((item) => (
@@ -169,13 +169,13 @@ export default function Navigation() {
                   <Button
                     variant="outline"
                     className={cn(
-                      "w-full h-14 flex items-center justify-center bg-transparent transition-colors",
+                      "w-full h-14 flex items-center justify-center bg-transparent transition-colors border-transparent",
                       pathname === item.href 
-                        ? "border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100/80" 
-                        : "border-gray-200 text-gray-500 hover:border-blue-200 hover:text-blue-600 hover:bg-blue-50/50"
+                        ? "bg-blue-600/30 text-blue-100 border-blue-500/30 hover:bg-blue-600/40" 
+                        : "text-blue-200/70 hover:text-blue-100 hover:bg-blue-600/20"
                     )}
                   >
-                    <item.icon className="h-4 w-4 stroke-current" />
+                    <item.icon className="h-5 w-5 stroke-current" />
                   </Button>
                 </Link>
               ))}

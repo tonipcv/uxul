@@ -143,393 +143,395 @@ export default function DashboardPage() {
   })) || [];
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8">
-        <div>
-          <h1 className="text-2xl font-light text-gray-800">Dashboard</h1>
-          <p className="text-gray-500">Bem-vindo, {session?.user?.name}</p>
+    <div className="min-h-[100dvh] bg-gradient-to-br from-blue-800 via-blue-700 to-blue-900 pt-8 pb-16 px-4">
+      <div className="container mx-auto">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8">
+          <div>
+            <h1 className="text-2xl font-light text-white">Dashboard</h1>
+            <p className="text-blue-100/80">Bem-vindo, {session?.user?.name}</p>
+          </div>
+          <Button 
+            onClick={fetchDashboardData} 
+            variant="outline" 
+            size="sm" 
+            className="mt-2 md:mt-0 bg-white/10 backdrop-blur-sm border-white/30 text-white hover:bg-white/20 transition-colors"
+          >
+            Atualizar dados
+          </Button>
         </div>
-        <Button 
-          onClick={fetchDashboardData} 
-          variant="outline" 
-          size="sm" 
-          className="mt-2 md:mt-0 bg-white border-blue-700 text-blue-700 hover:bg-blue-50 transition-colors"
-        >
-          Atualizar dados
-        </Button>
-      </div>
 
-      <Tabs defaultValue="overview" value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid grid-cols-2 mb-8 bg-white border border-gray-200 p-1 rounded-md">
-          <TabsTrigger 
-            value="overview" 
-            className="data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700 data-[state=active]:border-b-2 data-[state=active]:border-blue-700 text-gray-500 hover:text-gray-800 transition-colors rounded-md"
-          >
-            Visão Geral
-          </TabsTrigger>
-          <TabsTrigger 
-            value="details" 
-            className="data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700 data-[state=active]:border-b-2 data-[state=active]:border-blue-700 text-gray-500 hover:text-gray-800 transition-colors rounded-md"
-          >
-            Detalhamento
-          </TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="overview" className="mt-0">
-          {/* Cards principais */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <Card className="bg-white border-l-4 border-blue-700 border-t border-r border-b border-gray-200 shadow-md">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg font-medium flex items-center text-gray-800">
-                  <PhoneIcon className="h-5 w-5 mr-2 text-blue-700" />
-                  Total de Leads
-                </CardTitle>
-                <CardDescription className="text-gray-600">
-                  Conversões totais
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-end justify-between">
-                  <p className="text-4xl font-semibold text-blue-700">
-                    {loading ? '...' : dashboardData?.totalLeads || 0}
-                  </p>
-                  <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                    <ChevronUpIcon className="h-3 w-3 mr-1" />
-                    Ativo
-                  </Badge>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-white border-l-4 border-gray-400 border-t border-r border-b border-gray-200 shadow-md">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg font-medium flex items-center text-gray-800">
-                  <LinkIcon className="h-5 w-5 mr-2 text-gray-500" />
-                  Links Ativos
-                </CardTitle>
-                <CardDescription className="text-gray-600">
-                  Indicações ativas
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-end justify-between">
-                  <p className="text-4xl font-semibold text-gray-600">
-                    {loading ? '...' : dashboardData?.totalIndications || 0}
-                  </p>
-                  <Badge variant="outline" className="bg-gray-100 text-gray-600 border-gray-200">
-                    100%
-                  </Badge>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-white border-l-4 border-blue-400 border-t border-r border-b border-gray-200 shadow-md">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg font-medium flex items-center text-gray-800">
-                  <ArrowTrendingUpIcon className="h-5 w-5 mr-2 text-blue-500" />
-                  Taxa de Conversão
-                </CardTitle>
-                <CardDescription className="text-gray-600">
-                  Leads / Cliques
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-end justify-between">
-                  <p className="text-4xl font-semibold text-blue-500">
-                    {loading ? '...' : `${dashboardData?.conversionRate || 0}%`}
-                  </p>
-                  <p className="text-xs text-gray-600">
-                    {loading 
-                      ? '...' 
-                      : `${dashboardData?.totalLeads || 0} / ${dashboardData?.totalClicks || 0}`}
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Gráficos */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-            <Card className="bg-white border border-gray-200 shadow-sm">
-              <CardHeader>
-                <CardTitle className="text-lg font-medium text-gray-800">Leads por Origem</CardTitle>
-                <CardDescription className="text-gray-500">
-                  Distribuição de conversões por canal
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="h-80">
-                {loading ? (
-                  <div className="h-full w-full flex items-center justify-center">
-                    <p className="text-gray-500">Carregando...</p>
+        <Tabs defaultValue="overview" value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid grid-cols-2 mb-8 bg-white/10 backdrop-blur-sm border border-white/30 p-1 rounded-md">
+            <TabsTrigger 
+              value="overview" 
+              className="data-[state=active]:bg-white data-[state=active]:text-blue-700 data-[state=active]:border-b-2 data-[state=active]:border-blue-300 text-white/80 hover:text-white transition-colors rounded-md"
+            >
+              Visão Geral
+            </TabsTrigger>
+            <TabsTrigger 
+              value="details" 
+              className="data-[state=active]:bg-white data-[state=active]:text-blue-700 data-[state=active]:border-b-2 data-[state=active]:border-blue-300 text-white/80 hover:text-white transition-colors rounded-md"
+            >
+              Detalhamento
+            </TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="overview" className="mt-0">
+            {/* Cards principais */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+              <Card className="bg-white/10 backdrop-blur-sm border-l-4 border-blue-300 border-t border-r border-b border-white/30 shadow-md">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg font-medium flex items-center text-white">
+                    <PhoneIcon className="h-5 w-5 mr-2 text-blue-300" />
+                    Total de Leads
+                  </CardTitle>
+                  <CardDescription className="text-blue-100/80">
+                    Conversões totais
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-end justify-between">
+                    <p className="text-4xl font-semibold text-white">
+                      {loading ? '...' : dashboardData?.totalLeads || 0}
+                    </p>
+                    <Badge variant="outline" className="bg-blue-500/20 text-blue-100 border-blue-300/50">
+                      <ChevronUpIcon className="h-3 w-3 mr-1" />
+                      Ativo
+                    </Badge>
                   </div>
-                ) : sourceChartData.length > 0 ? (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={sourceChartData}
-                        cx="50%"
-                        cy="50%"
-                        labelLine={false}
-                        outerRadius={80}
-                        fill="#8884d8"
-                        dataKey="value"
-                        label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                </CardContent>
+              </Card>
+
+              <Card className="bg-white/10 backdrop-blur-sm border-l-4 border-white/50 border-t border-r border-b border-white/30 shadow-md">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg font-medium flex items-center text-white">
+                    <LinkIcon className="h-5 w-5 mr-2 text-white/70" />
+                    Links Ativos
+                  </CardTitle>
+                  <CardDescription className="text-blue-100/80">
+                    Indicações ativas
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-end justify-between">
+                    <p className="text-4xl font-semibold text-white">
+                      {loading ? '...' : dashboardData?.totalIndications || 0}
+                    </p>
+                    <Badge variant="outline" className="bg-white/20 text-white border-white/40">
+                      100%
+                    </Badge>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-white/10 backdrop-blur-sm border-l-4 border-blue-200 border-t border-r border-b border-white/30 shadow-md">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg font-medium flex items-center text-white">
+                    <ArrowTrendingUpIcon className="h-5 w-5 mr-2 text-blue-200" />
+                    Taxa de Conversão
+                  </CardTitle>
+                  <CardDescription className="text-blue-100/80">
+                    Leads / Cliques
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-end justify-between">
+                    <p className="text-4xl font-semibold text-white">
+                      {loading ? '...' : `${dashboardData?.conversionRate || 0}%`}
+                    </p>
+                    <p className="text-xs text-blue-100/70">
+                      {loading 
+                        ? '...' 
+                        : `${dashboardData?.totalLeads || 0} / ${dashboardData?.totalClicks || 0}`}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Gráficos */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+              <Card className="bg-white/10 backdrop-blur-sm border border-white/30 shadow-sm">
+                <CardHeader>
+                  <CardTitle className="text-lg font-medium text-white">Leads por Origem</CardTitle>
+                  <CardDescription className="text-blue-100/80">
+                    Distribuição de conversões por canal
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="h-80">
+                  {loading ? (
+                    <div className="h-full w-full flex items-center justify-center">
+                      <p className="text-blue-100/80">Carregando...</p>
+                    </div>
+                  ) : sourceChartData.length > 0 ? (
+                    <ResponsiveContainer width="100%" height="100%" className="text-white">
+                      <PieChart>
+                        <Pie
+                          data={sourceChartData}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={true}
+                          outerRadius={80}
+                          fill="#8884d8"
+                          dataKey="value"
+                          label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                        >
+                          {sourceChartData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                          ))}
+                        </Pie>
+                        <Tooltip />
+                        <Legend />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="h-full w-full flex items-center justify-center">
+                      <p className="text-blue-100/80">Nenhum dado disponível</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card className="bg-white/10 backdrop-blur-sm border border-white/30 shadow-sm">
+                <CardHeader>
+                  <CardTitle className="text-lg font-medium text-white">Leads por Indicação</CardTitle>
+                  <CardDescription className="text-blue-100/80">
+                    Performance dos links de indicação
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="h-80">
+                  {loading ? (
+                    <div className="h-full w-full flex items-center justify-center">
+                      <p className="text-blue-100/80">Carregando...</p>
+                    </div>
+                  ) : indicationChartData.length > 0 ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart
+                        data={indicationChartData}
+                        margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
                       >
-                        {sourceChartData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip />
-                      <Legend />
-                    </PieChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <div className="h-full w-full flex items-center justify-center">
-                    <p className="text-gray-500">Nenhum dado disponível</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                        <XAxis 
+                          dataKey="name" 
+                          angle={-45} 
+                          textAnchor="end" 
+                          height={60} 
+                          stroke="#f0f9ff"
+                          fontSize={12}
+                        />
+                        <YAxis stroke="#f0f9ff" fontSize={12} />
+                        <Tooltip content={<CustomTooltip />} />
+                        <Bar dataKey="leads" fill="#38bdf8" radius={[4, 4, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="h-full w-full flex items-center justify-center">
+                      <p className="text-blue-100/80">Nenhum dado disponível</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
 
-            <Card className="bg-white border border-gray-200 shadow-sm">
+            {/* Leads Recentes */}
+            <Card className="bg-white/10 backdrop-blur-sm border border-white/30 shadow-sm">
               <CardHeader>
-                <CardTitle className="text-lg font-medium text-gray-800">Leads por Indicação</CardTitle>
-                <CardDescription className="text-gray-500">
-                  Performance dos links de indicação
+                <CardTitle className="text-lg font-medium text-white">Leads Recentes</CardTitle>
+                <CardDescription className="text-blue-100/80">
+                  Últimas conversões registradas
                 </CardDescription>
               </CardHeader>
-              <CardContent className="h-80">
+              <CardContent>
                 {loading ? (
-                  <div className="h-full w-full flex items-center justify-center">
-                    <p className="text-gray-500">Carregando...</p>
-                  </div>
-                ) : indicationChartData.length > 0 ? (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart
-                      data={indicationChartData}
-                      margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
-                    >
-                      <XAxis 
-                        dataKey="name" 
-                        angle={-45} 
-                        textAnchor="end" 
-                        height={60} 
-                        stroke="#6b7280"
-                        fontSize={12}
-                      />
-                      <YAxis stroke="#6b7280" fontSize={12} />
-                      <Tooltip content={<CustomTooltip />} />
-                      <Bar dataKey="leads" fill="#3b82f6" radius={[4, 4, 0, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <div className="h-full w-full flex items-center justify-center">
-                    <p className="text-gray-500">Nenhum dado disponível</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Leads Recentes */}
-          <Card className="bg-white border border-gray-200 shadow-sm">
-            <CardHeader>
-              <CardTitle className="text-lg font-medium text-gray-800">Leads Recentes</CardTitle>
-              <CardDescription className="text-gray-500">
-                Últimas conversões registradas
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {loading ? (
-                <p className="text-gray-500">Carregando...</p>
-              ) : dashboardData?.recentLeads && dashboardData.recentLeads.length > 0 ? (
-                <div className="space-y-4">
-                  {dashboardData.recentLeads.map((lead) => (
-                    <div key={lead.id} className="flex justify-between items-center p-3 rounded-lg bg-gray-50 border border-gray-100">
-                      <div className="flex items-center">
-                        <div className="bg-blue-100 text-blue-600 h-10 w-10 rounded-full flex items-center justify-center mr-3">
-                          {lead.name.charAt(0).toUpperCase()}
+                  <p className="text-blue-100/80">Carregando...</p>
+                ) : dashboardData?.recentLeads && dashboardData.recentLeads.length > 0 ? (
+                  <div className="space-y-4">
+                    {dashboardData.recentLeads.map((lead) => (
+                      <div key={lead.id} className="flex justify-between items-center p-3 rounded-lg bg-white/5 border border-white/20">
+                        <div className="flex items-center">
+                          <div className="bg-blue-500/20 text-blue-100 h-10 w-10 rounded-full flex items-center justify-center mr-3">
+                            {lead.name.charAt(0).toUpperCase()}
+                          </div>
+                          <div>
+                            <p className="text-white font-medium">{lead.name}</p>
+                            <p className="text-xs text-blue-100/70 flex items-center">
+                              <span className="inline-block h-2 w-2 rounded-full bg-green-400 mr-1"></span>
+                              {lead.indication?.name || lead.indication?.slug || "Link principal"}
+                            </p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="text-gray-800 font-medium">{lead.name}</p>
-                          <p className="text-xs text-gray-500 flex items-center">
-                            <span className="inline-block h-2 w-2 rounded-full bg-green-500 mr-1"></span>
-                            {lead.indication?.name || lead.indication?.slug || "Link principal"}
+                        <div className="text-right">
+                          <p className="text-white text-sm font-medium">{lead.phone}</p>
+                          <p className="text-xs text-blue-100/70">
+                            {lead.createdAt && isValidDate(new Date(lead.createdAt)) 
+                              ? format(new Date(lead.createdAt), "dd/MM/yyyy", { locale: ptBR })
+                              : "Data não disponível"}
                           </p>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <p className="text-gray-700 text-sm font-medium">{lead.phone}</p>
-                        <p className="text-xs text-gray-500">
-                          {lead.createdAt && isValidDate(new Date(lead.createdAt)) 
-                            ? format(new Date(lead.createdAt), "dd/MM/yyyy", { locale: ptBR })
-                            : "Data não disponível"}
+                    ))}
+                  </div>
+                ) : (
+                  <div className="bg-white/5 rounded-lg p-6 text-center">
+                    <p className="text-blue-100/80">Nenhum lead registrado ainda.</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="details" className="mt-0">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Card className="bg-white/10 backdrop-blur-sm border border-white/30 shadow-sm md:col-span-2">
+                <CardHeader>
+                  <CardTitle className="text-lg font-medium text-white">Todos os Indicadores</CardTitle>
+                  <CardDescription className="text-blue-100/80">
+                    Detalhamento completo dos links de indicação
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {loading ? (
+                    <p className="text-blue-100/80">Carregando...</p>
+                  ) : dashboardData?.topIndications && dashboardData.topIndications.length > 0 ? (
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-12 text-xs text-blue-100/70 pb-2 border-b border-white/20">
+                        <div className="col-span-5">INDICADOR</div>
+                        <div className="col-span-4">LINK</div>
+                        <div className="col-span-2 text-right">LEADS</div>
+                        <div className="col-span-1 text-right">CLIQUES</div>
+                      </div>
+                      {dashboardData.topIndications.map((indication) => (
+                        <div key={indication.id} className="grid grid-cols-12 items-center py-3">
+                          <div className="col-span-5 text-white font-medium">{indication.name || indication.slug}</div>
+                          <div className="col-span-4 text-xs text-blue-100/70 truncate">
+                            med1.app/{session?.user?.name || '...'}/{indication.slug}
+                          </div>
+                          <div className="col-span-2 text-right">
+                            <Badge className="bg-blue-500/20 text-blue-100 border-blue-300/50">
+                              {indication._count.leads}
+                            </Badge>
+                          </div>
+                          <div className="col-span-1 text-right">
+                            <Badge variant="outline" className="border-white/30 text-white/80">
+                              {indication._count.events}
+                            </Badge>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="bg-white/5 rounded-lg p-6 text-center">
+                      <p className="text-blue-100/80">Nenhum indicador registrado ainda.</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card className="bg-white/10 backdrop-blur-sm border border-white/30 shadow-sm">
+                <CardHeader>
+                  <CardTitle className="text-lg font-medium text-white">Origem do Tráfego</CardTitle>
+                  <CardDescription className="text-blue-100/80">
+                    Detalhamento das fontes de tráfego
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {loading ? (
+                    <p className="text-blue-100/80">Carregando...</p>
+                  ) : dashboardData?.topSources && dashboardData.topSources.length > 0 ? (
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-12 text-xs text-blue-100/70 pb-2 border-b border-white/20">
+                        <div className="col-span-7">FONTE</div>
+                        <div className="col-span-3 text-right">LEADS</div>
+                        <div className="col-span-2 text-right">%</div>
+                      </div>
+                      {dashboardData.topSources.map((source, index) => (
+                        <div key={index} className="grid grid-cols-12 items-center py-3">
+                          <div className="col-span-7 flex items-center">
+                            <div 
+                              className="h-3 w-3 rounded-full mr-2" 
+                              style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                            ></div>
+                            <span className="text-white">{source.source || "Direto"}</span>
+                          </div>
+                          <div className="col-span-3 text-right">
+                            <Badge className="bg-white/10 text-white border-0">
+                              {source.count}
+                            </Badge>
+                          </div>
+                          <div className="col-span-2 text-right text-white">
+                            {Math.round((source.count / dashboardData.totalLeads) * 100)}%
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="bg-white/5 rounded-lg p-6 text-center">
+                      <p className="text-blue-100/80">Nenhuma origem registrada ainda.</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card className="bg-white/10 backdrop-blur-sm border border-white/30 shadow-sm">
+                <CardHeader>
+                  <CardTitle className="text-lg font-medium text-white">Estatísticas</CardTitle>
+                  <CardDescription className="text-blue-100/80">
+                    Métricas e indicadores de desempenho
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-6">
+                    <div>
+                      <p className="text-sm text-blue-100/80 mb-1">Taxa de Conversão</p>
+                      <div className="flex items-center">
+                        <div className="w-full bg-white/10 h-2 rounded-full mr-3">
+                          <div 
+                            className="bg-gradient-to-r from-green-400 to-emerald-300 h-2 rounded-full" 
+                            style={{ width: `${dashboardData?.conversionRate || 0}%` }}
+                          ></div>
+                        </div>
+                        <span className="text-sm text-white font-medium">{dashboardData?.conversionRate || 0}%</span>
+                      </div>
+                    </div>
+                    
+                    <Separator className="bg-white/20" />
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-sm text-blue-100/80 mb-1">Total de Cliques</p>
+                        <p className="text-xl font-medium text-white">{dashboardData?.totalClicks || 0}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-blue-100/80 mb-1">Eficiência</p>
+                        <p className="text-xl font-medium text-white">
+                          {dashboardData?.totalClicks 
+                            ? (dashboardData.totalLeads / dashboardData.totalClicks).toFixed(2) 
+                            : "0.00"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-blue-100/80 mb-1">Leads por Link</p>
+                        <p className="text-xl font-medium text-white">
+                          {dashboardData?.totalIndications 
+                            ? (dashboardData.totalLeads / dashboardData.totalIndications).toFixed(1) 
+                            : "0.0"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-blue-100/80 mb-1">Cliques por Link</p>
+                        <p className="text-xl font-medium text-white">
+                          {dashboardData?.totalIndications 
+                            ? (dashboardData.totalClicks / dashboardData.totalIndications).toFixed(1) 
+                            : "0.0"}
                         </p>
                       </div>
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="bg-gray-50 rounded-lg p-6 text-center">
-                  <p className="text-gray-500">Nenhum lead registrado ainda.</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="details" className="mt-0">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Card className="bg-white border border-gray-200 shadow-sm md:col-span-2">
-              <CardHeader>
-                <CardTitle className="text-lg font-medium text-gray-800">Todos os Indicadores</CardTitle>
-                <CardDescription className="text-gray-500">
-                  Detalhamento completo dos links de indicação
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {loading ? (
-                  <p className="text-gray-500">Carregando...</p>
-                ) : dashboardData?.topIndications && dashboardData.topIndications.length > 0 ? (
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-12 text-xs text-gray-500 pb-2 border-b border-gray-200">
-                      <div className="col-span-5">INDICADOR</div>
-                      <div className="col-span-4">LINK</div>
-                      <div className="col-span-2 text-right">LEADS</div>
-                      <div className="col-span-1 text-right">CLIQUES</div>
-                    </div>
-                    {dashboardData.topIndications.map((indication) => (
-                      <div key={indication.id} className="grid grid-cols-12 items-center py-3">
-                        <div className="col-span-5 text-gray-800 font-medium">{indication.name || indication.slug}</div>
-                        <div className="col-span-4 text-xs text-gray-500 truncate">
-                          med1.app/{session?.user?.name || '...'}/{indication.slug}
-                        </div>
-                        <div className="col-span-2 text-right">
-                          <Badge className="bg-blue-50 text-blue-600 border-blue-100">
-                            {indication._count.leads}
-                          </Badge>
-                        </div>
-                        <div className="col-span-1 text-right">
-                          <Badge variant="outline" className="border-gray-200 text-gray-500">
-                            {indication._count.events}
-                          </Badge>
-                        </div>
-                      </div>
-                    ))}
                   </div>
-                ) : (
-                  <div className="bg-gray-50 rounded-lg p-6 text-center">
-                    <p className="text-gray-500">Nenhum indicador registrado ainda.</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            <Card className="bg-white border border-gray-200 shadow-sm">
-              <CardHeader>
-                <CardTitle className="text-lg font-medium text-gray-800">Origem do Tráfego</CardTitle>
-                <CardDescription className="text-gray-500">
-                  Detalhamento das fontes de tráfego
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {loading ? (
-                  <p className="text-gray-500">Carregando...</p>
-                ) : dashboardData?.topSources && dashboardData.topSources.length > 0 ? (
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-12 text-xs text-gray-500 pb-2 border-b border-gray-200">
-                      <div className="col-span-7">FONTE</div>
-                      <div className="col-span-3 text-right">LEADS</div>
-                      <div className="col-span-2 text-right">%</div>
-                    </div>
-                    {dashboardData.topSources.map((source, index) => (
-                      <div key={index} className="grid grid-cols-12 items-center py-3">
-                        <div className="col-span-7 flex items-center">
-                          <div 
-                            className="h-3 w-3 rounded-full mr-2" 
-                            style={{ backgroundColor: COLORS[index % COLORS.length] }}
-                          ></div>
-                          <span className="text-gray-800">{source.source || "Direto"}</span>
-                        </div>
-                        <div className="col-span-3 text-right">
-                          <Badge className="bg-gray-100 text-gray-700 border-0">
-                            {source.count}
-                          </Badge>
-                        </div>
-                        <div className="col-span-2 text-right text-gray-500">
-                          {Math.round((source.count / dashboardData.totalLeads) * 100)}%
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="bg-gray-50 rounded-lg p-6 text-center">
-                    <p className="text-gray-500">Nenhuma origem registrada ainda.</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            <Card className="bg-white border border-gray-200 shadow-sm">
-              <CardHeader>
-                <CardTitle className="text-lg font-medium text-gray-800">Estatísticas</CardTitle>
-                <CardDescription className="text-gray-500">
-                  Métricas e indicadores de desempenho
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-6">
-                  <div>
-                    <p className="text-sm text-gray-500 mb-1">Taxa de Conversão</p>
-                    <div className="flex items-center">
-                      <div className="w-full bg-gray-100 h-2 rounded-full mr-3">
-                        <div 
-                          className="bg-gradient-to-r from-green-500 to-emerald-400 h-2 rounded-full" 
-                          style={{ width: `${dashboardData?.conversionRate || 0}%` }}
-                        ></div>
-                      </div>
-                      <span className="text-sm text-gray-700 font-medium">{dashboardData?.conversionRate || 0}%</span>
-                    </div>
-                  </div>
-                  
-                  <Separator className="bg-gray-200" />
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-sm text-gray-500 mb-1">Total de Cliques</p>
-                      <p className="text-xl font-medium text-gray-800">{dashboardData?.totalClicks || 0}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500 mb-1">Eficiência</p>
-                      <p className="text-xl font-medium text-gray-800">
-                        {dashboardData?.totalClicks 
-                          ? (dashboardData.totalLeads / dashboardData.totalClicks).toFixed(2) 
-                          : "0.00"}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500 mb-1">Leads por Link</p>
-                      <p className="text-xl font-medium text-gray-800">
-                        {dashboardData?.totalIndications 
-                          ? (dashboardData.totalLeads / dashboardData.totalIndications).toFixed(1) 
-                          : "0.0"}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500 mb-1">Cliques por Link</p>
-                      <p className="text-xl font-medium text-gray-800">
-                        {dashboardData?.totalIndications 
-                          ? (dashboardData.totalClicks / dashboardData.totalIndications).toFixed(1) 
-                          : "0.0"}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-      </Tabs>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
   );
 } 
