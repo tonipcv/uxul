@@ -29,13 +29,21 @@ export default function ProfilePage() {
   const [baseUrl, setBaseUrl] = useState('');
   const [isUploading, setIsUploading] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
-    setBaseUrl(window.location.origin);
+    // Marcador de renderização client-side para evitar problemas de hidratação
+    setIsClient(true);
+  }, []);
+
+  useEffect(() => {
+    if (isClient && typeof window !== 'undefined') {
+      setBaseUrl(window.location.origin);
+    }
     if (session?.user?.id) {
       fetchUserProfile();
     }
-  }, [session]);
+  }, [session, isClient]);
 
   const fetchUserProfile = async () => {
     if (!session?.user?.id) return;
@@ -133,13 +141,20 @@ export default function ProfilePage() {
   };
 
   const copyProfileLinkToClipboard = () => {
-    const profileUrl = `${baseUrl}/${slug}`;
-    navigator.clipboard.writeText(profileUrl);
-    toast({
-      title: "Link copiado",
-      description: "Seu link de perfil foi copiado para a área de transferência",
-    });
+    if (isClient && typeof navigator !== 'undefined' && navigator.clipboard) {
+      const profileUrl = `${baseUrl}/${slug}`;
+      navigator.clipboard.writeText(profileUrl);
+      toast({
+        title: "Link copiado",
+        description: "Seu link de perfil foi copiado para a área de transferência",
+      });
+    }
   };
+
+  // Não renderizar nada no servidor para evitar erros de hidratação
+  if (!isClient) {
+    return null;
+  }
 
   return (
     <div className="container max-w-3xl mx-auto p-4 pt-20 lg:pt-10">

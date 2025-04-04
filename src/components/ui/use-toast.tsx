@@ -12,13 +12,25 @@ interface ToastProps {
   duration?: number;
 }
 
+// Contador sequencial para gerar IDs determinísticos
+let idCounter = 0;
+
+// Para reiniciar contador periodicamente
+if (typeof window !== 'undefined') {
+  // Reiniciar contador a cada hora para evitar crescimento infinito
+  setInterval(() => {
+    idCounter = 0;
+  }, 60 * 60 * 1000);
+}
+
 const toastState = {
   toasts: [] as ToastProps[],
   listeners: [] as Function[],
 };
 
 export function toast(props: ToastProps) {
-  const id = Math.random().toString(36).substring(2, 9);
+  // Usar um ID sequencial, que é determinístico
+  const id = `toast-${++idCounter}`;
   const toast = {
     id,
     ...props,
@@ -53,14 +65,21 @@ export function useToast() {
 
 export default function Toaster() {
   const toasts = useToast();
+  const [isClient, setIsClient] = useState(false);
   
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+  
+  // Não renderizar no servidor para evitar erros de hidratação
+  if (!isClient) return null;
   if (!toasts.length) return null;
   
   return (
     <div className="fixed bottom-0 right-0 p-4 z-50 flex flex-col gap-2">
-      {toasts.map((toast, index) => (
+      {toasts.map((toast) => (
         <div 
-          key={index} 
+          key={toast.id} 
           className={`px-4 py-3 rounded-md shadow-lg max-w-sm transform transition-all duration-300 ease-in-out translate-x-0 ${
             toast.variant === 'destructive' 
               ? 'bg-red-600 text-white' 

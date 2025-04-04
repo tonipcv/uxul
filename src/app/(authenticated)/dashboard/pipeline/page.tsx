@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { DragDropContext, Droppable, Draggable, DroppableProvided, DraggableProvided, DropResult } from "@hello-pangea/dnd";
-import { PhoneIcon, BriefcaseIcon, CalendarIcon, PencilIcon, XMarkIcon, LinkIcon } from "@heroicons/react/24/outline";
+import { PhoneIcon, CalendarIcon, PencilIcon, LinkIcon, ArrowPathIcon } from "@heroicons/react/24/outline";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -28,11 +28,11 @@ interface Lead {
 }
 
 const columns = [
-  { id: 'novos', title: 'Novos', color: 'bg-blue-500/20 border-blue-300/30' },
-  { id: 'agendados', title: 'Agendados', color: 'bg-blue-600/20 border-blue-400/30' },
-  { id: 'compareceram', title: 'Compareceram', color: 'bg-blue-700/20 border-blue-500/30' },
-  { id: 'fechados', title: 'Fechados', color: 'bg-blue-800/20 border-blue-600/30' },
-  { id: 'naoVieram', title: 'Não vieram', color: 'bg-red-500/20 border-red-300/30' }
+  { id: 'novos', title: 'Novos' },
+  { id: 'agendados', title: 'Agendados' },
+  { id: 'compareceram', title: 'Compareceram' },
+  { id: 'fechados', title: 'Fechados' },
+  { id: 'naoVieram', title: 'Não vieram' }
 ];
 
 const statusMap: { [key: string]: string } = {
@@ -49,23 +49,49 @@ export default function PipelinePage() {
   const [loading, setLoading] = useState(true);
   const [editingLead, setEditingLead] = useState<Lead | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [dashboardData, setDashboardData] = useState<{ 
+    totalLeads: number;
+    totalIndications: number;
+  } | null>(null);
 
   useEffect(() => {
     if (session?.user?.id) {
       fetchLeads();
+      fetchDashboardData();
     }
   }, [session]);
+
+  const fetchDashboardData = async () => {
+    try {
+      const response = await fetch('/api/dashboard');
+      if (response.ok) {
+        const data = await response.json();
+        setDashboardData(data);
+      }
+    } catch (error) {
+      console.error('Erro ao buscar dados do dashboard:', error);
+    }
+  };
 
   const fetchLeads = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/leads?userId=${session?.user?.id}`);
+      const response = await fetch(`/api/leads`);
       if (response.ok) {
-        const data = await response.json();
-        setLeads(data);
+        const result = await response.json();
+        if (result.data && Array.isArray(result.data)) {
+          setLeads(result.data);
+        } else if (Array.isArray(result)) {
+          setLeads(result);
+        } else {
+          setLeads([]);
+        }
+      } else {
+        setLeads([]);
       }
     } catch (error) {
       console.error('Erro ao buscar leads:', error);
+      setLeads([]);
     } finally {
       setLoading(false);
     }
@@ -78,41 +104,28 @@ export default function PipelinePage() {
     if (source.droppableId === destination.droppableId) return;
 
     const newStatus = statusMap[destination.droppableId];
-    const oldStatus = statusMap[source.droppableId];
-    
-    // Encontra o lead que está sendo movido
     const lead = leads.find(l => l.id === draggableId);
     if (!lead) return;
 
-    // Cria uma cópia do estado atual para reverter se necessário
-    const previousLeads = [...leads];
-    
-    try {
-      // Atualiza o estado local otimisticamente
-      setLeads(leads.map(l => 
-        l.id === draggableId ? { ...l, status: newStatus } : l
-      ));
+    // Atualiza o estado local imediatamente
+    setLeads(leads.map(l => 
+      l.id === draggableId ? { ...l, status: newStatus } : l
+    ));
 
-      const response = await fetch(`/api/leads?leadId=${draggableId}`, {
+    // Envia atualização para o servidor
+    try {
+      await fetch(`/api/leads?leadId=${draggableId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus })
       });
-
-      if (!response.ok) {
-        // Se a API falhar, reverte para o estado anterior
-        setLeads(previousLeads);
-        throw new Error('Erro ao atualizar status');
-      }
-
-      toast({
-        title: "Lead atualizado",
-        description: `Status alterado de ${oldStatus} para ${newStatus}`,
-      });
+      
+      // Atualiza os dados do dashboard
+      fetchDashboardData();
     } catch (error) {
       console.error('Erro ao atualizar lead:', error);
-      // Reverte para o estado anterior em caso de erro
-      setLeads(previousLeads);
+      // Em caso de erro, apenas exibe um toast - não reverte o estado
+      // para evitar efeitos visuais disruptivos
       toast({
         title: "Erro",
         description: "Não foi possível atualizar o status",
@@ -122,16 +135,28 @@ export default function PipelinePage() {
   };
 
   const getColumnLeads = (columnId: string) => {
-    return leads.filter(lead => {
-      if (columnId === 'novos') {
-        return lead.status === 'Novo' || !lead.status;
-      }
-      return lead.status === statusMap[columnId];
-    });
+    // Garante que leads é sempre um array
+    if (!Array.isArray(leads)) return [];
+    
+    try {
+      return leads.filter(lead => {
+        if (columnId === 'novos') {
+          return lead.status === 'Novo' || !lead.status;
+        }
+        return lead.status === statusMap[columnId];
+      });
+    } catch (error) {
+      console.error('Erro ao filtrar leads para a coluna:', columnId, error);
+      return [];
+    }
   };
 
   const handleEditLead = async (updatedLead: Lead) => {
     try {
+      if (!updatedLead || !updatedLead.id) {
+        throw new Error('Lead inválido para atualização');
+      }
+      
       const response = await fetch(`/api/leads?leadId=${updatedLead.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -139,24 +164,34 @@ export default function PipelinePage() {
       });
 
       if (!response.ok) {
-        throw new Error('Erro ao atualizar lead');
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.error || `Erro ao atualizar lead: ${response.status}`);
       }
 
-      setLeads(leads.map(lead => 
-        lead.id === updatedLead.id ? updatedLead : lead
-      ));
+      // Atualiza o lead na lista local
+      if (Array.isArray(leads)) {
+        const updatedLeads = leads.map(lead => 
+          lead.id === updatedLead.id ? updatedLead : lead
+        );
+        setLeads(updatedLeads);
+      }
 
       toast({
         title: "Lead atualizado",
         description: "As informações foram atualizadas com sucesso",
       });
 
+      // Fecha o modal de edição
       setIsEditModalOpen(false);
+      setEditingLead(null);
+      
+      // Atualiza dados do dashboard
+      fetchDashboardData();
     } catch (error) {
       console.error('Erro ao atualizar lead:', error);
       toast({
         title: "Erro",
-        description: "Não foi possível atualizar o lead",
+        description: error instanceof Error ? error.message : "Não foi possível atualizar o lead",
         variant: "destructive"
       });
     }
@@ -172,97 +207,120 @@ export default function PipelinePage() {
 
   return (
     <DragDropContext onDragEnd={handleDragEnd}>
-      <div className="flex flex-col">
+      <div className="flex flex-col bg-blue-50">
         {/* Header */}
-        <div className="px-6 pt-2 pb-4">
-          <h1 className="text-xl font-medium text-white">Pipeline</h1>
+        <div className="px-6 pt-4 pb-4 flex items-center justify-between bg-white border-b border-gray-200">
+          <div>
+            <h1 className="text-xl font-medium text-gray-800">Pipeline</h1>
+            <p className="text-sm text-gray-500">Total de leads: {dashboardData?.totalLeads || 0}</p>
+          </div>
+          <Button
+            onClick={() => {
+              fetchLeads();
+              fetchDashboardData();
+            }}
+            variant="outline"
+            size="sm"
+            className="flex items-center gap-1.5 h-9 px-4 bg-white border-blue-300 text-blue-600 hover:bg-blue-50"
+          >
+            <ArrowPathIcon className="h-4 w-4" />
+            <span>Atualizar</span>
+          </Button>
         </div>
 
         {/* Pipeline Content */}
         <div className="flex flex-col overflow-x-hidden overflow-y-hidden">
           {/* Mobile Column Selector */}
-          <div className="md:hidden px-6 py-3 bg-white/10 backdrop-blur-sm border-y border-blue-500/30">
-            <div className="flex overflow-x-auto gap-3 -mx-6 px-6 pb-1">
+          <div className="md:hidden px-3 py-1.5 bg-white shadow-sm border-b border-gray-200">
+            <div className="flex overflow-x-auto gap-1.5 -mx-3 px-3 pb-0">
               {columns.map(column => (
                 <div 
                   key={column.id} 
-                  className={`flex-none px-4 py-2 rounded-full ${column.color} backdrop-blur-sm border shadow-sm`}
+                  className="flex-none px-2 py-0.5 rounded-full bg-gray-50 border border-gray-200"
                 >
-                  <span className="text-sm font-medium text-white">{column.title}</span>
-                  <span className="ml-2 text-xs text-blue-100/80">{getColumnLeads(column.id).length}</span>
+                  <span className="text-xs font-medium text-gray-700">{column.title}</span>
+                  <span className="ml-1 text-[10px] bg-white rounded-full px-1 text-gray-600">{getColumnLeads(column.id).length}</span>
                 </div>
               ))}
             </div>
           </div>
 
           {/* Columns Layout */}
-          <div className="overflow-x-auto pb-2">
-            <div className="flex gap-6 px-6 py-4 min-w-full md:min-w-0 min-h-[70vh]">
+          <div className="overflow-x-auto pb-1 bg-blue-50 p-1.5">
+            <div className="flex gap-3 px-1.5 py-2 min-w-full md:min-w-0 min-h-[75vh]">
               {columns.map(column => (
                 <div 
                   key={column.id} 
-                  className="flex-none md:flex-1 w-[85vw] md:w-auto md:min-w-[280px]"
+                  className="flex-none md:flex-1 w-[80vw] md:w-auto md:min-w-[280px]"
                 >
-                  <div className={`rounded-xl ${column.color} backdrop-blur-sm border shadow-sm flex flex-col h-full`}>
-                    <div className="flex items-center justify-between px-4 py-3 border-b border-inherit bg-white/5">
-                      <h3 className="font-medium text-white">{column.title}</h3>
-                      <span className="text-sm text-blue-100/80">{getColumnLeads(column.id).length}</span>
+                  <div className="rounded-lg bg-white border border-gray-200 shadow-sm flex flex-col h-full">
+                    <div className="flex items-center justify-between px-3 py-2 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-white">
+                      <h3 className="font-medium text-gray-800 text-sm">{column.title}</h3>
+                      <span className="text-xs bg-blue-100 rounded-full px-1.5 py-0.5 text-blue-800 font-medium">{getColumnLeads(column.id).length}</span>
                     </div>
                     
                     <Droppable droppableId={column.id}>
-                      {(provided: DroppableProvided) => (
+                      {(provided: DroppableProvided, snapshot) => (
                         <div
                           ref={provided.innerRef}
                           {...provided.droppableProps}
-                          className="flex-1 overflow-y-auto p-4 space-y-3 min-h-[200px]"
+                          className="flex-1 overflow-y-auto p-2 space-y-2 min-h-[200px] bg-blue-50/50"
                         >
                           {getColumnLeads(column.id).map((lead, index) => (
                             <Draggable key={lead.id} draggableId={lead.id} index={index}>
-                              {(provided: DraggableProvided) => (
+                              {(provided: DraggableProvided, snapshot) => (
                                 <div
                                   ref={provided.innerRef}
                                   {...provided.draggableProps}
                                   {...provided.dragHandleProps}
-                                  className="group bg-white/10 backdrop-blur-sm rounded-lg shadow-sm border border-white/20 p-4 touch-manipulation hover:border-blue-300/40 transition-all relative"
+                                  className={`group bg-white rounded-md shadow-sm border border-gray-200 p-3 touch-manipulation ${snapshot.isDragging ? 'border-blue-300 shadow-md' : ''}`}
+                                  style={{
+                                    ...provided.draggableProps.style
+                                  }}
                                 >
                                   {/* Botões flutuantes que aparecem no hover */}
-                                  <div className="absolute right-2 top-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <div className="absolute right-1.5 top-1.5 flex gap-1">
                                     <Button
                                       size="sm"
                                       variant="ghost"
-                                      onClick={() => {/* TODO: Implement quick schedule */}}
-                                      className="h-8 w-8 p-0 hover:bg-blue-600/30 text-blue-200"
+                                      onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                      }}
+                                      className="h-6 w-6 p-0 hover:bg-blue-50 text-blue-600"
                                     >
-                                      <CalendarIcon className="h-4 w-4" />
+                                      <CalendarIcon className="h-3.5 w-3.5" />
                                     </Button>
                                     <Button
                                       size="sm"
                                       variant="ghost"
-                                      onClick={() => {
+                                      onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
                                         setEditingLead(lead);
                                         setIsEditModalOpen(true);
                                       }}
-                                      className="h-8 w-8 p-0 hover:bg-blue-600/30 text-blue-200"
+                                      className="h-6 w-6 p-0 hover:bg-blue-50 text-blue-600"
                                     >
-                                      <PencilIcon className="h-4 w-4" />
+                                      <PencilIcon className="h-3.5 w-3.5" />
                                     </Button>
                                   </div>
 
                                   {/* Informações do Lead */}
-                                  <div className="space-y-3">
+                                  <div className="space-y-2">
                                     <div>
-                                      <h4 className="font-medium text-white mb-1 truncate" title={lead.name}>{lead.name}</h4>
-                                      <div className="flex items-center gap-2 text-sm text-blue-100/80">
-                                        <PhoneIcon className="flex-shrink-0 h-3.5 w-3.5" />
+                                      <h4 className="font-medium text-gray-800 text-sm mb-0.5 truncate" title={lead.name}>{lead.name}</h4>
+                                      <div className="flex items-center gap-1.5 text-xs text-gray-600">
+                                        <PhoneIcon className="flex-shrink-0 h-3 w-3" />
                                         <span className="truncate">{lead.phone}</span>
                                       </div>
                                     </div>
 
                                     {/* Adicionar um indicador de origem/indicação na parte superior do card */}
                                     {(lead.indication?.name || lead.source) && (
-                                      <div className="flex items-center gap-1.5 bg-blue-600/30 px-2 py-1 rounded-md">
-                                        <LinkIcon className="h-3.5 w-3.5 text-blue-200" />
-                                        <span className="text-xs font-medium text-blue-100 truncate">
+                                      <div className="flex items-center gap-1 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100">
+                                        <LinkIcon className="h-3 w-3 text-blue-500" />
+                                        <span className="text-[10px] font-medium text-blue-700 truncate">
                                           {lead.indication?.name || (lead.source?.includes('/') 
                                             ? lead.source.split('/').filter(Boolean)[1] 
                                             : lead.source)}
@@ -270,18 +328,18 @@ export default function PipelinePage() {
                                       </div>
                                     )}
 
-                                    <div className="pt-2 border-t border-blue-500/20">
-                                      <div className="grid grid-cols-2 gap-3 text-sm">
+                                    <div className="pt-1.5 border-t border-gray-200">
+                                      <div className="grid grid-cols-2 gap-2 text-xs">
                                         {lead.interest && (
                                           <div>
-                                            <p className="text-xs font-medium text-blue-100/60 mb-0.5">Interesse</p>
-                                            <p className="text-blue-100 truncate" title={lead.interest}>{lead.interest}</p>
+                                            <p className="text-[10px] font-medium text-gray-500 mb-0">Interesse</p>
+                                            <p className="text-gray-900 truncate" title={lead.interest}>{lead.interest}</p>
                                           </div>
                                         )}
                                         {lead.appointmentDate && (
                                           <div>
-                                            <p className="text-xs font-medium text-blue-100/60 mb-0.5">Agendamento</p>
-                                            <p className="text-blue-100 truncate">
+                                            <p className="text-[10px] font-medium text-gray-500 mb-0">Agendamento</p>
+                                            <p className="text-gray-900 truncate">
                                               {new Date(lead.appointmentDate).toLocaleDateString('pt-BR', {
                                                 day: '2-digit',
                                                 month: '2-digit',
@@ -293,8 +351,8 @@ export default function PipelinePage() {
                                         )}
                                         {lead.createdAt && (
                                           <div>
-                                            <p className="text-xs font-medium text-blue-100/60 mb-0.5">Criado em</p>
-                                            <p className="text-blue-100 truncate">
+                                            <p className="text-[10px] font-medium text-gray-500 mb-0">Criado em</p>
+                                            <p className="text-gray-900 truncate">
                                               {new Date(lead.createdAt).toLocaleDateString('pt-BR', {
                                                 day: '2-digit',
                                                 month: '2-digit'
@@ -322,9 +380,9 @@ export default function PipelinePage() {
 
         {/* Modal de Edição */}
         <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-          <DialogContent className="sm:max-w-[425px] bg-blue-800/90 backdrop-blur-sm p-0 rounded-lg border border-white/30">
-            <DialogHeader className="p-4 border-b border-blue-500/30">
-              <DialogTitle className="text-lg font-medium text-white">Editar Lead</DialogTitle>
+          <DialogContent className="sm:max-w-[425px] bg-white p-0 rounded-lg border border-gray-200 shadow-lg">
+            <DialogHeader className="p-4 border-b border-gray-200 bg-gray-50">
+              <DialogTitle className="text-lg font-medium text-gray-800">Editar Lead</DialogTitle>
             </DialogHeader>
             {editingLead && (
               <form onSubmit={(e) => {
@@ -333,72 +391,72 @@ export default function PipelinePage() {
                 handleEditLead(editingLead);
               }} className="space-y-4 p-4">
                 <div className="space-y-2">
-                  <Label htmlFor="name" className="text-sm text-blue-100">Nome</Label>
+                  <Label htmlFor="name" className="text-sm text-gray-700">Nome</Label>
                   <Input
                     id="name"
                     value={editingLead.name}
                     onChange={(e) => setEditingLead({ ...editingLead, name: e.target.value })}
-                    className="w-full h-9 bg-white/10 backdrop-blur-sm border-white/30 text-white"
+                    className="w-full h-9 bg-white border-gray-300 text-gray-900"
                   />
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="phone" className="text-sm text-blue-100">Telefone</Label>
+                  <Label htmlFor="phone" className="text-sm text-gray-700">Telefone</Label>
                   <Input
                     id="phone"
                     value={editingLead.phone}
                     onChange={(e) => setEditingLead({ ...editingLead, phone: e.target.value })}
-                    className="w-full h-9 bg-white/10 backdrop-blur-sm border-white/30 text-white"
+                    className="w-full h-9 bg-white border-gray-300 text-gray-900"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="interest" className="text-sm text-blue-100">Interesse</Label>
+                  <Label htmlFor="interest" className="text-sm text-gray-700">Interesse</Label>
                   <Input
                     id="interest"
                     value={editingLead.interest || ''}
                     onChange={(e) => setEditingLead({ ...editingLead, interest: e.target.value })}
-                    className="w-full h-9 bg-white/10 backdrop-blur-sm border-white/30 text-white"
+                    className="w-full h-9 bg-white border-gray-300 text-gray-900"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="status" className="text-sm text-blue-100">Status</Label>
+                  <Label htmlFor="status" className="text-sm text-gray-700">Status</Label>
                   <Select 
                     value={editingLead.status || 'Novo'}
                     onValueChange={(value) => setEditingLead({ ...editingLead, status: value })}
                   >
-                    <SelectTrigger className="w-full h-9 bg-white/10 backdrop-blur-sm border-white/30 text-white">
+                    <SelectTrigger className="w-full h-9 bg-white border-gray-300 text-gray-900">
                       <SelectValue placeholder="Selecione o status" />
                     </SelectTrigger>
-                    <SelectContent className="bg-blue-800/80 backdrop-blur-sm border border-blue-500/30 text-white">
-                      <SelectItem value="Novo" className="text-blue-100 focus:bg-blue-700/50">Novo</SelectItem>
-                      <SelectItem value="Agendado" className="text-blue-100 focus:bg-blue-700/50">Agendado</SelectItem>
-                      <SelectItem value="Compareceu" className="text-blue-100 focus:bg-blue-700/50">Compareceu</SelectItem>
-                      <SelectItem value="Fechado" className="text-blue-100 focus:bg-blue-700/50">Fechado</SelectItem>
-                      <SelectItem value="Não veio" className="text-blue-100 focus:bg-blue-700/50">Não veio</SelectItem>
+                    <SelectContent className="bg-white border border-gray-200 text-gray-900">
+                      <SelectItem value="Novo" className="text-gray-700 focus:bg-blue-50">Novo</SelectItem>
+                      <SelectItem value="Agendado" className="text-gray-700 focus:bg-blue-50">Agendado</SelectItem>
+                      <SelectItem value="Compareceu" className="text-gray-700 focus:bg-blue-50">Compareceu</SelectItem>
+                      <SelectItem value="Fechado" className="text-gray-700 focus:bg-blue-50">Fechado</SelectItem>
+                      <SelectItem value="Não veio" className="text-gray-700 focus:bg-blue-50">Não veio</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="appointmentDate" className="text-sm text-blue-100">Data do Agendamento</Label>
+                  <Label htmlFor="appointmentDate" className="text-sm text-gray-700">Data do Agendamento</Label>
                   <Input
                     id="appointmentDate"
                     type="datetime-local"
                     value={editingLead.appointmentDate || ''}
                     onChange={(e) => setEditingLead({ ...editingLead, appointmentDate: e.target.value })}
-                    className="w-full h-9 bg-white/10 backdrop-blur-sm border-white/30 text-white"
+                    className="w-full h-9 bg-white border-gray-300 text-gray-900"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="source" className="text-sm text-blue-100">Origem</Label>
+                  <Label htmlFor="source" className="text-sm text-gray-700">Origem</Label>
                   <Input
                     id="source"
                     value={editingLead.source || ''}
                     onChange={(e) => setEditingLead({ ...editingLead, source: e.target.value })}
-                    className="w-full h-9 bg-white/10 backdrop-blur-sm border-white/30 text-white"
+                    className="w-full h-9 bg-white border-gray-300 text-gray-900"
                   />
                 </div>
 
@@ -407,13 +465,13 @@ export default function PipelinePage() {
                     type="button"
                     variant="outline"
                     onClick={() => setIsEditModalOpen(false)}
-                    className="h-9 px-4 bg-blue-700/30 border-blue-500/30 text-blue-100 hover:bg-blue-600/40"
+                    className="h-9 px-4 bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
                   >
                     Cancelar
                   </Button>
                   <Button 
                     type="submit"
-                    className="h-9 px-4 bg-white text-blue-700 hover:bg-white/90 border-none"
+                    className="h-9 px-4 bg-blue-600 text-white hover:bg-blue-700 border-none"
                   >
                     Salvar alterações
                   </Button>

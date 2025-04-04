@@ -74,10 +74,12 @@ export default function LeadsPage() {
   const [statusEditLead, setStatusEditLead] = useState<Lead | null>(null);
   const [isStatusMenuOpen, setIsStatusMenuOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("all");
+  const [dashboardData, setDashboardData] = useState<{ totalLeads: number } | null>(null);
 
   useEffect(() => {
     if (session?.user?.id) {
       fetchLeads();
+      fetchDashboardData();
     }
   }, [session]);
 
@@ -104,16 +106,39 @@ export default function LeadsPage() {
     }
   }, [editingLead]);
 
+  const fetchDashboardData = async () => {
+    try {
+      const response = await fetch('/api/dashboard');
+      if (response.ok) {
+        const data = await response.json();
+        setDashboardData(data);
+      }
+    } catch (error) {
+      console.error('Erro ao buscar dados do dashboard:', error);
+    }
+  };
+
   const fetchLeads = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/leads?userId=${session?.user?.id}`);
+      const response = await fetch(`/api/leads`);
       if (response.ok) {
-        const data = await response.json();
-        setLeads(data);
+        const result = await response.json();
+        // Verificar se data existe na resposta e é um array
+        if (result.data && Array.isArray(result.data)) {
+          setLeads(result.data);
+        } else if (Array.isArray(result)) {
+          // Fallback para o caso de a API retornar diretamente um array
+          setLeads(result);
+        } else {
+          setLeads([]);
+        }
+      } else {
+        setLeads([]);
       }
     } catch (error) {
       console.error('Erro ao buscar leads:', error);
+      setLeads([]);
     } finally {
       setLoading(false);
     }
@@ -363,17 +388,19 @@ export default function LeadsPage() {
 
   // Calcula estatísticas de leads
   const leadStats = {
-    total: leads.length,
-    novos: leads.filter(lead => lead.status === 'Novo' || !lead.status).length,
-    emContato: leads.filter(lead => lead.status === 'Em contato').length,
-    agendados: leads.filter(lead => lead.status === 'Agendado').length,
-    compareceram: leads.filter(lead => lead.status === 'Compareceu').length,
-    naoVieram: leads.filter(lead => lead.status === 'Não veio').length,
-    fechados: leads.filter(lead => lead.status === 'Fechado').length,
+    total: dashboardData?.totalLeads || 0,
+    novos: Array.isArray(leads) ? leads.filter(lead => lead.status === 'Novo' || !lead.status).length : 0,
+    emContato: Array.isArray(leads) ? leads.filter(lead => lead.status === 'Em contato').length : 0,
+    agendados: Array.isArray(leads) ? leads.filter(lead => lead.status === 'Agendado').length : 0,
+    compareceram: Array.isArray(leads) ? leads.filter(lead => lead.status === 'Compareceu').length : 0,
+    naoVieram: Array.isArray(leads) ? leads.filter(lead => lead.status === 'Não veio').length : 0,
+    fechados: Array.isArray(leads) ? leads.filter(lead => lead.status === 'Fechado').length : 0,
   };
 
   // Filtra leads por status e termo de busca
   const getFilteredLeads = () => {
+    if (!Array.isArray(leads)) return [];
+    
     let filteredByStatus = leads;
     
     if (activeTab !== 'all') {
@@ -401,7 +428,7 @@ export default function LeadsPage() {
     );
   };
 
-  const filteredLeads = getFilteredLeads();
+  const filteredLeads = Array.isArray(leads) ? getFilteredLeads() : [];
 
   return (
     <div className="container mx-auto p-4">
@@ -500,7 +527,7 @@ export default function LeadsPage() {
                   <div className="animate-spin h-6 w-6 border-2 border-blue-300 border-t-transparent rounded-full mx-auto mb-2" />
                   <p className="text-sm text-blue-100/80">Carregando...</p>
                 </div>
-              ) : getFilteredLeads().length > 0 ? (
+              ) : Array.isArray(leads) && getFilteredLeads().length > 0 ? (
                 <>
                   <div className="md:hidden">
                     {getFilteredLeads().map((lead) => (

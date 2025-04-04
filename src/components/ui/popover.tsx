@@ -122,20 +122,32 @@ interface PopoverContentProps extends React.HTMLAttributes<HTMLDivElement> {
   sideOffset?: number
 }
 
-const PopoverContent = React.forwardRef<HTMLDivElement, PopoverContentProps>(
-  ({ className, children, align = "center", sideOffset = 4, ...props }, ref) => {
-    const { open, anchor, setOpen } = usePopoverContext()
-    const [position, setPosition] = React.useState({ top: 0, left: 0 })
+const PopoverContent = React.forwardRef<
+  HTMLDivElement,
+  PopoverContentProps
+>(
+  (
+    { className, align = "center", sideOffset = 4, children, ...props },
+    ref
+  ) => {
+    const { open, setOpen, anchor } = usePopoverContext()
     const contentRef = React.useRef<HTMLDivElement | null>(null)
+    const [position, setPosition] = React.useState({ top: 0, left: 0 })
+    const [isClient, setIsClient] = React.useState(false)
 
     React.useEffect(() => {
-      if (open && anchor.current && contentRef.current) {
+      setIsClient(true)
+    }, [])
+
+    React.useEffect(() => {
+      if (open && anchor.current && contentRef.current && isClient) {
         const anchorRect = anchor.current.getBoundingClientRect()
         const contentRect = contentRef.current.getBoundingClientRect()
         
+        // Position based on alignment
         let top = anchorRect.bottom + sideOffset
         let left = anchorRect.left
-
+        
         if (align === "center") {
           left = anchorRect.left + (anchorRect.width - contentRect.width) / 2
         } else if (align === "end") {
@@ -143,15 +155,17 @@ const PopoverContent = React.forwardRef<HTMLDivElement, PopoverContentProps>(
         }
 
         // Ensure content stays within viewport
-        const viewportWidth = window.innerWidth
-        if (left < 0) left = 0
-        if (left + contentRect.width > viewportWidth) {
-          left = viewportWidth - contentRect.width
+        if (isClient && typeof window !== 'undefined') {
+          const viewportWidth = window.innerWidth
+          if (left < 0) left = 0
+          if (left + contentRect.width > viewportWidth) {
+            left = viewportWidth - contentRect.width
+          }
         }
 
         setPosition({ top, left })
       }
-    }, [open, align, sideOffset])
+    }, [open, align, sideOffset, isClient])
 
     React.useEffect(() => {
       const handleClickOutside = (event: MouseEvent) => {

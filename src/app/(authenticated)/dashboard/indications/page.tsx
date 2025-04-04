@@ -25,12 +25,20 @@ interface IndicationCount {
   leads: number;
 }
 
+interface IndicationStats {
+  clicks: number;
+  leads: number;
+  conversionRate: number;
+  period: string;
+}
+
 interface Indication {
   id: string;
   slug: string;
   name?: string;
   createdAt: string;
-  _count: IndicationCount;
+  _count?: IndicationCount;
+  stats?: IndicationStats;
 }
 
 export default function IndicationsPage() {
@@ -44,15 +52,29 @@ export default function IndicationsPage() {
   const [userSlug, setUserSlug] = useState('');
   const [totalLeads, setTotalLeads] = useState(0);
   const [totalClicks, setTotalClicks] = useState(0);
+  const [isClient, setIsClient] = useState(false);
+  const [dashboardData, setDashboardData] = useState<{ 
+    totalLeads: number;
+    totalIndications: number;
+    totalClicks: number;
+  } | null>(null);
 
   useEffect(() => {
-    setBaseUrl(window.location.origin);
+    // Marcador de renderização client-side para evitar problemas de hidratação
+    setIsClient(true);
+  }, []);
+
+  useEffect(() => {
+    if (isClient && typeof window !== 'undefined') {
+      setBaseUrl(window.location.origin);
+    }
     
     if (session?.user?.id) {
       fetchIndications();
       fetchUserProfile();
+      fetchDashboardData();
     }
-  }, [session]);
+  }, [session, isClient]);
 
   const fetchUserProfile = async () => {
     if (!session?.user?.id) return;
@@ -74,23 +96,30 @@ export default function IndicationsPage() {
     if (!session?.user?.id) return;
 
     try {
-      const response = await fetch(`/api/indications?userId=${session.user.id}`);
+      const response = await fetch(`/api/indications?withStats=true`);
       if (response.ok) {
         const data = await response.json();
         setIndications(data);
         
-        // Calcular totais
-        let leads = 0;
-        let clicks = 0;
-        data.forEach((ind: Indication) => {
-          leads += ind._count.leads;
-          clicks += ind._count.events;
-        });
-        setTotalLeads(leads);
-        setTotalClicks(clicks);
+        // Não calcular totais aqui, já que usamos os dados do dashboard
       }
     } catch (error) {
       console.error('Erro ao buscar indicações:', error);
+    }
+  };
+
+  const fetchDashboardData = async () => {
+    try {
+      const response = await fetch('/api/dashboard');
+      if (response.ok) {
+        const data = await response.json();
+        setDashboardData(data);
+        // Atualizar os totais a partir do dashboard
+        setTotalLeads(data.totalLeads || 0);
+        setTotalClicks(data.totalClicks || 0);
+      }
+    } catch (error) {
+      console.error('Erro ao buscar dados do dashboard:', error);
     }
   };
 
@@ -190,19 +219,29 @@ export default function IndicationsPage() {
   };
 
   const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    toast({
-      title: "Link copiado",
-      description: "Link copiado para a área de transferência",
-    });
+    if (isClient && typeof navigator !== 'undefined' && navigator.clipboard) {
+      navigator.clipboard.writeText(text);
+      toast({
+        title: "Link copiado",
+        description: "Link copiado para a área de transferência",
+      });
+    }
   };
 
   const shareOnWhatsApp = (link: string) => {
     // Adicionar UTMs ao compartilhar via WhatsApp para rastreamento
     const linkWithUtm = `${link}?utm_source=whatsapp&utm_medium=share&utm_campaign=indication`;
-    window.open(`https://wa.me/?text=Olha esse link: ${encodeURIComponent(linkWithUtm)}`, '_blank');
+    // Garantir que só execute no cliente
+    if (isClient && typeof window !== 'undefined') {
+      window.open(`https://wa.me/?text=Olha esse link: ${encodeURIComponent(linkWithUtm)}`, '_blank');
+    }
   };
 
+  // Não renderizar nada no servidor para evitar erros de hidratação
+  if (!isClient) {
+    return null;
+  }
+  
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8">
@@ -392,9 +431,21 @@ export default function IndicationsPage() {
                 <div className="flex flex-col md:flex-row gap-3">
                   <div className="flex items-center gap-2 text-sm text-blue-100/80">
                     <UserIcon className="h-4 w-4" />
-                    <span>{indication._count.leads} leads</span>
+                    <span>
+                      {indication.stats 
+                        ? indication.stats.leads 
+                        : (indication._count && indication._count.leads !== undefined 
+                          ? indication._count.leads 
+                          : 0)} leads
+                    </span>
                     <ArrowTrendingUpIcon className="h-4 w-4 ml-2" />
-                    <span>{indication._count.events} cliques</span>
+                    <span>
+                      {indication.stats 
+                        ? indication.stats.clicks 
+                        : (indication._count && indication._count.events !== undefined 
+                          ? indication._count.events 
+                          : 0)} cliques
+                    </span>
                   </div>
                   
                   <div className="flex gap-2">
