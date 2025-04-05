@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Logo } from '@/components/ui/logo';
@@ -22,7 +22,40 @@ export default function InsideSalesPage() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
+  const [timeRemaining, setTimeRemaining] = useState(3 * 60); // 3 minutes in seconds
+  const [showCountdown, setShowCountdown] = useState(false);
   const router = useRouter();
+
+  // Countdown timer effect
+  useEffect(() => {
+    if (!showCountdown || timeRemaining <= 0) return;
+    
+    const interval = setInterval(() => {
+      setTimeRemaining(prev => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    
+    return () => clearInterval(interval);
+  }, [showCountdown, timeRemaining]);
+
+  // Format time as MM:SS
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const toggleCountdown = () => {
+    if (!showCountdown) {
+      setTimeRemaining(3 * 60); // Reset to 3 minutes
+    }
+    setShowCountdown(!showCountdown);
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -518,6 +551,24 @@ export default function InsideSalesPage() {
         <span className="mr-1">Sair</span>
         <XMarkIcon className="h-4 w-4" />
       </button>
+
+      {/* Tempo restante - agora em um botão para toggle */}
+      <button 
+        onClick={toggleCountdown}
+        className="absolute top-4 left-4 text-white/60 hover:text-white transition-colors flex items-center text-xs bg-white/10 backdrop-blur-sm px-2 py-1 rounded-full"
+      >
+        <CalendarIcon className="h-3 w-3 mr-1" />
+        <span>Timer</span>
+      </button>
+
+      {/* Countdown display */}
+      {showCountdown && (
+        <div className="absolute top-12 left-4 text-white/80 flex items-center text-xs bg-white/10 backdrop-blur-sm px-2 py-1 rounded-full">
+          <span className={`${timeRemaining < 60 ? 'text-red-300' : 'text-white'}`}>
+            {formatTime(timeRemaining)}
+          </span>
+        </div>
+      )}
 
       <div className="container mx-auto px-4 py-8 flex-1 flex flex-col">
         <div className="flex justify-center mb-16 pt-8">

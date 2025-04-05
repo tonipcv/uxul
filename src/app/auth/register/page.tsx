@@ -68,7 +68,7 @@ export default function Register() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
-                className="bg-white/10 backdrop-blur-sm border-2 border-white/30 text-white placeholder:text-white/60 focus:ring-2 focus:ring-white/50 focus:border-transparent"
+                className="bg-white/10 backdrop-blur-sm border-2 border-white/30 text-blue-900 placeholder:text-white/60 focus:ring-2 focus:ring-white/50 focus:border-transparent appearance-none"
               />
             </div>
             <div className="space-y-2">
@@ -80,7 +80,7 @@ export default function Register() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="bg-white/10 backdrop-blur-sm border-2 border-white/30 text-white placeholder:text-white/60 focus:ring-2 focus:ring-white/50 focus:border-transparent"
+                className="bg-white/10 backdrop-blur-sm border-2 border-white/30 text-blue-900 placeholder:text-white/60 focus:ring-2 focus:ring-white/50 focus:border-transparent appearance-none"
               />
             </div>
             <div className="space-y-2">
@@ -92,7 +92,7 @@ export default function Register() {
                 value={slug}
                 onChange={(e) => setSlug(e.target.value)}
                 required
-                className="bg-white/10 backdrop-blur-sm border-2 border-white/30 text-white placeholder:text-white/60 focus:ring-2 focus:ring-white/50 focus:border-transparent"
+                className="bg-white/10 backdrop-blur-sm border-2 border-white/30 text-blue-900 placeholder:text-white/60 focus:ring-2 focus:ring-white/50 focus:border-transparent appearance-none"
               />
               <p className="text-xs text-white/60">
                 Esta será sua URL pessoal: med1.app/<span className="text-white">{slug || 'username'}</span>
@@ -106,7 +106,7 @@ export default function Register() {
                 placeholder="Cardiologista"
                 value={specialty}
                 onChange={(e) => setSpecialty(e.target.value)}
-                className="bg-white/10 backdrop-blur-sm border-2 border-white/30 text-white placeholder:text-white/60 focus:ring-2 focus:ring-white/50 focus:border-transparent"
+                className="bg-white/10 backdrop-blur-sm border-2 border-white/30 text-blue-900 placeholder:text-white/60 focus:ring-2 focus:ring-white/50 focus:border-transparent appearance-none"
               />
             </div>
             <div className="space-y-2">
@@ -117,7 +117,7 @@ export default function Register() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="bg-white/10 backdrop-blur-sm border-2 border-white/30 text-white placeholder:text-white/60 focus:ring-2 focus:ring-white/50 focus:border-transparent"
+                className="bg-white/10 backdrop-blur-sm border-2 border-white/30 text-blue-900 placeholder:text-white/60 focus:ring-2 focus:ring-white/50 focus:border-transparent appearance-none"
               />
             </div>
             {error && (
