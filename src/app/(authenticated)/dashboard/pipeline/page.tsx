@@ -277,6 +277,10 @@ export default function PipelinePage() {
                                   style={{
                                     ...provided.draggableProps.style
                                   }}
+                                  onDoubleClick={() => {
+                                    setEditingLead(lead);
+                                    setIsEditModalOpen(true);
+                                  }}
                                 >
                                   {/* Botões flutuantes que aparecem no hover */}
                                   <div className="absolute right-1.5 top-1.5 flex gap-1">

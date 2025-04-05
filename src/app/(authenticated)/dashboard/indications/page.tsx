@@ -230,11 +230,17 @@ export default function IndicationsPage() {
 
   const shareOnWhatsApp = (link: string) => {
     // Adicionar UTMs ao compartilhar via WhatsApp para rastreamento
-    const linkWithUtm = `${link}?utm_source=whatsapp&utm_medium=share&utm_campaign=indication`;
+    const fullLink = `${baseUrl}/${userSlug}/${link.split('/').pop()}`;
+    const linkWithUtm = `${fullLink}?utm_source=whatsapp&utm_medium=share&utm_campaign=indication`;
     // Garantir que só execute no cliente
     if (isClient && typeof window !== 'undefined') {
       window.open(`https://wa.me/?text=Olha esse link: ${encodeURIComponent(linkWithUtm)}`, '_blank');
     }
+  };
+
+  // Formatar link sem https://
+  const formatLink = (url: string) => {
+    return url.replace(/^https?:\/\//, '');
   };
 
   // Não renderizar nada no servidor para evitar erros de hidratação
@@ -253,12 +259,12 @@ export default function IndicationsPage() {
           {/* Link direto do médico */}
           <div className="flex items-center gap-2 bg-blue-600/20 backdrop-blur-sm px-3 py-2 rounded-md border border-blue-500/30">
             <span className="text-sm text-blue-100">Seu link:</span>
-            <code className="text-blue-200 font-medium text-sm">{`${baseUrl}/${userSlug}`}</code>
+            <code className="text-blue-200 font-medium text-sm">{formatLink(`${baseUrl}/${userSlug}`)}</code>
             <Button
               variant="ghost"
               size="sm"
               className="h-8 w-8 p-0 hover:bg-blue-600/30 text-blue-200"
-              onClick={() => copyToClipboard(`${baseUrl}/${userSlug}`)}
+              onClick={() => copyToClipboard(formatLink(`${baseUrl}/${userSlug}`))}
             >
               <ClipboardIcon className="h-4 w-4" />
             </Button>
@@ -383,13 +389,13 @@ export default function IndicationsPage() {
                 <p className="text-sm text-blue-100 mb-2">Link gerado:</p>
                 <div className="flex items-center gap-2 text-sm">
                   <code className="flex-1 bg-blue-700/30 px-2 py-1 rounded border border-blue-500/30 text-blue-100">
-                    {`${baseUrl}/${userSlug}/${generatedSlug}`}
+                    {formatLink(`${baseUrl}/${userSlug}/${generatedSlug}`)}
                   </code>
                   <Button
                     type="button"
                     size="sm"
                     variant="ghost"
-                    onClick={() => copyToClipboard(`${baseUrl}/${userSlug}/${generatedSlug}`)}
+                    onClick={() => copyToClipboard(formatLink(`${baseUrl}/${userSlug}/${generatedSlug}`))}
                     className="h-8 w-8 p-0 hover:bg-blue-600/30 text-blue-200"
                   >
                     <ClipboardIcon className="h-4 w-4" />
@@ -423,7 +429,7 @@ export default function IndicationsPage() {
                   </h3>
                   <div className="flex items-center gap-2 bg-blue-600/20 px-3 py-2 rounded border border-blue-500/30">
                     <code className="text-blue-100 text-sm truncate">
-                      {`${baseUrl}/${userSlug}/${indication.slug}`}
+                      {formatLink(`${baseUrl}/${userSlug}/${indication.slug}`)}
                     </code>
                   </div>
                 </div>
@@ -453,7 +459,7 @@ export default function IndicationsPage() {
                       variant="ghost"
                       size="sm"
                       className="h-9 w-9 p-0 hover:bg-blue-600/30 text-blue-200"
-                      onClick={() => copyToClipboard(`${baseUrl}/${userSlug}/${indication.slug}`)}
+                      onClick={() => copyToClipboard(formatLink(`${baseUrl}/${userSlug}/${indication.slug}`))}
                     >
                       <ClipboardIcon className="h-4 w-4" />
                     </Button>

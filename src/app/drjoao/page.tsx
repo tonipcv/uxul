@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, Suspense } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import { Button } from "@/components/ui/button";
@@ -11,22 +11,56 @@ import { Label } from "@/components/ui/label";
 import { Logo } from '@/components/ui/logo';
 import { ShieldCheckIcon } from '@heroicons/react/24/outline';
 
+interface Doctor {
+  name: string;
+  specialty: string;
+  image: string | null;
+  email?: string;
+}
+
 // Componente interno que usa useSearchParams
 function DrJoaoContent() {
   const searchParams = useSearchParams();
+  const [doctor, setDoctor] = useState<Doctor | null>(null);
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [interest, setInterest] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [isLoadingDoctor, setIsLoadingDoctor] = useState(true);
 
-  // Dados fixos do Dr. João
-  const doctor = {
-    name: "Dr. João Silva",
-    specialty: "Cardiologista",
-    image: null // Você pode adicionar uma URL de imagem se tiver
-  };
+  // Buscar informações do médico
+  useEffect(() => {
+    const fetchDoctorInfo = async () => {
+      try {
+        const userSlug = 'drjoao';
+        
+        // Verificar se já temos os dados em cache
+        const cachedDoctor = localStorage.getItem(`doctor_${userSlug}`);
+        if (cachedDoctor) {
+          setDoctor(JSON.parse(cachedDoctor));
+        }
+        
+        // Buscar dados atualizados da API
+        const response = await fetch(`/api/users/${userSlug}`);
+        if (response.ok) {
+          const data = await response.json();
+          setDoctor(data);
+          // Salvar os dados no localStorage para futuras visitas
+          localStorage.setItem(`doctor_${userSlug}`, JSON.stringify(data));
+        } else {
+          console.error('Erro ao buscar médico:', await response.json());
+        }
+      } catch (error) {
+        console.error('Erro ao buscar informações do médico:', error);
+      } finally {
+        setIsLoadingDoctor(false);
+      }
+    };
+
+    fetchDoctorInfo();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -116,7 +150,7 @@ function DrJoaoContent() {
                 
                 <h2 className="text-xl font-medium tracking-wide text-gray-800">Obrigado!</h2>
                 <p className="text-gray-600">
-                  {doctor.name} receberá seus dados e entrará em contato em breve.
+                  {doctor?.name ? `${doctor.name} receberá seus dados` : 'Seus dados foram enviados'} e entrará em contato em breve.
                 </p>
               </CardContent>
             </Card>
@@ -138,7 +172,7 @@ function DrJoaoContent() {
           {/* Doctor Profile Card - Span 1 column on mobile, 1 column on desktop */}
           <Card className="bg-white border border-gray-200 shadow-sm rounded-xl overflow-hidden md:col-span-1">
             <CardContent className="flex flex-col items-center justify-center p-6 space-y-4">
-              {doctor.image ? (
+              {doctor?.image ? (
                 <div className="w-24 h-24 rounded-full overflow-hidden border border-gray-200 shadow-sm">
                   <Image 
                     src={doctor.image} 
@@ -150,16 +184,16 @@ function DrJoaoContent() {
                 </div>
               ) : (
                 <div className="w-24 h-24 rounded-full bg-blue-50 flex items-center justify-center text-3xl font-light text-blue-700">
-                  {doctor.name?.charAt(0) || 'J'}
+                  {doctor?.name?.charAt(0) || (isLoadingDoctor ? '?' : 'J')}
                 </div>
               )}
               
               <div className="text-center">
                 <h2 className="text-xl font-medium text-gray-800">
-                  {doctor.name}
+                  {doctor?.name || (isLoadingDoctor ? 'Carregando...' : 'Dr. João')}
                 </h2>
                 <p className="text-sm font-medium text-gray-600">
-                  {doctor.specialty}
+                  {doctor?.specialty || (isLoadingDoctor ? '' : 'Médico')}
                 </p>
               </div>
             </CardContent>
@@ -171,7 +205,9 @@ function DrJoaoContent() {
               <div className="bg-blue-50 p-5 rounded-xl">
                 <h3 className="text-xl font-medium text-gray-800 mb-2">Bem-vindo!</h3>
                 <p className="text-gray-600">
-                  {doctor.name} está disponível para agendar sua consulta
+                  {doctor?.name 
+                    ? `${doctor.name} está disponível para agendar sua consulta` 
+                    : 'Agende sua consulta'}
                 </p>
               </div>
             </CardContent>
