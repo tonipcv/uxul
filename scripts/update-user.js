@@ -4,7 +4,7 @@ const prisma = new PrismaClient();
 async function main() {
   try {
     const user = await prisma.user.update({
-      where: { email: 'xppsalvador@gmail.com' },
+      where: { email: 'tonitypebot@gmail.com' },
       data: {
         plan: 'premium',
         planExpiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)

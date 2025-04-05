@@ -24,6 +24,12 @@ const AUTH_ROUTES = [
   // Dashboard removido para que seja verificado apenas como rota premium
 ];
 
+// Lista de e-mails com acesso premium
+const PREMIUM_EMAILS = [
+  'xppsalvador@gmail.com',
+  'tonitypebot@gmail.com'
+];
+
 // Verificar se o usuário está autenticado
 async function isAuthenticated(req: NextRequest): Promise<boolean> {
   const session = await getToken({ 
@@ -34,14 +40,34 @@ async function isAuthenticated(req: NextRequest): Promise<boolean> {
   return !!session;
 }
 
-// Modificar a função para incluir o parâmetro req
-async function getUserPlan(userId: string, req?: NextRequest): Promise<string> {
+// Modificar a função para verificar por e-mail em vez de ID
+async function getUserPlan(token: any, req?: NextRequest): Promise<string> {
   try {
-    // Para teste, verificamos se é o email específico que deve ser premium
-    if (userId === 'cm8zamrep0000lb0420xkta5z') { // ID do xppsalvador@gmail.com
+    // Verificar se o token contém o e-mail
+    const email = token?.email;
+    
+    if (!email) {
+      console.log('Middleware: Token não contém e-mail, usando ID como fallback');
+      // Fallback para verificação por ID se e-mail não estiver disponível
+      const premiumUserIds = [
+        'cm8zamrep0000lb0420xkta5z',
+        'cm94hhzds0000jo044c9hupfo'
+      ];
+      
+      if (premiumUserIds.includes(token?.sub)) {
+        return 'premium';
+      }
+      
+      return 'free';
+    }
+    
+    // Verificar se o e-mail está na lista de e-mails premium
+    if (PREMIUM_EMAILS.includes(email)) {
+      console.log('Middleware: E-mail premium encontrado:', email);
       return 'premium';
     }
     
+    console.log('Middleware: E-mail não premium:', email);
     // Para todos os outros, retornar free
     return 'free';
     
@@ -82,12 +108,12 @@ export async function middleware(req: NextRequest) {
     console.log('Middleware: Rota premium detectada', pathname);
     const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
     
-    if (!token?.sub) { // sub contém o ID do usuário
+    if (!token) { // Verificar se o token existe
       console.log('Middleware: Usuário não autenticado, redirecionando para login');
       return NextResponse.redirect(new URL('/auth/signin', req.url));
     }
     
-    const userPlan = await getUserPlan(token.sub, req);
+    const userPlan = await getUserPlan(token, req);
     console.log('Middleware: Plano do usuário:', userPlan);
     
     if (userPlan !== 'premium') {
