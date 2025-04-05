@@ -3,10 +3,14 @@ import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 
+// Configuração para cache e revalidação
+export const revalidate = 60; // Revalidar a cada 60 segundos
+
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const userId = searchParams.get('userId');
+    const noCache = searchParams.get('noCache') === 'true';
 
     // Obter a sessão atual
     const session = await getServerSession(authOptions);
@@ -31,7 +35,7 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    // Buscar o usuário pelo ID
+    // Buscar o usuário pelo ID com as informações essenciais
     const user = await prisma.user.findUnique({
       where: { id: targetUserId },
       select: {
@@ -41,6 +45,7 @@ export async function GET(req: NextRequest) {
         slug: true,
         specialty: true,
         image: true,
+        pageTemplate: true,
         _count: {
           select: {
             indications: true,
@@ -57,7 +62,18 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    return NextResponse.json(user);
+    // Configurar cabeçalhos para cache
+    const headers = new Headers();
+    if (!noCache) {
+      headers.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300');
+    } else {
+      headers.set('Cache-Control', 'no-store');
+    }
+
+    return NextResponse.json(user, { 
+      headers,
+      status: 200 
+    });
   } catch (error) {
     console.error('Erro ao buscar perfil:', error);
     return NextResponse.json(

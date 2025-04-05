@@ -47,7 +47,6 @@ async function getUserPlan(token: any, req?: NextRequest): Promise<string> {
     const email = token?.email;
     
     if (!email) {
-      console.log('Middleware: Token não contém e-mail, usando ID como fallback');
       // Fallback para verificação por ID se e-mail não estiver disponível
       const premiumUserIds = [
         'cm8zamrep0000lb0420xkta5z',
@@ -63,11 +62,9 @@ async function getUserPlan(token: any, req?: NextRequest): Promise<string> {
     
     // Verificar se o e-mail está na lista de e-mails premium
     if (PREMIUM_EMAILS.includes(email)) {
-      console.log('Middleware: E-mail premium encontrado:', email);
       return 'premium';
     }
     
-    console.log('Middleware: E-mail não premium:', email);
     // Para todos os outros, retornar free
     return 'free';
     
@@ -100,28 +97,22 @@ async function getUserPlan(token: any, req?: NextRequest): Promise<string> {
 
 export async function middleware(req: NextRequest) {
   const { pathname } = new URL(req.url);
-  console.log('Middleware: Processando rota', pathname);
   
   // Verificar se é uma rota premium
   const isPremiumRoute = PREMIUM_ROUTES.some(route => pathname.startsWith(route));
   if (isPremiumRoute) {
-    console.log('Middleware: Rota premium detectada', pathname);
     const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
     
     if (!token) { // Verificar se o token existe
-      console.log('Middleware: Usuário não autenticado, redirecionando para login');
       return NextResponse.redirect(new URL('/auth/signin', req.url));
     }
     
     const userPlan = await getUserPlan(token, req);
-    console.log('Middleware: Plano do usuário:', userPlan);
     
     if (userPlan !== 'premium') {
-      console.log('Middleware: Usuário não é premium, redirecionando para página de bloqueio');
       return NextResponse.redirect(new URL('/bloqueado', req.url));
     }
     
-    console.log('Middleware: Usuário premium, permitindo acesso');
     return NextResponse.next();
   }
   
@@ -130,13 +121,10 @@ export async function middleware(req: NextRequest) {
                      pathname.startsWith('/profile');
   
   if (isAuthRoute) {
-    console.log('Middleware: Rota autenticada detectada', pathname);
     const isLoggedIn = await isAuthenticated(req);
     if (!isLoggedIn) {
-      console.log('Middleware: Usuário não autenticado, redirecionando para login');
       return NextResponse.redirect(new URL('/auth/signin', req.url));
     }
-    console.log('Middleware: Usuário autenticado, permitindo acesso');
     return NextResponse.next();
   }
   

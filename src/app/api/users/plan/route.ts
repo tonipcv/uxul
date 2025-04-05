@@ -3,8 +3,15 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
-export async function GET() {
+// Configuração para cache e revalidação
+export const revalidate = 300; // Revalidar a cada 5 minutos
+
+export async function GET(request: Request) {
   try {
+    // Verificar se deve ignorar o cache
+    const url = new URL(request.url);
+    const noCache = url.searchParams.get('noCache') === 'true';
+    
     // Obter sessão do usuário
     const session = await getServerSession(authOptions);
     
@@ -32,6 +39,7 @@ export async function GET() {
     }
 
     // Verificar se o plano premium expirou
+    let planData;
     if (user.plan === 'premium' && user.planExpiresAt && new Date(user.planExpiresAt) < new Date()) {
       // Atualizar usuário para plano gratuito
       await prisma.user.update({
@@ -42,15 +50,28 @@ export async function GET() {
         }
       });
 
-      return NextResponse.json({
+      planData = {
         plan: 'free',
         planExpiresAt: null
-      });
+      };
+    } else {
+      planData = {
+        plan: user.plan,
+        planExpiresAt: user.planExpiresAt
+      };
     }
 
-    return NextResponse.json({
-      plan: user.plan,
-      planExpiresAt: user.planExpiresAt
+    // Configurar cabeçalhos para cache
+    const headers = new Headers();
+    if (!noCache) {
+      headers.set('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600');
+    } else {
+      headers.set('Cache-Control', 'no-store');
+    }
+
+    return NextResponse.json(planData, {
+      headers,
+      status: 200
     });
   } catch (error) {
     console.error('Erro ao obter plano do usuário:', error);

@@ -44,7 +44,7 @@ const statusMap: { [key: string]: string } = {
 };
 
 export default function PipelinePage() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingLead, setEditingLead] = useState<Lead | null>(null);
@@ -55,18 +55,16 @@ export default function PipelinePage() {
   } | null>(null);
 
   useEffect(() => {
-    if (session?.user?.id) {
-      console.log("Pipeline: Buscando dados para o usuário:", session.user.id);
+    if (status === 'authenticated' && session?.user?.id) {
       fetchLeads();
       fetchDashboardData();
-    } else if (session === null) {
+    } else if (status === 'unauthenticated') {
       // Session foi carregada mas não há usuário (não autenticado)
-      console.log("Pipeline: Usuário não autenticado");
       setLoading(false);
       setLeads([]);
     }
-    // Não fazer nada se session === undefined (ainda carregando)
-  }, [session]);
+    // Não fazer nada se status === "loading" (ainda carregando)
+  }, [session, status]);
 
   const fetchDashboardData = async () => {
     try {
@@ -90,26 +88,22 @@ export default function PipelinePage() {
   const fetchLeads = async () => {
     try {
       setLoading(true);
-      console.log("Pipeline: Chamando API de leads");
       
       const response = await fetch(`/api/leads`);
       
-      console.log("Pipeline: Status da resposta:", response.status);
-      
       if (response.ok) {
         const result = await response.json();
-        console.log("Pipeline: Dados recebidos:", result);
         
         if (result.data && Array.isArray(result.data)) {
           setLeads(result.data);
         } else if (Array.isArray(result)) {
           setLeads(result);
         } else {
-          console.warn("Pipeline: Dados recebidos não são um array");
+          console.warn("Dados recebidos não são um array");
           setLeads([]);
         }
       } else {
-        console.error("Pipeline: Erro na resposta da API:", await response.text());
+        console.error("Erro na resposta da API:", await response.text());
         toast({
           title: "Erro",
           description: "Não foi possível obter os dados dos leads",
@@ -443,16 +437,6 @@ export default function PipelinePage() {
                     id="phone"
                     value={editingLead.phone}
                     onChange={(e) => setEditingLead({ ...editingLead, phone: e.target.value })}
-                    className="w-full h-9 bg-white border-gray-300 text-gray-900"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="interest" className="text-sm text-gray-700">Interesse</Label>
-                  <Input
-                    id="interest"
-                    value={editingLead.interest || ''}
-                    onChange={(e) => setEditingLead({ ...editingLead, interest: e.target.value })}
                     className="w-full h-9 bg-white border-gray-300 text-gray-900"
                   />
                 </div>

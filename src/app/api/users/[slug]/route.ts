@@ -7,6 +7,8 @@ export async function GET(
 ) {
   try {
     const { slug } = await params;
+    const searchParams = new URL(request.url).searchParams;
+    const includeTemplate = searchParams.get('includeTemplate') === 'true';
 
     if (!slug) {
       return NextResponse.json(
@@ -22,7 +24,8 @@ export async function GET(
         name: true,
         specialty: true,
         image: true,
-        email: true // útil para contato, mas não exibido publicamente
+        email: true, // útil para contato, mas não exibido publicamente
+        ...(includeTemplate ? { pageTemplate: true } : {})
       }
     });
 

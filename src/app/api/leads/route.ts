@@ -63,11 +63,8 @@ export async function GET(req: NextRequest) {
     // Obter a sessão atual
     const session = await getServerSession(authOptions);
     const userId = session?.user?.id;
-
-    console.log('[API] GET /api/leads: Iniciando busca para userId:', userId);
     
     if (!userId) {
-      console.log('[API] Erro: Usuário não autenticado');
       return NextResponse.json(
         { error: 'Usuário não autenticado' },
         { status: 401 }
@@ -89,10 +86,9 @@ export async function GET(req: NextRequest) {
         }
       });
       
-      console.log(`[API] Encontrados ${leads.length} leads através do modelo Prisma para o usuário ${userId}`);
       return NextResponse.json({ success: true, data: leads });
     } catch (modelError) {
-      console.error('[API] Erro ao usar modelo Prisma:', modelError);
+      console.error('Erro ao usar modelo Prisma:', modelError);
       
       // Fallback para SQL direto
       const results = await db.$queryRaw`
@@ -103,11 +99,10 @@ export async function GET(req: NextRequest) {
         ORDER BY l."createdAt" DESC
       `;
       
-      console.log(`[API] Encontrados ${Array.isArray(results) ? results.length : 0} leads com SQL direto para o usuário ${userId}`);
       return NextResponse.json({ success: true, data: results });
     }
   } catch (error) {
-    console.error('[API] Erro ao buscar leads:', error);
+    console.error('Erro ao buscar leads:', error);
     return NextResponse.json(
       { 
         error: 'Erro ao buscar leads', 

@@ -1,0 +1,268 @@
+'use client';
+
+import { useState } from 'react';
+import { useSearchParams } from 'next/navigation';
+import Image from 'next/image';
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { ShieldCheckIcon } from '@heroicons/react/24/outline';
+
+interface Doctor {
+  name?: string;
+  specialty?: string;
+  email?: string;
+  image?: string;
+}
+
+interface DarkTemplateProps {
+  doctor: Doctor | null;
+  slug: string;
+}
+
+export default function DarkTemplate({ doctor, slug }: DarkTemplateProps) {
+  const searchParams = useSearchParams();
+  const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false);
+
+  // Rastrear a fonte do lead (UTM)
+  const utmSource = searchParams.get('utm_source');
+  const utmMedium = searchParams.get('utm_medium');
+  const utmCampaign = searchParams.get('utm_campaign');
+  const utmTerm = searchParams.get('utm_term');
+  const utmContent = searchParams.get('utm_content');
+  const source = searchParams.get('source');
+  
+  // Rastrear o evento de clique na página
+  useState(() => {
+    const trackPageView = async () => {
+      try {
+        const slugToTrack = slug || 'default';
+        const response = await fetch('/api/analytics/track', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            type: 'view',
+            slug: slugToTrack,
+            utmSource,
+            utmMedium,
+            utmCampaign,
+            utmTerm,
+            utmContent,
+            source,
+            page: 'profile',
+          }),
+        });
+      } catch (error) {
+        // Silenciosamente falhar
+        console.error('Erro ao rastrear visualização:', error);
+      }
+    };
+
+    trackPageView();
+  });
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError('');
+    
+    if (!name || !phone) {
+      setError('Por favor, preencha os campos obrigatórios.');
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/lead', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name,
+          phone,
+          userSlug: slug,
+          indicationSlug: null,
+          utmSource,
+          utmMedium,
+          utmCampaign,
+          utmTerm,
+          utmContent,
+          source
+        }),
+      });
+
+      if (response.ok) {
+        setSuccess(true);
+        setName('');
+        setPhone('');
+      } else {
+        const data = await response.json();
+        setError(data.error || 'Erro ao enviar o formulário.');
+      }
+    } catch (error) {
+      setError('Ocorreu um erro ao enviar o formulário. Tente novamente.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (success) {
+    return (
+      <div className="min-h-screen w-full flex items-center justify-center bg-gray-900 p-4 md:p-8">
+        <div className="w-full max-w-3xl mx-auto">
+          <div className="grid grid-cols-1 gap-6">
+            <Card className="bg-gray-800 border border-gray-700 shadow-md rounded-xl overflow-hidden">
+              <CardContent className="flex flex-col items-center justify-center p-8 text-center space-y-4">
+                <div className="w-16 h-16 rounded-full bg-blue-900 flex items-center justify-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                
+                <h2 className="text-xl font-medium tracking-wide text-white">Obrigado!</h2>
+                <p className="text-gray-300">
+                  {doctor?.name ? `${doctor.name} receberá seus dados` : 'Seus dados foram enviados'} e entrará em contato em breve.
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+          
+          <div className="mt-6 text-center text-xs text-gray-500">
+            Powered by <span className="text-blue-400 font-medium">med1.app</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen w-full bg-gray-900 text-gray-100 p-4 md:p-8">
+      <div className="w-full max-w-4xl mx-auto">
+        {/* Bento Grid Layout */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Doctor Profile Card - Span 1 column on mobile, 1 column on desktop */}
+          <Card className="bg-gray-800 border border-gray-700 shadow-md rounded-xl overflow-hidden md:col-span-1">
+            <CardContent className="flex flex-col items-center justify-center p-6 space-y-4">
+              {doctor?.image ? (
+                <div className="w-24 h-24 rounded-full overflow-hidden border border-gray-600 shadow-lg">
+                  <Image 
+                    src={doctor.image} 
+                    alt={doctor?.name || 'Médico'} 
+                    width={96} 
+                    height={96}
+                    className="object-cover w-full h-full"
+                  />
+                </div>
+              ) : (
+                <div className="w-24 h-24 rounded-full bg-gray-700 flex items-center justify-center text-3xl font-light text-blue-400">
+                  {doctor?.name?.charAt(0) || ''}
+                </div>
+              )}
+              
+              <div className="text-center">
+                <h2 className="text-xl font-medium text-white">
+                  {doctor?.name || 'Carregando...'}
+                </h2>
+                <p className="text-sm font-medium text-gray-400">
+                  {doctor?.specialty || ''}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+          
+          {/* Welcome Message Card - Span 1 column on mobile, 2 columns on desktop */}
+          <Card className="bg-gray-800 border border-gray-700 shadow-md rounded-xl overflow-hidden md:col-span-2">
+            <CardContent className="p-6">
+              <div className="bg-gray-700 p-5 rounded-xl">
+                <h3 className="text-xl font-medium text-white mb-2">Bem-vindo!</h3>
+                <p className="text-gray-300">
+                  {doctor?.name 
+                    ? `${doctor.name} está disponível para agendar sua consulta` 
+                    : 'Agende sua consulta'}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+          
+          {/* Form Card - Span full width */}
+          <Card className="bg-gray-800 border border-gray-700 shadow-md rounded-xl overflow-hidden md:col-span-3">
+            <CardHeader className="pb-0 pt-6 px-6">
+              <h3 className="text-lg font-medium text-white">Agende sua consulta</h3>
+            </CardHeader>
+            <CardContent className="p-6">
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="name" className="text-gray-300">Nome</Label>
+                    <Input
+                      id="name"
+                      type="text"
+                      placeholder="Seu nome completo"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      required
+                      className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-500 focus:border-blue-400 focus:ring-blue-500/20"
+                    />
+                  </div>
+                  
+                  <div className="space-y-1.5">
+                    <Label htmlFor="phone" className="text-gray-300">Telefone</Label>
+                    <Input
+                      id="phone"
+                      type="tel"
+                      placeholder="(00) 00000-0000"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      required
+                      className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-500 focus:border-blue-400 focus:ring-blue-500/20"
+                    />
+                  </div>
+                </div>
+                
+                {error && (
+                  <div className="text-red-300 text-sm bg-red-900/30 border border-red-800/50 py-2 px-3 rounded">{error}</div>
+                )}
+                
+                {/* Mensagem LGPD */}
+                <div className="flex items-start space-x-2 text-xs text-gray-400 bg-gray-700/50 p-3 rounded">
+                  <ShieldCheckIcon className="h-4 w-4 flex-shrink-0 text-blue-400" />
+                  <span>Seus dados estão protegidos de acordo com a LGPD (Lei Geral de Proteção de Dados) e serão utilizados apenas para contato.</span>
+                </div>
+                
+                <Button 
+                  type="submit" 
+                  disabled={isLoading}
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white border-none h-11 transition-colors"
+                >
+                  {isLoading ? (
+                    <span className="flex items-center justify-center">
+                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Enviando...
+                    </span>
+                  ) : 'Solicitar Consulta'}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
+        
+        {/* Footer */}
+        <div className="mt-6 text-center text-xs text-gray-500">
+          Powered by <span className="text-blue-400 font-medium">med1.app</span>
+        </div>
+      </div>
+    </div>
+  );
+} 

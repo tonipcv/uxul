@@ -5,7 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState, useEffect } from "react";
-import { ArrowRightOnRectangleIcon, CameraIcon, LinkIcon, UserIcon, UserGroupIcon, ClipboardDocumentIcon, SparklesIcon, ShoppingCartIcon } from '@heroicons/react/24/outline';
+import { ArrowRightOnRectangleIcon, CameraIcon, LinkIcon, UserIcon, UserGroupIcon, ClipboardDocumentIcon, SparklesIcon, ShoppingCartIcon, SwatchIcon } from '@heroicons/react/24/outline';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { toast } from "@/components/ui/use-toast";
@@ -16,52 +18,85 @@ import { ptBR } from "date-fns/locale";
 
 export default function ProfilePage() {
   const router = useRouter();
-  const { data: session, update } = useSession();
+  const { data: session, status } = useSession();
   const { isPremium, isLoading: isPlanLoading, planExpiresAt, daysRemaining } = useUserPlan();
+
+  // Estados para os dados do perfil
   const [isEditing, setIsEditing] = useState(false);
-  const [name, setName] = useState(session?.user?.name || '');
-  const [email] = useState(session?.user?.email || '');
-  const [image, setImage] = useState(session?.user?.image || '');
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [image, setImage] = useState('');
   const [specialty, setSpecialty] = useState('');
   const [slug, setSlug] = useState('');
+  const [pageTemplate, setPageTemplate] = useState('default');
   const [leadCount, setLeadCount] = useState(0);
   const [indicationCount, setIndicationCount] = useState(0);
   const [baseUrl, setBaseUrl] = useState('');
+  
+  // Estados de UI
   const [isUploading, setIsUploading] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [profileFetched, setProfileFetched] = useState(false);
+  
+  // Estado para garantir renderização no cliente
   const [isClient, setIsClient] = useState(false);
 
+  // Marcar que estamos no cliente
   useEffect(() => {
-    // Marcador de renderização client-side para evitar problemas de hidratação
     setIsClient(true);
-  }, []);
-
-  useEffect(() => {
-    if (isClient && typeof window !== 'undefined') {
+    if (typeof window !== 'undefined') {
       setBaseUrl(window.location.origin);
     }
-    if (session?.user?.id) {
+  }, []);
+
+  // Efeito para carregar os dados do perfil quando a sessão estiver pronta
+  useEffect(() => {
+    if (status === 'loading' || !isClient) return;
+    
+    if (status === 'authenticated' && session?.user?.id && !profileFetched) {
       fetchUserProfile();
+    } else if (status === 'unauthenticated') {
+      // Redirecionar para login se não estiver autenticado
+      router.push('/auth/signin');
     }
-  }, [session, isClient]);
+  }, [status, session, isClient, profileFetched]);
 
   const fetchUserProfile = async () => {
     if (!session?.user?.id) return;
+    
     setIsLoading(true);
-
+    
     try {
-      const response = await fetch(`/api/users/profile?userId=${session.user.id}`);
+      // Usar AbortController para poder cancelar a requisição se necessário
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 8000);
+      
+      const response = await fetch(`/api/users/profile?userId=${session.user.id}`, {
+        signal: controller.signal,
+        cache: 'no-store'
+      });
+      
+      clearTimeout(timeoutId);
+      
       if (response.ok) {
         const data = await response.json();
+        // Atualizar os estados apenas quando os dados forem recebidos
         setName(data.name || '');
+        setEmail(data.email || '');
         setImage(data.image || '');
         setSpecialty(data.specialty || '');
         setSlug(data.slug || '');
+        setPageTemplate(data.pageTemplate || 'default');
         setLeadCount(data._count?.leads || 0);
         setIndicationCount(data._count?.indications || 0);
+        setProfileFetched(true);
+      } else {
+        console.error('Erro ao buscar perfil:', response.statusText);
       }
     } catch (error) {
-      console.error('Erro ao buscar perfil do usuário:', error);
+      if ((error as Error).name !== 'AbortError') {
+        console.error('Erro ao buscar perfil do usuário:', error);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -93,6 +128,11 @@ export default function ProfilePage() {
       router.refresh();
     } catch (error) {
       console.error('Erro ao fazer upload:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível fazer o upload da imagem",
+        variant: "destructive"
+      });
     } finally {
       setIsUploading(false);
     }
@@ -106,22 +146,12 @@ export default function ProfilePage() {
         body: JSON.stringify({ 
           name, 
           image: newImage || image,
-          specialty
+          specialty,
+          pageTemplate
         }),
       });
 
       if (!response.ok) throw new Error('Falha ao atualizar perfil');
-
-      // Update session
-      await update({
-        ...session,
-        user: {
-          ...session?.user,
-          name,
-          image: newImage || image,
-          specialty
-        },
-      });
 
       toast({
         title: "Perfil atualizado",
@@ -129,7 +159,6 @@ export default function ProfilePage() {
       });
 
       setIsEditing(false);
-      fetchUserProfile();
     } catch (error) {
       console.error('Erro ao salvar:', error);
       toast({
@@ -151,9 +180,13 @@ export default function ProfilePage() {
     }
   };
 
-  // Não renderizar nada no servidor para evitar erros de hidratação
-  if (!isClient) {
-    return null;
+  // Mostrar um spinner enquanto carrega
+  if (!isClient || status === 'loading' || (isLoading && !profileFetched)) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="w-12 h-12 rounded-full border-4 border-blue-500 border-t-transparent animate-spin"></div>
+      </div>
+    );
   }
 
   return (
@@ -255,6 +288,22 @@ export default function ProfilePage() {
                     <label className="text-sm text-blue-100 font-medium">Email</label>
                     <p className="text-lg text-white">{email}</p>
                   </div>
+                  
+                  <div className="space-y-1">
+                    <Label htmlFor="pageTemplate" className="text-sm text-gray-300">
+                      Template da Página
+                    </Label>
+                    <Select value={pageTemplate} onValueChange={setPageTemplate}>
+                      <SelectTrigger id="pageTemplate" className="bg-blue-950/50 border-white/10 focus:border-blue-500/70 text-white">
+                        <SelectValue placeholder="Escolha o template" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-navy-800 border-white/10 text-white">
+                        <SelectItem value="default">Padrão (Claro)</SelectItem>
+                        <SelectItem value="dark">Escuro</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-gray-400">Escolha o estilo visual para sua página de captação</p>
+                  </div>
 
                   <div className="pt-4 flex gap-3">
                     <Button 
@@ -276,7 +325,12 @@ export default function ProfilePage() {
                 <div className="space-y-5">
                   <div>
                     <h2 className="text-2xl font-light text-white">{name}</h2>
-                    <p className="text-blue-200">{specialty}</p>
+                    {specialty && (
+                      <div className="flex items-center space-x-2">
+                        <UserIcon className="h-4 w-4 mr-1.5 text-blue-300" />
+                        <span className="text-blue-50">{specialty}</span>
+                      </div>
+                    )}
                   </div>
                   
                   <div className="space-y-2">
@@ -308,6 +362,14 @@ export default function ProfilePage() {
                         {indicationCount} indicações
                       </span>
                     </div>
+                  </div>
+
+                  {/* Exibição do template selecionado */}
+                  <div className="flex items-center space-x-2">
+                    <SwatchIcon className="h-4 w-4 mr-1.5 text-blue-300" />
+                    <span className="text-blue-50">
+                      Template: {pageTemplate === 'dark' ? 'Escuro' : 'Padrão (Claro)'}
+                    </span>
                   </div>
                 </div>
               )}

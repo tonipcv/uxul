@@ -27,6 +27,7 @@ model User {
   createdAt              DateTime        @default(now())
   plan                   String          @default("free") // Pode ser "free" ou "premium"
   planExpiresAt          DateTime?       // Data de expiração do plano premium
+  pageTemplate           String          @default("default") // Modelo de página a ser usado (default, dark, etc)
   
   // Relações existentes
   accounts               Account[]
