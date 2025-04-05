@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { useUserPlan } from "@/hooks/use-user-plan";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import Link from "next/link";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -206,13 +207,23 @@ export default function ProfilePage() {
               </Badge>
             )}
             {!isEditing && (
-              <Button 
-                variant="outline" 
-                className="bg-white text-blue-700 hover:bg-white/90 transition-colors border-none"
-                onClick={() => setIsEditing(true)}
-              >
-                Editar Perfil
-              </Button>
+              <>
+                <Button 
+                  variant="outline" 
+                  className="bg-white text-blue-700 hover:bg-white/90 transition-colors border-none"
+                  onClick={() => setIsEditing(true)}
+                >
+                  Editar Perfil
+                </Button>
+                <Link href="/settings/interest-options">
+                  <Button 
+                    variant="outline" 
+                    className="bg-blue-600/40 text-white hover:bg-blue-600/50 transition-colors border border-blue-500/30 ml-2"
+                  >
+                    Configurações
+                  </Button>
+                </Link>
+              </>
             )}
           </div>
         </CardHeader>

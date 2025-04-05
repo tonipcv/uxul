@@ -226,7 +226,7 @@ export default function PipelinePage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen">
+      <div className="flex items-center justify-center h-screen bg-blue-800">
         <div className="animate-spin h-6 w-6 border-2 border-blue-300 border-t-transparent rounded-full" />
       </div>
     );
@@ -234,12 +234,12 @@ export default function PipelinePage() {
 
   return (
     <DragDropContext onDragEnd={handleDragEnd}>
-      <div className="flex flex-col bg-blue-50">
+      <div className="flex flex-col bg-blue-800">
         {/* Header */}
-        <div className="px-6 pt-4 pb-4 flex items-center justify-between bg-white border-b border-gray-200">
+        <div className="px-6 pt-4 pb-4 flex items-center justify-between bg-blue-800 border-b border-blue-700">
           <div>
-            <h1 className="text-xl font-medium text-gray-800">Pipeline</h1>
-            <p className="text-sm text-gray-500">Total de leads: {dashboardData?.totalLeads || 0}</p>
+            <h1 className="text-xl font-medium text-white">Pipeline</h1>
+            <p className="text-sm text-blue-200">Total de leads: {dashboardData?.totalLeads || 0}</p>
           </div>
           <Button
             onClick={() => {
@@ -248,7 +248,7 @@ export default function PipelinePage() {
             }}
             variant="outline"
             size="sm"
-            className="flex items-center gap-1.5 h-9 px-4 bg-white border-blue-300 text-blue-600 hover:bg-blue-50"
+            className="flex items-center gap-1.5 h-9 px-4 bg-blue-700 border-blue-600 text-white hover:bg-blue-600"
           >
             <ArrowPathIcon className="h-4 w-4" />
             <span>Atualizar</span>
@@ -273,7 +273,7 @@ export default function PipelinePage() {
           </div>
 
           {/* Columns Layout */}
-          <div className="overflow-x-auto pb-1 bg-blue-50 p-1.5">
+          <div className="overflow-x-auto pb-1 bg-blue-800 p-1.5">
             <div className="flex gap-3 px-1.5 py-2 min-w-full md:min-w-0 min-h-[75vh]">
               {columns.map(column => (
                 <div 
@@ -291,7 +291,7 @@ export default function PipelinePage() {
                         <div
                           ref={provided.innerRef}
                           {...provided.droppableProps}
-                          className="flex-1 overflow-y-auto p-2 space-y-2 min-h-[200px] bg-blue-50/50"
+                          className="flex-1 overflow-y-auto p-2 space-y-2 min-h-[200px] bg-white"
                         >
                           {getColumnLeads(column.id).map((lead, index) => (
                             <Draggable key={lead.id} draggableId={lead.id} index={index}>

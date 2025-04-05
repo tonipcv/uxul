@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Logo } from '@/components/ui/logo';
 import { ShieldCheckIcon } from '@heroicons/react/24/outline';
 import { CheckCircleIcon as CheckCircleSolid } from '@heroicons/react/24/solid';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 
 interface Doctor {
   name: string;
@@ -24,10 +25,14 @@ function DrJoaoContent() {
   const [doctor, setDoctor] = useState<Doctor | null>(null);
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
+  const [interest, setInterest] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [isLoadingDoctor, setIsLoadingDoctor] = useState(true);
+  const [interestOptions, setInterestOptions] = useState<{ id: string; label: string; value: string; isDefault: boolean; redirectUrl?: string | null }[]>([]);
+  const [loadingOptions, setLoadingOptions] = useState(true);
+  const [redirect, setRedirect] = useState<string | null>(null);
 
   // Buscar informações do médico
   useEffect(() => {
@@ -59,6 +64,32 @@ function DrJoaoContent() {
     };
 
     fetchDoctorInfo();
+  }, []);
+
+  // Buscar opções de interesse configuradas pelo médico
+  useEffect(() => {
+    const fetchInterestOptions = async () => {
+      try {
+        const response = await fetch(`/api/interest-options/drjoao`);
+        
+        if (response.ok) {
+          const options = await response.json();
+          setInterestOptions(options);
+          
+          // Se tiver uma opção padrão, seleciona ela
+          const defaultOption = options.find((opt: any) => opt.isDefault);
+          if (defaultOption) {
+            setInterest(defaultOption.value);
+          }
+        }
+      } catch (error) {
+        console.error('Erro ao buscar opções de interesse:', error);
+      } finally {
+        setLoadingOptions(false);
+      }
+    };
+
+    fetchInterestOptions();
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -100,6 +131,7 @@ function DrJoaoContent() {
         body: JSON.stringify({
           name,
           phone,
+          interest,
           userSlug: 'drjoao',
           indicationSlug: null,
           source,
@@ -116,7 +148,13 @@ function DrJoaoContent() {
         throw new Error(data.error || 'Erro ao enviar seus dados');
       }
 
-      setSuccess(true);
+      // Verificar se tem URL de redirecionamento para o interesse selecionado
+      const selectedOption = interestOptions.find(opt => opt.value === interest);
+      if (selectedOption && selectedOption.redirectUrl) {
+        setRedirect(selectedOption.redirectUrl);
+      } else {
+        setSuccess(true);
+      }
       
       // Limpar os parâmetros UTM após conversão bem-sucedida
       if (typeof window !== 'undefined') {
@@ -132,6 +170,13 @@ function DrJoaoContent() {
       setIsLoading(false);
     }
   };
+
+  // Redirecionamento se necessário
+  useEffect(() => {
+    if (redirect) {
+      window.location.href = redirect;
+    }
+  }, [redirect]);
 
   if (success) {
     return (
@@ -246,6 +291,27 @@ function DrJoaoContent() {
                     />
                   </div>
                 </div>
+                
+                {interestOptions.length > 0 && (
+                  <div className="space-y-1.5">
+                    <Label htmlFor="interest" className="text-gray-600">Interesse</Label>
+                    <Select
+                      value={interest}
+                      onValueChange={setInterest}
+                    >
+                      <SelectTrigger className="border-gray-200 focus:border-blue-700 focus:ring-blue-50 text-gray-800">
+                        <SelectValue placeholder="Selecione seu interesse" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {interestOptions.map(option => (
+                          <SelectItem key={option.id} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
                 
                 {error && (
                   <div className="text-red-500 text-sm bg-red-50 py-2 px-3 rounded">{error}</div>

@@ -9,6 +9,7 @@ export async function POST(req: NextRequest) {
       phone, 
       userSlug, 
       indicationSlug, 
+      interest,
       source,
       utmSource,
       utmMedium,
@@ -57,6 +58,7 @@ export async function POST(req: NextRequest) {
       data: {
         name,
         phone,
+        interest,
         userId: user.id,
         indicationId: indication?.id,
         source,

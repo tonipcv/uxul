@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import { Button } from "@/components/ui/button";
@@ -9,12 +9,21 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ShieldCheckIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
 import { CheckCircleIcon as CheckCircleSolid } from '@heroicons/react/24/solid';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 
 interface Doctor {
   name?: string;
   specialty?: string;
   email?: string;
   image?: string;
+}
+
+interface InterestOption {
+  id: string;
+  label: string;
+  value: string;
+  isDefault: boolean;
+  redirectUrl?: string | null;
 }
 
 interface DarkTemplateProps {
@@ -26,9 +35,13 @@ export default function DarkTemplate({ doctor, slug }: DarkTemplateProps) {
   const searchParams = useSearchParams();
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
+  const [interest, setInterest] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [interestOptions, setInterestOptions] = useState<InterestOption[]>([]);
+  const [loadingOptions, setLoadingOptions] = useState(true);
+  const [redirect, setRedirect] = useState<string | null>(null);
 
   // Rastrear a fonte do lead (UTM)
   const utmSource = searchParams.get('utm_source');
@@ -69,6 +82,41 @@ export default function DarkTemplate({ doctor, slug }: DarkTemplateProps) {
     trackPageView();
   });
 
+  // Buscar opções de interesse configuradas pelo médico
+  useEffect(() => {
+    const fetchInterestOptions = async () => {
+      try {
+        const response = await fetch(`/api/interest-options/${slug}`);
+        
+        if (response.ok) {
+          const options = await response.json();
+          setInterestOptions(options);
+          
+          // Se tiver uma opção padrão, seleciona ela
+          const defaultOption = options.find((opt: any) => opt.isDefault);
+          if (defaultOption) {
+            setInterest(defaultOption.value);
+          }
+        }
+      } catch (error) {
+        console.error('Erro ao buscar opções de interesse:', error);
+      } finally {
+        setLoadingOptions(false);
+      }
+    };
+
+    if (slug) {
+      fetchInterestOptions();
+    }
+  }, [slug]);
+
+  // Redirecionamento se necessário
+  useEffect(() => {
+    if (redirect) {
+      window.location.href = redirect;
+    }
+  }, [redirect]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -89,6 +137,7 @@ export default function DarkTemplate({ doctor, slug }: DarkTemplateProps) {
         body: JSON.stringify({
           name,
           phone,
+          interest,
           userSlug: slug,
           indicationSlug: null,
           utmSource,
@@ -101,7 +150,13 @@ export default function DarkTemplate({ doctor, slug }: DarkTemplateProps) {
       });
 
       if (response.ok) {
-        setSuccess(true);
+        // Verificar se tem URL de redirecionamento para o interesse selecionado
+        const selectedOption = interestOptions.find(opt => opt.value === interest);
+        if (selectedOption && selectedOption.redirectUrl) {
+          setRedirect(selectedOption.redirectUrl);
+        } else {
+          setSuccess(true);
+        }
         setName('');
         setPhone('');
       } else {
@@ -228,6 +283,27 @@ export default function DarkTemplate({ doctor, slug }: DarkTemplateProps) {
                     />
                   </div>
                 </div>
+
+                {interestOptions.length > 0 && (
+                  <div className="space-y-1.5">
+                    <Label htmlFor="interest" className="text-gray-300">Interesse</Label>
+                    <Select
+                      value={interest}
+                      onValueChange={setInterest}
+                    >
+                      <SelectTrigger className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-500 focus:border-blue-400 focus:ring-blue-500/20">
+                        <SelectValue placeholder="Selecione seu interesse" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-gray-800 border-gray-700 text-white">
+                        {interestOptions.map(option => (
+                          <SelectItem key={option.id} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
                 
                 {error && (
                   <div className="text-red-300 text-sm bg-red-900/30 border border-red-800/50 py-2 px-3 rounded">{error}</div>
@@ -252,14 +328,13 @@ export default function DarkTemplate({ doctor, slug }: DarkTemplateProps) {
                       </svg>
                       Enviando...
                     </span>
-                  ) : 'Solicitar Consulta'}
+                  ) : "Quero ser atendido"}
                 </Button>
               </form>
             </CardContent>
           </Card>
         </div>
         
-        {/* Footer */}
         <div className="mt-6 text-center text-xs text-gray-500">
           Powered by <span className="text-blue-400 font-medium">med1.app</span>
         </div>
