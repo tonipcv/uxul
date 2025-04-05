@@ -60,26 +60,50 @@ import { db } from '@/lib/db';
  */
 export async function GET(req: NextRequest) {
   try {
-    console.log('[API] GET /api/leads: Iniciando busca');
+    // Obter a sessão atual
+    const session = await getServerSession(authOptions);
+    const userId = session?.user?.id;
+
+    console.log('[API] GET /api/leads: Iniciando busca para userId:', userId);
+    
+    if (!userId) {
+      console.log('[API] Erro: Usuário não autenticado');
+      return NextResponse.json(
+        { error: 'Usuário não autenticado' },
+        { status: 401 }
+      );
+    }
     
     // Tentar usar o modelo Prisma primeiro
     try {
       const leads = await prisma.lead.findMany({
-        orderBy: { createdAt: 'desc' }
+        where: { userId }, // Filtrar apenas os leads do usuário atual
+        orderBy: { createdAt: 'desc' },
+        include: {
+          indication: {
+            select: {
+              name: true,
+              slug: true
+            }
+          }
+        }
       });
       
-      console.log(`[API] Encontrados ${leads.length} leads através do modelo Prisma`);
+      console.log(`[API] Encontrados ${leads.length} leads através do modelo Prisma para o usuário ${userId}`);
       return NextResponse.json({ success: true, data: leads });
     } catch (modelError) {
       console.error('[API] Erro ao usar modelo Prisma:', modelError);
       
       // Fallback para SQL direto
       const results = await db.$queryRaw`
-        SELECT * FROM "LeadForm" 
-        ORDER BY "createdAt" DESC
+        SELECT l.*, i."name" as "indicationName", i."slug" as "indicationSlug" 
+        FROM "Lead" l
+        LEFT JOIN "Indication" i ON l."indicationId" = i.id
+        WHERE l."userId" = ${userId}
+        ORDER BY l."createdAt" DESC
       `;
       
-      console.log(`[API] Encontrados ${Array.isArray(results) ? results.length : 0} leads com SQL direto`);
+      console.log(`[API] Encontrados ${Array.isArray(results) ? results.length : 0} leads com SQL direto para o usuário ${userId}`);
       return NextResponse.json({ success: true, data: results });
     }
   } catch (error) {

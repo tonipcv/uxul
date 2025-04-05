@@ -56,9 +56,16 @@ export default function PipelinePage() {
 
   useEffect(() => {
     if (session?.user?.id) {
+      console.log("Pipeline: Buscando dados para o usuário:", session.user.id);
       fetchLeads();
       fetchDashboardData();
+    } else if (session === null) {
+      // Session foi carregada mas não há usuário (não autenticado)
+      console.log("Pipeline: Usuário não autenticado");
+      setLoading(false);
+      setLeads([]);
     }
+    // Não fazer nada se session === undefined (ainda carregando)
   }, [session]);
 
   const fetchDashboardData = async () => {
@@ -67,6 +74,13 @@ export default function PipelinePage() {
       if (response.ok) {
         const data = await response.json();
         setDashboardData(data);
+      } else {
+        console.error('Erro ao buscar dados do dashboard:', await response.text());
+        toast({
+          title: "Erro",
+          description: "Não foi possível obter os dados do dashboard",
+          variant: "destructive"
+        });
       }
     } catch (error) {
       console.error('Erro ao buscar dados do dashboard:', error);
@@ -76,21 +90,40 @@ export default function PipelinePage() {
   const fetchLeads = async () => {
     try {
       setLoading(true);
+      console.log("Pipeline: Chamando API de leads");
+      
       const response = await fetch(`/api/leads`);
+      
+      console.log("Pipeline: Status da resposta:", response.status);
+      
       if (response.ok) {
         const result = await response.json();
+        console.log("Pipeline: Dados recebidos:", result);
+        
         if (result.data && Array.isArray(result.data)) {
           setLeads(result.data);
         } else if (Array.isArray(result)) {
           setLeads(result);
         } else {
+          console.warn("Pipeline: Dados recebidos não são um array");
           setLeads([]);
         }
       } else {
+        console.error("Pipeline: Erro na resposta da API:", await response.text());
+        toast({
+          title: "Erro",
+          description: "Não foi possível obter os dados dos leads",
+          variant: "destructive"
+        });
         setLeads([]);
       }
     } catch (error) {
       console.error('Erro ao buscar leads:', error);
+      toast({
+        title: "Erro",
+        description: "Ocorreu um erro ao buscar os dados",
+        variant: "destructive"
+      });
       setLeads([]);
     } finally {
       setLoading(false);
