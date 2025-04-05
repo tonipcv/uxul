@@ -7,7 +7,6 @@ export async function POST(req: NextRequest) {
     const { 
       name, 
       phone, 
-      interest, 
       userSlug, 
       indicationSlug, 
       source,
@@ -58,7 +57,6 @@ export async function POST(req: NextRequest) {
       data: {
         name,
         phone,
-        interest,
         userId: user.id,
         indicationId: indication?.id,
         source,

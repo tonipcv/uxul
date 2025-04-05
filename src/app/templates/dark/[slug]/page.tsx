@@ -8,8 +8,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/components/ui/use-toast";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import Image from "next/image";
+import { CheckCircleIcon } from '@heroicons/react/24/outline';
+import { CheckCircleIcon as CheckCircleSolid } from '@heroicons/react/24/solid';
 
 interface Doctor {
   name: string;
@@ -24,7 +25,6 @@ export default function DarkTemplatePage() {
   const [doctor, setDoctor] = useState<Doctor | null>(null);
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
-  const [interest, setInterest] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
@@ -113,7 +113,6 @@ export default function DarkTemplatePage() {
         body: JSON.stringify({
           name,
           phone,
-          interest,
           utmSource,
           utmMedium,
           utmCampaign,
@@ -126,7 +125,6 @@ export default function DarkTemplatePage() {
         setSuccess(true);
         setName('');
         setPhone('');
-        setInterest('');
         toast({
           title: "Enviado com sucesso!",
           description: "Entraremos em contato em breve.",
@@ -167,8 +165,9 @@ export default function DarkTemplatePage() {
               )}
               
               <div className="text-center">
-                <h2 className="text-xl font-medium text-white">
+                <h2 className="text-xl font-medium text-white flex items-center justify-center gap-1">
                   {doctor?.name || 'Carregando...'}
+                  <CheckCircleSolid className="h-5 w-5 text-blue-400" />
                 </h2>
                 <p className="text-sm font-medium text-gray-400">
                   {doctor?.specialty || ''}
@@ -234,27 +233,12 @@ export default function DarkTemplatePage() {
                     />
                   </div>
                   
-                  <div className="space-y-2">
-                    <Label htmlFor="interest" className="text-gray-300">Interesse</Label>
-                    <Select value={interest} onValueChange={setInterest}>
-                      <SelectTrigger className="bg-gray-700 border-gray-600 text-white focus:ring-blue-600/20">
-                        <SelectValue placeholder="Selecione o serviço de interesse" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-gray-800 border-gray-700 text-white">
-                        <SelectItem value="consulta">Consulta</SelectItem>
-                        <SelectItem value="procedimento">Procedimento</SelectItem>
-                        <SelectItem value="exame">Exame</SelectItem>
-                        <SelectItem value="outro">Outro</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
                   <Button 
                     type="submit" 
                     disabled={isLoading}
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded"
+                    className="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white font-medium"
                   >
-                    {isLoading ? 'Enviando...' : 'Enviar'}
+                    {isLoading ? 'Enviando...' : 'Solicitar Consulta'}
                   </Button>
                 </form>
               )}

@@ -6,10 +6,10 @@ import Image from 'next/image';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Logo } from '@/components/ui/logo';
 import { ShieldCheckIcon } from '@heroicons/react/24/outline';
+import { CheckCircleIcon as CheckCircleSolid } from '@heroicons/react/24/solid';
 
 interface Doctor {
   name: string;
@@ -24,7 +24,6 @@ function DrJoaoContent() {
   const [doctor, setDoctor] = useState<Doctor | null>(null);
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
-  const [interest, setInterest] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
@@ -101,7 +100,6 @@ function DrJoaoContent() {
         body: JSON.stringify({
           name,
           phone,
-          interest,
           userSlug: 'drjoao',
           indicationSlug: null,
           source,
@@ -189,8 +187,9 @@ function DrJoaoContent() {
               )}
               
               <div className="text-center">
-                <h2 className="text-xl font-medium text-gray-800">
+                <h2 className="text-xl font-medium text-gray-800 flex items-center justify-center gap-1">
                   {doctor?.name || (isLoadingDoctor ? 'Carregando...' : 'Dr. João')}
+                  <CheckCircleSolid className="h-5 w-5 text-blue-500" />
                 </h2>
                 <p className="text-sm font-medium text-gray-600">
                   {doctor?.specialty || (isLoadingDoctor ? '' : 'Médico')}
@@ -246,21 +245,6 @@ function DrJoaoContent() {
                       className="border-gray-200 focus:border-blue-700 focus:ring-blue-50 text-gray-800 placeholder:text-gray-500"
                     />
                   </div>
-                </div>
-                
-                <div className="space-y-1.5">
-                  <Label htmlFor="interest" className="text-gray-600">Interesse</Label>
-                  <Select value={interest} onValueChange={setInterest}>
-                    <SelectTrigger className="border-gray-200 bg-white focus:border-blue-700 focus:ring-blue-50 text-gray-800 [&_[data-placeholder]]:text-gray-500 data-[state=open]:border-blue-700">
-                      <SelectValue placeholder="Selecione seu interesse" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-white border-gray-200 shadow-md">
-                      <SelectItem value="consulta" className="text-gray-800 hover:bg-blue-50 focus:bg-blue-50 focus:text-blue-700">Consulta</SelectItem>
-                      <SelectItem value="avaliacao" className="text-gray-800 hover:bg-blue-50 focus:bg-blue-50 focus:text-blue-700">Avaliação</SelectItem>
-                      <SelectItem value="exames" className="text-gray-800 hover:bg-blue-50 focus:bg-blue-50 focus:text-blue-700">Exames</SelectItem>
-                      <SelectItem value="outros" className="text-gray-800 hover:bg-blue-50 focus:bg-blue-50 focus:text-blue-700">Outros</SelectItem>
-                    </SelectContent>
-                  </Select>
                 </div>
                 
                 {error && (

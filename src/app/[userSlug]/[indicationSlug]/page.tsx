@@ -6,10 +6,10 @@ import Image from 'next/image';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Logo } from '@/components/ui/logo';
-import { ShieldCheckIcon } from '@heroicons/react/24/outline';
+import { ShieldCheckIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
+import { CheckCircleIcon as CheckCircleSolid } from '@heroicons/react/24/solid';
 
 interface Doctor {
   name: string;
@@ -182,8 +182,9 @@ export default function IndicationPage() {
               )}
               
               <div className="text-center">
-                <h2 className="text-xl font-medium text-gray-800">
+                <h2 className="text-xl font-medium text-gray-800 flex items-center justify-center gap-1">
                   {doctor?.name || 'Carregando...'}
+                  <CheckCircleSolid className="h-5 w-5 text-blue-500" />
                 </h2>
                 <p className="text-sm font-medium text-gray-600">
                   {doctor?.specialty || ''}
