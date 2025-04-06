@@ -64,6 +64,8 @@ interface DashboardData {
   recentLeads: Lead[];
   topIndications: Indication[];
   topSources: UtmSource[];
+  totalRevenue: number;
+  potentialRevenue: number;
 }
 
 // Componente para formatar o Tooltip do gráfico
@@ -110,7 +112,9 @@ export default function DashboardPage() {
           conversionRate: 0,
           recentLeads: [],
           topIndications: [],
-          topSources: []
+          topSources: [],
+          totalRevenue: 0,
+          potentialRevenue: 0
         });
       }
     } catch (error) {
@@ -124,7 +128,9 @@ export default function DashboardPage() {
         conversionRate: 0,
         recentLeads: [],
         topIndications: [],
-        topSources: []
+        topSources: [],
+        totalRevenue: 0,
+        potentialRevenue: 0
       });
     } finally {
       setLoading(false);
@@ -178,7 +184,7 @@ export default function DashboardPage() {
           
           <TabsContent value="overview" className="mt-0">
             {/* Cards principais */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
               <Card className="bg-white/10 backdrop-blur-sm border-l-4 border-blue-300 border-t border-r border-b border-white/30 shadow-md">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-lg font-medium flex items-center text-white">
@@ -224,26 +230,68 @@ export default function DashboardPage() {
                 </CardContent>
               </Card>
 
-              <Card className="bg-white/10 backdrop-blur-sm border-l-4 border-blue-200 border-t border-r border-b border-white/30 shadow-md">
+              <Card className="bg-white/10 backdrop-blur-sm border-l-4 border-green-300 border-t border-r border-b border-white/30 shadow-md">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-lg font-medium flex items-center text-white">
-                    <ArrowTrendingUpIcon className="h-5 w-5 mr-2 text-blue-200" />
-                    Taxa de Conversão
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 mr-2 text-green-300">
+                      <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                    </svg>
+                    Faturamento
                   </CardTitle>
                   <CardDescription className="text-blue-100/80">
-                    Leads / Cliques
+                    Clientes fechados
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="flex items-end justify-between">
                     <p className="text-4xl font-semibold text-white">
-                      {loading ? '...' : `${dashboardData?.conversionRate || 0}%`}
-                    </p>
-                    <p className="text-xs text-blue-100/70">
                       {loading 
                         ? '...' 
-                        : `${dashboardData?.totalLeads || 0} / ${dashboardData?.totalClicks || 0}`}
+                        : new Intl.NumberFormat('pt-BR', { 
+                            style: 'currency', 
+                            currency: 'BRL',
+                            minimumFractionDigits: 0,
+                            maximumFractionDigits: 0
+                          }).format(dashboardData?.totalRevenue || 0)
+                      }
                     </p>
+                    <Badge variant="outline" className="bg-green-500/20 text-green-100 border-green-300/50">
+                      Fechados
+                    </Badge>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-white/10 backdrop-blur-sm border-l-4 border-yellow-300 border-t border-r border-b border-white/30 shadow-md">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg font-medium flex items-center text-white">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 mr-2 text-yellow-300">
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"></path>
+                      <path d="M12 18V6"></path>
+                    </svg>
+                    Novos Negócios
+                  </CardTitle>
+                  <CardDescription className="text-blue-100/80">
+                    Potencial em aberto
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-end justify-between">
+                    <p className="text-4xl font-semibold text-white">
+                      {loading 
+                        ? '...' 
+                        : new Intl.NumberFormat('pt-BR', { 
+                            style: 'currency', 
+                            currency: 'BRL',
+                            minimumFractionDigits: 0,
+                            maximumFractionDigits: 0
+                          }).format(dashboardData?.potentialRevenue || 0)
+                      }
+                    </p>
+                    <Badge variant="outline" className="bg-yellow-500/20 text-yellow-100 border-yellow-300/50">
+                      Em negociação
+                    </Badge>
                   </div>
                 </CardContent>
               </Card>

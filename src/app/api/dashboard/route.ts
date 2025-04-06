@@ -110,6 +110,34 @@ export async function GET(req: NextRequest) {
       LIMIT 5
     `;
 
+    // Calcular faturamento total (soma do potentialValue dos leads fechados)
+    const closedLeadsData = await prisma.lead.aggregate({
+      where: { 
+        userId,
+        status: 'Fechado',
+        potentialValue: { not: null }
+      },
+      _sum: {
+        potentialValue: true
+      }
+    });
+    
+    // Calcular potencial em aberto (soma do potentialValue dos leads não fechados)
+    const openLeadsData = await prisma.lead.aggregate({
+      where: { 
+        userId,
+        NOT: { status: 'Fechado' },
+        potentialValue: { not: null }
+      },
+      _sum: {
+        potentialValue: true
+      }
+    });
+
+    // Extrair os valores e garantir que eles não sejam nulos
+    const totalRevenue = closedLeadsData._sum.potentialValue || 0;
+    const potentialRevenue = openLeadsData._sum.potentialValue || 0;
+
     // Converter todos os dados que podem conter BigInt
     const responseData = {
       totalLeads: Number(totalLeads),
@@ -118,7 +146,9 @@ export async function GET(req: NextRequest) {
       conversionRate,
       recentLeads: convertBigIntToNumber(recentLeads),
       topIndications: convertBigIntToNumber(topIndications),
-      topSources: convertBigIntToNumber(topSourcesRaw)
+      topSources: convertBigIntToNumber(topSourcesRaw),
+      totalRevenue: Number(totalRevenue),
+      potentialRevenue: Number(potentialRevenue)
     };
 
     return NextResponse.json(responseData);
