@@ -12,6 +12,7 @@ import {
   ChartBarIcon,
   LinkIcon,
   UsersIcon,
+  Cog6ToothIcon,
 } from '@heroicons/react/24/outline';
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -40,7 +41,8 @@ export default function Navigation() {
     '/dashboard/indications',
     '/dashboard/leads',
     '/dashboard/pipeline',
-    '/profile'
+    '/profile',
+    '/settings'
   ];
 
   // Só mostrar navegação em rotas protegidas
@@ -78,6 +80,17 @@ export default function Navigation() {
           description: 'Gestão de status'
         }
       ]
+    },
+    {
+      title: "Configurações",
+      items: [
+        {
+          href: '/settings/interest-options',
+          label: 'Configurações',
+          icon: Cog6ToothIcon,
+          description: 'Opções do sistema'
+        }
+      ]
     }
   ];
 
@@ -85,14 +98,15 @@ export default function Navigation() {
     <Button
       variant="outline"
       className={cn(
-        "w-full h-14 flex items-center justify-center bg-transparent transition-colors border-transparent",
+        "w-full h-10 flex items-center justify-start px-3 bg-transparent transition-colors border-transparent gap-2 rounded-xl",
         pathname === item.href 
-          ? "bg-blue-600/30 text-blue-100 border-blue-500/30 hover:bg-blue-600/40" 
-          : "text-blue-200/70 hover:text-blue-100 hover:bg-blue-600/20",
+          ? "bg-blue-700 text-blue-100 border-blue-600 hover:bg-blue-600" 
+          : "text-blue-200 hover:text-blue-100 hover:bg-blue-800",
         className
       )}
     >
-      <item.icon className="h-5 w-5 stroke-current" />
+      <item.icon className="h-4 w-4 stroke-current flex-shrink-0" />
+      <span className="text-xs whitespace-nowrap overflow-hidden text-ellipsis">{item.label}</span>
     </Button>
   );
 
@@ -114,15 +128,15 @@ export default function Navigation() {
   return (
     <>
       {/* Desktop Navigation */}
-      <nav className="fixed left-0 top-0 bottom-0 w-20 border-r border-blue-500/20 bg-blue-900/30 backdrop-blur-sm shadow-md hidden lg:block z-40">
+      <nav className="fixed left-0 top-0 bottom-0 w-44 border-r border-blue-700 bg-blue-900 shadow-md hidden lg:block z-40 rounded-tr-xl rounded-br-xl">
         <div className="flex flex-col h-full">
-          <div className="p-6 border-b border-blue-500/20">
+          <div className="p-4 border-b border-blue-700">
             <Link href="/" className="flex items-center justify-center">
-              <span className="text-sm font-medium text-blue-200 tracking-wide">MED1</span>
+              <span className="text-sm font-medium text-blue-100 tracking-wide">MED1</span>
             </Link>
           </div>
-          <div className="flex-1 py-6">
-            <nav className="space-y-6 px-2">
+          <div className="flex-1 py-4">
+            <nav className="space-y-4 px-2">
               {navSections.map((section) => (
                 <div key={section.title} className="space-y-1">
                   {section.items.map((item) => (
@@ -134,26 +148,32 @@ export default function Navigation() {
               ))}
             </nav>
           </div>
-          <div className="p-6 border-t border-blue-500/20">
+          <div className="p-4 border-t border-blue-700">
             <Link href="/profile">
-              <div className="w-10 h-10 flex items-center justify-center cursor-pointer border border-blue-400/30 rounded-full hover:border-blue-400/50 hover:bg-blue-600/20 transition-colors mx-auto">
-                <UserAvatar />
+              <div className="flex items-center gap-2 cursor-pointer border border-blue-600 rounded-xl px-3 py-2 hover:border-blue-500 hover:bg-blue-800 transition-colors">
+                <div className="w-6 h-6 flex items-center justify-center rounded-full overflow-hidden flex-shrink-0">
+                  <UserAvatar />
+                </div>
+                <span className="text-xs text-blue-100">Perfil</span>
               </div>
             </Link>
           </div>
         </div>
       </nav>
 
+      {/* Add a spacer for desktop to prevent content overlap */}
+      <div className="hidden lg:block w-44 flex-shrink-0"></div>
+
       {/* Mobile Navigation */}
       <div className="lg:hidden">
         {/* Mobile Header */}
-        <div className="fixed top-0 left-0 right-0 border-b border-blue-500/20 bg-blue-900/30 backdrop-blur-sm shadow-md z-40">
+        <div className="fixed top-0 left-0 right-0 border-b border-blue-700 bg-blue-900 shadow-md z-40">
           <div className="py-4 px-4 flex justify-between items-center">
             <Link href="/" className="flex items-center">
-              <span className="text-sm font-medium text-blue-200 tracking-wide">MED1</span>
+              <span className="text-sm font-medium text-blue-100 tracking-wide">MED1</span>
             </Link>
             <Link href="/profile">
-              <div className="h-7 w-7 flex items-center justify-center cursor-pointer border border-blue-400/30 rounded-full hover:border-blue-400/50 hover:bg-blue-600/20 transition-colors">
+              <div className="h-8 w-8 flex items-center justify-center cursor-pointer border border-blue-600 rounded-xl hover:border-blue-500 hover:bg-blue-800 transition-colors">
                 <UserAvatar />
               </div>
             </Link>
@@ -161,21 +181,25 @@ export default function Navigation() {
         </div>
 
         {/* Mobile Navigation Bar */}
-        <nav className="fixed bottom-0 left-0 right-0 border-t border-blue-500/20 bg-blue-900/30 backdrop-blur-sm shadow-md z-40">
+        <nav className="fixed bottom-0 left-0 right-0 border-t border-blue-700 bg-blue-900 shadow-md z-50 rounded-tl-xl rounded-tr-xl">
           <div className="py-3 px-4">
             <div className="flex items-center justify-around gap-2">
-              {navSections.flatMap(section => section.items).map((item) => (
+              {navSections
+                .filter(section => section.title !== "Configurações") // Filter out the "Configurações" section for mobile
+                .flatMap(section => section.items)
+                .map((item) => (
                 <Link key={item.href} href={item.href} className="flex-1">
                   <Button
                     variant="outline"
                     className={cn(
-                      "w-full h-14 flex items-center justify-center bg-transparent transition-colors border-transparent",
+                      "w-full h-14 flex flex-col items-center justify-center bg-transparent transition-colors border-transparent rounded-xl gap-1",
                       pathname === item.href 
-                        ? "bg-blue-600/30 text-blue-100 border-blue-500/30 hover:bg-blue-600/40" 
-                        : "text-blue-200/70 hover:text-blue-100 hover:bg-blue-600/20"
+                        ? "bg-blue-700 text-blue-100 border-blue-600 hover:bg-blue-600" 
+                        : "text-blue-200 hover:text-blue-100 hover:bg-blue-800"
                     )}
                   >
                     <item.icon className="h-5 w-5 stroke-current" />
+                    <span className="text-xs">{item.label}</span>
                   </Button>
                 </Link>
               ))}

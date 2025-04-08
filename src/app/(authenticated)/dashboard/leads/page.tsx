@@ -14,7 +14,12 @@ import {
   CurrencyDollarIcon,
   BriefcaseIcon,
   ClockIcon,
-  ArrowPathIcon
+  ArrowPathIcon,
+  CheckCircleIcon,
+  ArrowTrendingUpIcon,
+  ChartBarIcon,
+  EyeIcon,
+  PlusIcon
 } from "@heroicons/react/24/outline";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -32,6 +37,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 interface Lead {
   id: string;
   name: string;
+  email?: string;
   phone: string;
   interest?: string;
   source?: string;
@@ -49,6 +55,11 @@ interface Lead {
   };
 }
 
+interface DashboardData {
+  totalLeads: number;
+  conversionRate: number;
+}
+
 export default function LeadsPage() {
   const { data: session } = useSession();
   const [leads, setLeads] = useState<Lead[]>([]);
@@ -56,8 +67,11 @@ export default function LeadsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [editingLead, setEditingLead] = useState<Lead | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [viewingLead, setViewingLead] = useState<Lead | null>(null);
   const [formData, setFormData] = useState({
     name: "",
+    email: "",
     phone: "",
     interest: "",
     status: "",
@@ -74,7 +88,17 @@ export default function LeadsPage() {
   const [statusEditLead, setStatusEditLead] = useState<Lead | null>(null);
   const [isStatusMenuOpen, setIsStatusMenuOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("all");
-  const [dashboardData, setDashboardData] = useState<{ totalLeads: number } | null>(null);
+  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [newLead, setNewLead] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    source: "",
+    interest: ""
+  });
+  const [isLoading, setIsLoading] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
 
   useEffect(() => {
     if (session?.user?.id) {
@@ -95,6 +119,7 @@ export default function LeadsPage() {
 
       setFormData({
         name: editingLead.name || "",
+        email: editingLead.email || "",
         phone: editingLead.phone || "",
         interest: editingLead.interest || "",
         status: editingLead.status || "Novo",
@@ -184,6 +209,7 @@ export default function LeadsPage() {
 
       const updatedData = {
         name: formData.name,
+        email: formData.email,
         phone: formData.phone,
         interest: formData.interest,
         status: formData.status,
@@ -296,6 +322,11 @@ export default function LeadsPage() {
         variant: "destructive"
       });
     }
+  };
+
+  const handleViewLead = (lead: Lead) => {
+    setViewingLead(lead);
+    setIsViewModalOpen(true);
   };
 
   // Função para renderizar o status com cores diferentes
@@ -430,364 +461,511 @@ export default function LeadsPage() {
 
   const filteredLeads = Array.isArray(leads) ? getFilteredLeads() : [];
 
+  const handleCreateLead = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    try {
+      const response = await fetch('/api/leads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newLead)
+      });
+
+      if (response.ok) {
+        toast({
+          title: "Lead criado",
+          description: "O lead foi criado com sucesso",
+        });
+        fetchLeads();
+        setShowCreateModal(false);
+        setNewLead({
+          name: "",
+          email: "",
+          phone: "",
+          source: "",
+          interest: ""
+        });
+      } else {
+        const error = await response.json();
+        throw new Error(error.message || 'Erro ao criar lead');
+      }
+    } catch (error) {
+      console.error('Erro ao criar lead:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível criar o lead",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
-    <div className="container mx-auto p-4">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-6">
-        <h1 className="text-xl font-medium text-white">Leads</h1>
-        <div className="flex gap-2 items-center w-full md:w-auto">
-          <Input
-            placeholder="Buscar leads..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="flex-1 md:w-64 h-9 bg-white/10 backdrop-blur-sm border-2 border-white/30 text-white placeholder:text-white/60 focus:ring-2 focus:ring-white/50 focus:border-transparent"
-          />
+    <div className="min-h-[100dvh] bg-gray-100 pt-8 pb-16 px-4">
+      <div className="container mx-auto">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8">
+          <div>
+            <h1 className="text-xl md:text-2xl font-bold text-gray-900 tracking-[-0.03em] font-inter">Leads</h1>
+            <p className="text-sm md:text-base text-gray-600 tracking-[-0.03em] font-inter">Gerencie seus leads</p>
+          </div>
           <Button 
-            onClick={fetchLeads} 
-            size="sm"
-            variant="outline" 
-            className="bg-white/10 backdrop-blur-sm border-blue-300/30 text-blue-100 hover:bg-blue-600/30 transition-colors h-9 px-3"
+            onClick={() => setShowCreateModal(true)}
+            className="mt-2 md:mt-0 bg-gray-800/5 border-0 shadow-[0_4px_12px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.1)] transition-all duration-300 rounded-2xl text-gray-700 hover:bg-gray-800/10"
           >
-            <ArrowPathIcon className="h-4 w-4" />
+            <PlusIcon className="h-4 w-4 mr-2" />
+            Novo Lead
           </Button>
         </div>
-      </div>
 
-      <div className="bg-white/10 backdrop-blur-sm rounded-lg border border-white/30 shadow-md">
-        <div className="p-2">
-          <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="hidden md:grid md:grid-cols-6 bg-transparent border border-blue-500/30 p-1 rounded-md">
-              <TabsTrigger 
-                value="all" 
-                className="data-[state=active]:bg-blue-600/40 data-[state=active]:text-white data-[state=active]:border-b-2 data-[state=active]:border-blue-300 text-blue-100/70 hover:text-blue-100 transition-colors rounded-md"
-              >
-                Todos ({leadStats.total})
-              </TabsTrigger>
-              <TabsTrigger 
-                value="novos" 
-                className="data-[state=active]:bg-blue-600/40 data-[state=active]:text-white data-[state=active]:border-b-2 data-[state=active]:border-blue-300 text-blue-100/70 hover:text-blue-100 transition-colors rounded-md"
-              >
-                Novos ({leadStats.novos})
-              </TabsTrigger>
-              <TabsTrigger 
-                value="agendados" 
-                className="data-[state=active]:bg-blue-600/40 data-[state=active]:text-white data-[state=active]:border-b-2 data-[state=active]:border-blue-300 text-blue-100/70 hover:text-blue-100 transition-colors rounded-md"
-              >
-                Agendados ({leadStats.agendados})
-              </TabsTrigger>
-              <TabsTrigger 
-                value="compareceram" 
-                className="data-[state=active]:bg-blue-600/40 data-[state=active]:text-white data-[state=active]:border-b-2 data-[state=active]:border-blue-300 text-blue-100/70 hover:text-blue-100 transition-colors rounded-md"
-              >
-                Compareceram ({leadStats.compareceram})
-              </TabsTrigger>
-              <TabsTrigger 
-                value="fechados" 
-                className="data-[state=active]:bg-blue-600/40 data-[state=active]:text-white data-[state=active]:border-b-2 data-[state=active]:border-blue-300 text-blue-100/70 hover:text-blue-100 transition-colors rounded-md"
-              >
-                Fechados ({leadStats.fechados})
-              </TabsTrigger>
-              <TabsTrigger 
-                value="naoVieram" 
-                className="data-[state=active]:bg-blue-600/40 data-[state=active]:text-white data-[state=active]:border-b-2 data-[state=active]:border-blue-300 text-blue-100/70 hover:text-blue-100 transition-colors rounded-md"
-              >
-                Não vieram ({leadStats.naoVieram})
-              </TabsTrigger>
-            </TabsList>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <Card className="bg-gray-800/5 border-0 shadow-[0_8px_30px_rgba(0,0,0,0.12)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.16)] transition-all duration-300 rounded-2xl">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg font-medium flex items-center text-gray-900">
+                <UserIcon className="h-5 w-5 mr-2 text-sky-500" />
+                Total de Leads
+              </CardTitle>
+              <CardDescription className="text-gray-500">
+                Todos os leads registrados
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-end justify-between">
+                <p className="text-4xl font-semibold text-gray-900">
+                  {dashboardData?.totalLeads || 0}
+                </p>
+                <Badge variant="outline" className="bg-sky-50 text-sky-600 border-sky-200">
+                  Ativo
+                </Badge>
+              </div>
+            </CardContent>
+          </Card>
 
-            {/* Mobile Filter */}
-            <div className="md:hidden mb-2">
-              <Select 
-                value={activeTab} 
-                onValueChange={setActiveTab}
-              >
-                <SelectTrigger className="w-full h-9 bg-blue-600/40 backdrop-blur-sm text-white border-blue-500/30 focus:ring-blue-600/40 focus:ring-offset-0">
-                  <SelectValue>
-                    {activeTab === 'all' && `Todos (${leadStats.total})`}
-                    {activeTab === 'novos' && `Novos (${leadStats.novos})`}
-                    {activeTab === 'agendados' && `Agendados (${leadStats.agendados})`}
-                    {activeTab === 'compareceram' && `Compareceram (${leadStats.compareceram})`}
-                    {activeTab === 'fechados' && `Fechados (${leadStats.fechados})`}
-                    {activeTab === 'naoVieram' && `Não vieram (${leadStats.naoVieram})`}
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent className="bg-blue-800/80 backdrop-blur-sm border border-blue-500/30 text-white">
-                  <SelectItem value="all" className="text-blue-100 focus:bg-blue-700/50">Todos ({leadStats.total})</SelectItem>
-                  <SelectItem value="novos" className="text-blue-100 focus:bg-blue-700/50">Novos ({leadStats.novos})</SelectItem>
-                  <SelectItem value="agendados" className="text-blue-100 focus:bg-blue-700/50">Agendados ({leadStats.agendados})</SelectItem>
-                  <SelectItem value="compareceram" className="text-blue-100 focus:bg-blue-700/50">Compareceram ({leadStats.compareceram})</SelectItem>
-                  <SelectItem value="fechados" className="text-blue-100 focus:bg-blue-700/50">Fechados ({leadStats.fechados})</SelectItem>
-                  <SelectItem value="naoVieram" className="text-blue-100 focus:bg-blue-700/50">Não vieram ({leadStats.naoVieram})</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+          <Card className="bg-gray-800/5 border-0 shadow-[0_8px_30px_rgba(0,0,0,0.12)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.16)] transition-all duration-300 rounded-2xl">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg font-medium flex items-center text-gray-900">
+                <CheckCircleIcon className="h-5 w-5 mr-2 text-emerald-500" />
+                Pacientes Fechados
+              </CardTitle>
+              <CardDescription className="text-gray-500">
+                Pacientes que fecharam no pipeline
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-end justify-between">
+                <p className="text-4xl font-semibold text-gray-900">
+                  {leads.filter(lead => lead.status === 'Fechado').length}
+                </p>
+                <Badge variant="outline" className="bg-emerald-50 text-emerald-600 border-emerald-200">
+                  <ArrowTrendingUpIcon className="h-3 w-3 mr-1" />
+                  Crescendo
+                </Badge>
+              </div>
+            </CardContent>
+          </Card>
 
-            <div className="divide-y divide-blue-500/20">
-              {loading ? (
-                <div className="text-center py-8">
-                  <div className="animate-spin h-6 w-6 border-2 border-blue-300 border-t-transparent rounded-full mx-auto mb-2" />
-                  <p className="text-sm text-blue-100/80">Carregando...</p>
-                </div>
-              ) : Array.isArray(leads) && getFilteredLeads().length > 0 ? (
-                <>
-                  <div className="md:hidden">
-                    {getFilteredLeads().map((lead) => (
-                      <div key={lead.id} className="p-3 border-b border-blue-500/20">
-                        <div className="flex flex-col gap-2">
-                          <div className="flex items-start justify-between gap-2">
-                            <div>
-                              <h3 className="font-medium text-white mb-0.5">{lead.name}</h3>
-                              <div className="flex flex-wrap gap-2 text-sm text-blue-100/80">
-                                <span className="flex items-center gap-1">
-                                  <PhoneIcon className="h-3.5 w-3.5" />
-                                  {lead.phone}
-                                </span>
-                                {lead.interest && (
-                                  <span className="flex items-center gap-1">
-                                    <BriefcaseIcon className="h-3.5 w-3.5" />
-                                    {lead.interest}
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                            {renderStatus(lead)}
-                          </div>
-                          <div className="flex gap-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => {
-                                setQuickEditLead(lead);
-                                setQuickAppointmentDate("");
-                                setQuickAppointmentTime("");
-                              }}
-                              className="flex-1 h-8 px-3 text-sm bg-white text-blue-700 hover:bg-white/90 border-none"
-                            >
-                              <CalendarIcon className="h-3.5 w-3.5 mr-1.5" />
-                              Agendar
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => openEditModal(lead)}
-                              className="flex-1 h-8 px-3 text-sm bg-blue-700/30 border-blue-500/30 text-blue-100 hover:bg-blue-600/40"
-                            >
-                              <PencilIcon className="h-3.5 w-3.5 mr-1.5" />
-                              Editar
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  
-                  {/* Desktop List View */}
-                  <div className="hidden md:block">
-                    <table className="w-full">
-                      <tbody>
-                        {getFilteredLeads().map((lead) => (
-                          <tr key={lead.id} className="border-b border-blue-500/20">
-                            <td className="py-3 pl-4 pr-2 w-[30%]">
-                              <div className="font-medium text-white">{lead.name}</div>
-                            </td>
-                            <td className="py-3 px-2 w-[20%]">
-                              <div className="text-blue-100/80">{lead.phone}</div>
-                            </td>
-                            <td className="py-3 px-2 w-[20%]">
-                              <div className="text-blue-100/80">{lead.interest}</div>
-                            </td>
-                            <td className="py-3 px-2 w-[15%]">
-                              {renderStatus(lead)}
-                            </td>
-                            <td className="py-3 pl-2 pr-4 w-[15%]">
-                              <div className="flex justify-end gap-2">
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => {
-                                    setQuickEditLead(lead);
-                                    setQuickAppointmentDate("");
-                                    setQuickAppointmentTime("");
-                                  }}
-                                  className="h-8 px-3 text-sm bg-white text-blue-700 hover:bg-white/90 border-none"
-                                >
-                                  <CalendarIcon className="h-3.5 w-3.5" />
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => openEditModal(lead)}
-                                  className="h-8 px-3 text-sm bg-blue-700/30 border-blue-500/30 text-blue-100 hover:bg-blue-600/40"
-                                >
-                                  <PencilIcon className="h-3.5 w-3.5" />
-                                </Button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </>
-              ) : (
-                <div className="text-center py-8">
-                  <UserIcon className="h-8 w-8 text-blue-300/60 mx-auto mb-2" />
-                  <p className="text-sm text-blue-100/80">
-                    Nenhum lead {activeTab !== 'all' ? 'nesta categoria' : ''} encontrado
-                  </p>
-                </div>
-              )}
-            </div>
-          </Tabs>
+          <Card className="bg-gray-800/5 border-0 shadow-[0_8px_30px_rgba(0,0,0,0.12)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.16)] transition-all duration-300 rounded-2xl">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg font-medium flex items-center text-gray-900">
+                <ChartBarIcon className="h-5 w-5 mr-2 text-purple-500" />
+                Taxa de Conversão
+              </CardTitle>
+              <CardDescription className="text-gray-500">
+                Média de conversão
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-end justify-between">
+                <p className="text-4xl font-semibold text-gray-900">
+                  {dashboardData?.conversionRate || 0}%
+                </p>
+                <Badge variant="outline" className="bg-purple-50 text-purple-600 border-purple-200">
+                  Média
+                </Badge>
+              </div>
+            </CardContent>
+          </Card>
         </div>
-      </div>
 
-      {/* Modal de Edição */}
-      <Dialog open={isEditModalOpen} onOpenChange={closeEditModal}>
-        <DialogContent className="sm:max-w-[425px] bg-blue-800/90 backdrop-blur-sm p-0 rounded-lg border border-white/30">
-          <div className="p-4 border-b border-blue-500/30">
-            <DialogTitle className="text-lg font-medium text-white">Editar Lead</DialogTitle>
-          </div>
-          <form onSubmit={handleSubmit} className="space-y-4 p-4">
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="name" className="text-sm text-blue-100">Nome</Label>
-                <Input
-                  id="name"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleInputChange}
-                  className="h-9 bg-white/10 backdrop-blur-sm border-white/30 text-white"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="phone" className="text-sm text-blue-100">Telefone</Label>
-                <Input
-                  id="phone"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleInputChange}
-                  className="h-9 bg-white/10 backdrop-blur-sm border-white/30 text-white"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="status" className="text-sm text-blue-100">Status</Label>
-                <Select name="status" value={formData.status} onValueChange={(value) => handleSelectChange("status", value)}>
-                  <SelectTrigger className="h-9 bg-white/10 backdrop-blur-sm border-white/30 text-white">
-                    <SelectValue placeholder="Selecione o status" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-blue-800/80 backdrop-blur-sm border border-blue-500/30 text-white">
-                    <SelectItem value="Novo" className="text-blue-100 focus:bg-blue-700/50">Novo</SelectItem>
-                    <SelectItem value="Agendado" className="text-blue-100 focus:bg-blue-700/50">Agendado</SelectItem>
-                    <SelectItem value="Compareceu" className="text-blue-100 focus:bg-blue-700/50">Compareceu</SelectItem>
-                    <SelectItem value="Fechado" className="text-blue-100 focus:bg-blue-700/50">Fechado</SelectItem>
-                    <SelectItem value="Não veio" className="text-blue-100 focus:bg-blue-700/50">Não veio</SelectItem>
-                    <SelectItem value="Cancelado" className="text-blue-100 focus:bg-blue-700/50">Cancelado</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
+        <Card className="bg-gray-800/5 border-0 shadow-[0_8px_30px_rgba(0,0,0,0.12)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.16)] transition-all duration-300 rounded-2xl">
+          <CardHeader>
+            <CardTitle className="text-lg font-medium text-gray-900">Lista de Leads</CardTitle>
+            <CardDescription className="text-gray-500">
+              Gerencie seus leads e pacientes
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-gray-200">
+                    <th className="py-3 px-4 text-left text-sm font-medium text-gray-500">Nome</th>
+                    <th className="py-3 px-4 text-left text-sm font-medium text-gray-500">Email</th>
+                    <th className="py-3 px-4 text-left text-sm font-medium text-gray-500">Telefone</th>
+                    <th className="py-3 px-4 text-left text-sm font-medium text-gray-500">Origem</th>
+                    <th className="py-3 px-4 text-left text-sm font-medium text-gray-500">Status</th>
+                    <th className="py-3 px-4 text-left text-sm font-medium text-gray-500">Data</th>
+                    <th className="py-3 px-4 text-right text-sm font-medium text-gray-500">Ações</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {leads.map((lead) => (
+                    <tr key={lead.id} className="hover:bg-gray-50 transition-colors">
+                      <td className="py-4 px-4">
+                        <div className="font-medium text-gray-900">{lead.name}</div>
+                      </td>
+                      <td className="py-4 px-4">
+                        <div className="text-gray-600">{lead.email || 'Não informado'}</div>
+                      </td>
+                      <td className="py-4 px-4">
+                        <div className="text-gray-600">{lead.phone}</div>
+                      </td>
+                      <td className="py-4 px-4">
+                        <div className="text-gray-600">{lead.source || 'Não informado'}</div>
+                      </td>
+                      <td className="py-4 px-4">
+                        <Badge 
+                          variant="outline" 
+                          className={`${
+                            lead.status === 'converted' 
+                              ? 'bg-emerald-50 text-emerald-600 border-emerald-200' 
+                              : 'bg-sky-50 text-sky-600 border-sky-200'
+                          }`}
+                        >
+                          {lead.status === 'converted' ? 'Paciente' : 'Lead'}
+                        </Badge>
+                      </td>
+                      <td className="py-4 px-4">
+                        <div className="text-gray-600">
+                          {new Date(lead.createdAt).toLocaleDateString('pt-BR')}
+                        </div>
+                      </td>
+                      <td className="py-4 px-4">
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="bg-white border-sky-300 text-sky-700 hover:bg-sky-50 hover:border-sky-400 hover:text-sky-800 transition-colors"
+                            onClick={() => openEditModal(lead)}
+                          >
+                            <PencilIcon className="h-4 w-4 mr-2" />
+                            Editar
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="bg-white border-sky-300 text-sky-700 hover:bg-sky-50 hover:border-sky-400 hover:text-sky-800 transition-colors"
+                            onClick={() => handleViewLead(lead)}
+                          >
+                            <EyeIcon className="h-4 w-4 mr-2" />
+                            Ver
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Modal de criação */}
+        <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
+          <DialogContent className="bg-white/90 border-0 shadow-[0_8px_30px_rgba(0,0,0,0.12)] rounded-3xl p-6">
+            <CardHeader className="p-0 mb-6">
+              <CardTitle className="text-xl font-bold text-gray-900 tracking-[-0.03em] font-inter">Novo Lead</CardTitle>
+              <CardDescription className="text-sm text-gray-600 tracking-[-0.03em] font-inter">
+                Adicione um novo lead ao sistema
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-0">
+              <form onSubmit={handleCreateLead} className="space-y-6">
                 <div className="space-y-2">
-                  <Label htmlFor="appointmentDate" className="text-sm text-blue-100">Data</Label>
+                  <Label htmlFor="name" className="text-sm font-medium text-gray-700 tracking-[-0.03em] font-inter">Nome</Label>
                   <Input
-                    id="appointmentDate"
-                    name="appointmentDate"
-                    type="date"
-                    value={formData.appointmentDate}
-                    onChange={handleInputChange}
-                    className="h-9 bg-white/10 backdrop-blur-sm border-white/30 text-white"
+                    id="name"
+                    value={newLead.name}
+                    onChange={(e) => setNewLead({ ...newLead, name: e.target.value })}
+                    placeholder="Nome completo"
+                    className="bg-white/50 border-gray-200 focus:border-gray-300 text-gray-900 placeholder:text-gray-400 rounded-xl h-11"
                   />
                 </div>
+
                 <div className="space-y-2">
-                  <Label htmlFor="appointmentTime" className="text-sm text-blue-100">Hora</Label>
+                  <Label htmlFor="email" className="text-sm font-medium text-gray-700 tracking-[-0.03em] font-inter">E-mail</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={newLead.email}
+                    onChange={(e) => setNewLead({ ...newLead, email: e.target.value })}
+                    placeholder="E-mail do lead"
+                    className="bg-white/50 border-gray-200 focus:border-gray-300 text-gray-900 placeholder:text-gray-400 rounded-xl h-11"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="phone" className="text-sm font-medium text-gray-700 tracking-[-0.03em] font-inter">Telefone</Label>
+                  <Input
+                    id="phone"
+                    value={newLead.phone}
+                    onChange={(e) => setNewLead({ ...newLead, phone: e.target.value })}
+                    placeholder="Telefone do lead"
+                    className="bg-white/50 border-gray-200 focus:border-gray-300 text-gray-900 placeholder:text-gray-400 rounded-xl h-11"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="source" className="text-sm font-medium text-gray-700 tracking-[-0.03em] font-inter">Origem</Label>
+                  <Select
+                    value={newLead.source}
+                    onValueChange={(value) => setNewLead({ ...newLead, source: value })}
+                  >
+                    <SelectTrigger className="bg-white/50 border-gray-200 focus:border-gray-300 text-gray-900 rounded-xl h-11">
+                      <SelectValue placeholder="Selecione a origem" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="website">Website</SelectItem>
+                      <SelectItem value="social">Redes Sociais</SelectItem>
+                      <SelectItem value="referral">Indicação</SelectItem>
+                      <SelectItem value="other">Outro</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex gap-4 pt-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowCreateModal(false)}
+                    className="bg-white/50 border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300 rounded-xl h-11 flex-1"
+                  >
+                    Cancelar
+                  </Button>
+
+                  <Button
+                    type="submit"
+                    disabled={isLoading}
+                    className="bg-gray-900 hover:bg-gray-800 text-white rounded-xl h-11 flex-1"
+                  >
+                    {isLoading ? (
+                      <ArrowPathIcon className="h-4 w-4 animate-spin" />
+                    ) : (
+                      "Criar Lead"
+                    )}
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </DialogContent>
+        </Dialog>
+
+        {/* Modal de edição */}
+        <Dialog open={showEditModal} onOpenChange={setShowEditModal}>
+          <DialogContent className="bg-white/90 border-0 shadow-[0_8px_30px_rgba(0,0,0,0.12)] rounded-3xl p-6">
+            <CardHeader className="p-0 mb-6">
+              <CardTitle className="text-xl font-bold text-gray-900 tracking-[-0.03em] font-inter">Editar Lead</CardTitle>
+              <CardDescription className="text-sm text-gray-600 tracking-[-0.03em] font-inter">
+                Edite as informações do lead
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-0">
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="space-y-2">
+                  <Label htmlFor="name" className="text-sm font-medium text-gray-700 tracking-[-0.03em] font-inter">Nome</Label>
+                  <Input
+                    id="name"
+                    value={formData.name}
+                    onChange={handleInputChange}
+                    placeholder="Nome completo"
+                    className="bg-white/50 border-gray-200 focus:border-gray-300 text-gray-900 placeholder:text-gray-400 rounded-xl h-11"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="email" className="text-sm font-medium text-gray-700 tracking-[-0.03em] font-inter">E-mail</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    placeholder="E-mail do lead"
+                    className="bg-white/50 border-gray-200 focus:border-gray-300 text-gray-900 placeholder:text-gray-400 rounded-xl h-11"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="phone" className="text-sm font-medium text-gray-700 tracking-[-0.03em] font-inter">Telefone</Label>
+                  <Input
+                    id="phone"
+                    value={formData.phone}
+                    onChange={handleInputChange}
+                    placeholder="Telefone do lead"
+                    className="bg-white/50 border-gray-200 focus:border-gray-300 text-gray-900 placeholder:text-gray-400 rounded-xl h-11"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="interest" className="text-sm font-medium text-gray-700 tracking-[-0.03em] font-inter">Interesse</Label>
+                  <Input
+                    id="interest"
+                    value={formData.interest}
+                    onChange={handleInputChange}
+                    placeholder="Interesse do lead"
+                    className="bg-white/50 border-gray-200 focus:border-gray-300 text-gray-900 placeholder:text-gray-400 rounded-xl h-11"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="status" className="text-sm font-medium text-gray-700 tracking-[-0.03em] font-inter">Status</Label>
+                  <Select
+                    value={formData.status}
+                    onValueChange={handleSelectChange.bind(null, 'status')}
+                  >
+                    <SelectTrigger className="bg-white/50 border-gray-200 focus:border-gray-300 text-gray-900 rounded-xl h-11">
+                      <SelectValue placeholder="Selecione o status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Novo">Novo</SelectItem>
+                      <SelectItem value="Agendado">Agendado</SelectItem>
+                      <SelectItem value="Compareceu">Compareceu</SelectItem>
+                      <SelectItem value="Fechado">Fechado</SelectItem>
+                      <SelectItem value="Não veio">Não veio</SelectItem>
+                      <SelectItem value="Cancelado">Cancelado</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="potentialValue" className="text-sm font-medium text-gray-700 tracking-[-0.03em] font-inter">Valor Potencial</Label>
+                  <Input
+                    id="potentialValue"
+                    type="number"
+                    value={formData.potentialValue}
+                    onChange={handleInputChange}
+                    placeholder="Valor potencial do lead"
+                    className="bg-white/50 border-gray-200 focus:border-gray-300 text-gray-900 placeholder:text-gray-400 rounded-xl h-11"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="appointmentDate" className="text-sm font-medium text-gray-700 tracking-[-0.03em] font-inter">Data da Consulta</Label>
+                  <Input
+                    id="appointmentDate"
+                    type="datetime-local"
+                    value={formData.appointmentDate}
+                    onChange={handleInputChange}
+                    className="bg-white/50 border-gray-200 focus:border-gray-300 text-gray-900 placeholder:text-gray-400 rounded-xl h-11"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="appointmentTime" className="text-sm font-medium text-gray-700 tracking-[-0.03em] font-inter">Horário da Consulta</Label>
                   <Input
                     id="appointmentTime"
-                    name="appointmentTime"
                     type="time"
                     value={formData.appointmentTime}
                     onChange={handleInputChange}
-                    className="h-9 bg-white/10 backdrop-blur-sm border-white/30 text-white"
+                    className="bg-white/50 border-gray-200 focus:border-gray-300 text-gray-900 placeholder:text-gray-400 rounded-xl h-11"
                   />
                 </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="medicalNotes" className="text-sm text-blue-100">Anotações</Label>
-                <Textarea
-                  id="medicalNotes"
-                  name="medicalNotes"
-                  value={formData.medicalNotes}
-                  onChange={handleInputChange}
-                  className="min-h-[80px] bg-white/10 backdrop-blur-sm border-white/30 text-white placeholder:text-white/50"
-                  placeholder="Adicione observações..."
-                />
-              </div>
-            </div>
-            <div className="flex justify-end gap-2 pt-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={closeEditModal}
-                className="h-9 px-4 bg-blue-700/30 border-blue-500/30 text-blue-100 hover:bg-blue-600/40"
-              >
-                Cancelar
-              </Button>
-              <Button
-                type="submit"
-                disabled={isSubmitting}
-                className="h-9 px-4 bg-white text-blue-700 hover:bg-white/90 border-none"
-              >
-                {isSubmitting ? "Salvando..." : "Salvar"}
-              </Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
 
-      {/* Modal de Agendamento Rápido */}
-      <Dialog open={!!quickEditLead} onOpenChange={() => setQuickEditLead(null)}>
-        <DialogContent className="sm:max-w-[360px] bg-blue-800/90 backdrop-blur-sm p-0 rounded-lg border border-white/30">
-          <div className="p-4 border-b border-blue-500/30">
-            <DialogTitle className="text-lg font-medium text-white">Agendar Consulta</DialogTitle>
-            <p className="text-sm text-blue-100/80 mt-1">{quickEditLead?.name}</p>
-          </div>
-          <div className="p-4 space-y-4">
-            <div className="space-y-2">
-              <Label className="text-sm text-blue-100">Data</Label>
-              <Input
-                type="date"
-                value={quickAppointmentDate}
-                onChange={(e) => setQuickAppointmentDate(e.target.value)}
-                className="h-9 bg-white/10 backdrop-blur-sm border-white/30 text-white"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-sm text-blue-100">Hora</Label>
-              <Input
-                type="time"
-                value={quickAppointmentTime}
-                onChange={(e) => setQuickAppointmentTime(e.target.value)}
-                className="h-9 bg-white/10 backdrop-blur-sm border-white/30 text-white"
-              />
-            </div>
-            <div className="flex justify-end gap-2 pt-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setQuickEditLead(null)}
-                className="h-9 px-4 bg-blue-700/30 border-blue-500/30 text-blue-100 hover:bg-blue-600/40"
-              >
-                Cancelar
+                <div className="space-y-2">
+                  <Label htmlFor="medicalNotes" className="text-sm font-medium text-gray-700 tracking-[-0.03em] font-inter">Observações</Label>
+                  <Textarea
+                    id="medicalNotes"
+                    value={formData.medicalNotes}
+                    onChange={handleInputChange}
+                    placeholder="Observações sobre o lead"
+                    className="bg-white/50 border-gray-200 focus:border-gray-300 text-gray-900 placeholder:text-gray-400 rounded-xl h-24"
+                  />
+                </div>
+
+                <div className="flex gap-4 pt-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={closeEditModal}
+                    className="bg-white/50 border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300 rounded-xl h-11 flex-1"
+                  >
+                    Cancelar
+                  </Button>
+
+                  <Button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="bg-gray-900 hover:bg-gray-800 text-white rounded-xl h-11 flex-1"
+                  >
+                    {isSubmitting ? (
+                      <ArrowPathIcon className="h-4 w-4 animate-spin" />
+                    ) : (
+                      "Salvar"
+                    )}
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </DialogContent>
+        </Dialog>
+
+        {/* Modal de Visualização */}
+        <Dialog open={isViewModalOpen} onOpenChange={setIsViewModalOpen}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Detalhes do Lead</DialogTitle>
+            </DialogHeader>
+            {viewingLead && (
+              <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label className="text-right">Nome</Label>
+                  <div className="col-span-3">{viewingLead.name}</div>
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label className="text-right">Email</Label>
+                  <div className="col-span-3">{viewingLead.email || 'Não informado'}</div>
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label className="text-right">Telefone</Label>
+                  <div className="col-span-3">{viewingLead.phone}</div>
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label className="text-right">Origem</Label>
+                  <div className="col-span-3">{viewingLead.source || 'Não informado'}</div>
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label className="text-right">Status</Label>
+                  <div className="col-span-3">{viewingLead.status || 'Novo'}</div>
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label className="text-right">Data</Label>
+                  <div className="col-span-3">
+                    {new Date(viewingLead.createdAt).toLocaleDateString('pt-BR')}
+                  </div>
+                </div>
+                {viewingLead.appointmentDate && (
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label className="text-right">Consulta</Label>
+                    <div className="col-span-3">
+                      {new Date(viewingLead.appointmentDate).toLocaleDateString('pt-BR')}
+                    </div>
+                  </div>
+                )}
+                {viewingLead.medicalNotes && (
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label className="text-right">Observações</Label>
+                    <div className="col-span-3">{viewingLead.medicalNotes}</div>
+                  </div>
+                )}
+              </div>
+            )}
+            <DialogFooter>
+              <Button variant="secondary" onClick={() => setIsViewModalOpen(false)}>
+                Fechar
               </Button>
-              <Button
-                onClick={handleQuickSchedule}
-                disabled={isQuickSubmitting || !quickAppointmentDate}
-                className="h-9 px-4 bg-white text-blue-700 hover:bg-white/90 border-none"
-              >
-                {isQuickSubmitting ? "Agendando..." : "Agendar"}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
     </div>
   );
 } 

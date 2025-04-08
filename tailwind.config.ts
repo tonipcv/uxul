@@ -11,6 +11,7 @@ export default {
   	extend: {
   		fontFamily: {
   			helvetica: ['Helvetica Neue', 'Helvetica', 'Arial', 'sans-serif'],
+  			sans: ['var(--font-satoshi)'],
   		},
   		fontWeight: {
   			thin: '100',
@@ -77,7 +78,10 @@ export default {
   			lg: 'var(--radius)',
   			md: 'calc(var(--radius) - 2px)',
   			sm: 'calc(var(--radius) - 4px)'
-  		}
+  		},
+  		letterSpacing: {
+  			tighter: '-0.03em',
+  		},
   	}
   },
   plugins: [require("tailwindcss-animate")],

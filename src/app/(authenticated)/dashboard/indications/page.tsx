@@ -19,10 +19,12 @@ import {
   ArrowPathIcon
 } from "@heroicons/react/24/outline";
 import { toast } from "@/components/ui/use-toast";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 
 interface IndicationCount {
   events: number;
   leads: number;
+  converted: number;
 }
 
 interface IndicationStats {
@@ -39,11 +41,23 @@ interface Indication {
   createdAt: string;
   _count?: IndicationCount;
   stats?: IndicationStats;
+  leads?: Array<{
+    id: string;
+    patient?: {
+      id: string;
+      name: string;
+      email: string;
+      phone: string;
+    };
+  }>;
 }
 
 export default function IndicationsPage() {
   const { data: session } = useSession();
   const [newIndication, setNewIndication] = useState('');
+  const [patientName, setPatientName] = useState('');
+  const [patientEmail, setPatientEmail] = useState('');
+  const [patientPhone, setPatientPhone] = useState('');
   const [generatedSlug, setGeneratedSlug] = useState('');
   const [indications, setIndications] = useState<Indication[]>([]);
   const [baseUrl, setBaseUrl] = useState('');
@@ -58,6 +72,8 @@ export default function IndicationsPage() {
     totalIndications: number;
     totalClicks: number;
   } | null>(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
 
   useEffect(() => {
     // Marcador de renderização client-side para evitar problemas de hidratação
@@ -101,10 +117,20 @@ export default function IndicationsPage() {
         const data = await response.json();
         setIndications(data);
         
-        // Não calcular totais aqui, já que usamos os dados do dashboard
+        // Calcular totais diretamente dos dados
+        const totalLeads = data.reduce((acc: number, curr: any) => acc + (curr._count?.leads || 0), 0);
+        const totalClicks = data.reduce((acc: number, curr: any) => acc + (curr._count?.events || 0), 0);
+        
+        setTotalLeads(totalLeads);
+        setTotalClicks(totalClicks);
       }
     } catch (error) {
       console.error('Erro ao buscar indicações:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível carregar as indicações",
+        variant: "destructive"
+      });
     }
   };
 
@@ -114,9 +140,6 @@ export default function IndicationsPage() {
       if (response.ok) {
         const data = await response.json();
         setDashboardData(data);
-        // Atualizar os totais a partir do dashboard
-        setTotalLeads(data.totalLeads || 0);
-        setTotalClicks(data.totalClicks || 0);
       }
     } catch (error) {
       console.error('Erro ao buscar dados do dashboard:', error);
@@ -157,6 +180,14 @@ export default function IndicationsPage() {
   const handleCreateIndication = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newIndication.trim() || !session?.user?.id) return;
+    if (!patientName.trim() || !patientEmail.trim() || !patientPhone.trim()) {
+      toast({
+        title: "Erro",
+        description: "Preencha todos os dados do paciente",
+        variant: "destructive"
+      });
+      return;
+    }
     
     setIsLoading(true);
     try {
@@ -180,14 +211,15 @@ export default function IndicationsPage() {
         }
       }
       
-      // Criar a indicação
+      // Criar a indicação com os dados do paciente
       const response = await fetch('/api/indications', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          userId: session.user.id,
-          slug,
-          name: newIndication
+          name: newIndication,
+          patientName,
+          patientEmail,
+          patientPhone
         })
       });
       
@@ -197,12 +229,16 @@ export default function IndicationsPage() {
           description: "Link de indicação criado com sucesso",
         });
         setNewIndication('');
+        setPatientName('');
+        setPatientEmail('');
+        setPatientPhone('');
         setGeneratedSlug('');
         fetchIndications();
       } else {
+        const errorData = await response.json();
         toast({
           title: "Erro",
-          description: "Não foi possível criar a indicação",
+          description: errorData.error || "Não foi possível criar a indicação",
           variant: "destructive"
         });
       }
@@ -243,240 +279,225 @@ export default function IndicationsPage() {
     return url.replace(/^https?:\/\//, '');
   };
 
+  // Carregar dados imediatamente após montagem do componente
+  useEffect(() => {
+    if (session?.user?.id) {
+      fetchIndications();
+      fetchUserProfile();
+      fetchDashboardData();
+    }
+  }, [session?.user?.id]);
+
+  // Atualizar dados periodicamente
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (session?.user?.id) {
+        fetchIndications();
+        fetchDashboardData();
+      }
+    }, 30000); // Atualizar a cada 30 segundos
+
+    return () => clearInterval(interval);
+  }, [session?.user?.id]);
+
   // Não renderizar nada no servidor para evitar erros de hidratação
   if (!isClient) {
     return null;
   }
   
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8">
-        <div>
-          <h1 className="text-2xl font-light text-white">Indicações</h1>
-          <p className="text-blue-100/80">Gerencie seus links personalizados</p>
-        </div>
-        <div className="flex flex-col md:flex-row gap-3 items-end mt-2 md:mt-0">
-          {/* Link direto do médico */}
-          <div className="flex items-center gap-2 bg-blue-600/20 backdrop-blur-sm px-3 py-2 rounded-md border border-blue-500/30">
-            <span className="text-sm text-blue-100">Seu link:</span>
-            <code className="text-blue-200 font-medium text-sm">{formatLink(`${baseUrl}/${userSlug}`)}</code>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-8 w-8 p-0 hover:bg-blue-600/30 text-blue-200"
-              onClick={() => copyToClipboard(formatLink(`${baseUrl}/${userSlug}`))}
-            >
-              <ClipboardIcon className="h-4 w-4" />
-            </Button>
+    <div className="min-h-[100dvh] bg-gray-100 pt-8 pb-16 px-4">
+      <div className="container mx-auto">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8">
+          <div>
+            <h1 className="text-xl md:text-2xl font-bold text-gray-900 tracking-[-0.03em] font-inter">Indicações</h1>
+            <p className="text-sm md:text-base text-gray-600 tracking-[-0.03em] font-inter">Gerencie suas indicações</p>
           </div>
           <Button 
-            onClick={() => fetchIndications()} 
-            variant="ghost"
-            size="sm" 
-            className="h-8 w-8 p-0 hover:bg-blue-600/30 text-blue-200"
-            title="Atualizar dados"
+            onClick={() => setShowCreateModal(true)}
+            className="mt-2 md:mt-0 bg-gray-800/5 border-0 shadow-[0_4px_12px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.1)] transition-all duration-300 rounded-2xl text-gray-700 hover:bg-gray-800/10"
           >
-            <ArrowPathIcon className="h-4 w-4" />
+            <PlusIcon className="h-4 w-4 mr-2" />
+            Nova Indicação
           </Button>
         </div>
-      </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <Card className="bg-white/10 backdrop-blur-sm border-l-4 border-blue-300 border-t border-r border-b border-white/30 shadow-md">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg font-medium flex items-center text-white">
-              <LinkIcon className="h-5 w-5 mr-2 text-blue-300" />
-              Links Ativos
-            </CardTitle>
-            <CardDescription className="text-blue-100/80">
-              Total de links criados
+        <Card className="bg-gray-800/5 border-0 shadow-[0_8px_30px_rgba(0,0,0,0.12)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.16)] transition-all duration-300 rounded-2xl">
+          <CardHeader>
+            <CardTitle className="text-lg font-medium text-gray-900">Links de Indicação</CardTitle>
+            <CardDescription className="text-gray-500">
+              Gerencie seus links de indicação
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex items-end justify-between">
-              <p className="text-4xl font-semibold text-white">
-                {indications.length}
-              </p>
-              <Badge variant="outline" className="bg-blue-500/20 text-blue-100 border-blue-300/50">
-                Ativos
-              </Badge>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-gray-200">
+                    <th className="py-3 px-4 text-left text-sm font-medium text-gray-500">Nome</th>
+                    <th className="py-3 px-4 text-left text-sm font-medium text-gray-500">Link</th>
+                    <th className="py-3 px-4 text-left text-sm font-medium text-gray-500">Cliques</th>
+                    <th className="py-3 px-4 text-left text-sm font-medium text-gray-500">Leads</th>
+                    <th className="py-3 px-4 text-left text-sm font-medium text-gray-500">Pacientes</th>
+                    <th className="py-3 px-4 text-left text-sm font-medium text-gray-500">Conversão</th>
+                    <th className="py-3 px-4 text-right text-sm font-medium text-gray-500">Ações</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {indications.map((indication) => (
+                    <tr key={indication.id} className="hover:bg-gray-50 transition-colors">
+                      <td className="py-4 px-4">
+                        <div className="font-medium text-gray-900">{indication.name}</div>
+                      </td>
+                      <td className="py-4 px-4">
+                        <div className="text-gray-600 text-sm">
+                          {`${baseUrl}/${userSlug}/${indication.slug}`}
+                        </div>
+                      </td>
+                      <td className="py-4 px-4">
+                        <div className="text-gray-900 font-medium">
+                          {indication._count?.events || 0}
+                        </div>
+                      </td>
+                      <td className="py-4 px-4">
+                        <div className="text-gray-900 font-medium">
+                          {indication._count?.leads || 0}
+                        </div>
+                      </td>
+                      <td className="py-4 px-4">
+                        <div className="text-gray-900 font-medium">
+                          {indication._count?.converted || 0}
+                        </div>
+                      </td>
+                      <td className="py-4 px-4">
+                        <div className="text-gray-900 font-medium">
+                          {indication._count?.events 
+                            ? `${Math.round((indication._count.converted / indication._count.events) * 100)}%`
+                            : '0%'}
+                        </div>
+                      </td>
+                      <td className="py-4 px-4">
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="bg-white border-sky-300 text-sky-700 hover:bg-sky-50 hover:border-sky-400 hover:text-sky-800 transition-colors"
+                            onClick={() => copyToClipboard(`${baseUrl}/${userSlug}/${indication.slug}`)}
+                          >
+                            <ClipboardIcon className="h-4 w-4 mr-2" />
+                            Copiar
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="bg-white border-sky-300 text-sky-700 hover:bg-sky-50 hover:border-sky-400 hover:text-sky-800 transition-colors"
+                            onClick={() => shareOnWhatsApp(`${baseUrl}/${userSlug}/${indication.slug}`)}
+                          >
+                            <ShareIcon className="h-4 w-4 mr-2" />
+                            Compartilhar
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-white/10 backdrop-blur-sm border-l-4 border-white/50 border-t border-r border-b border-white/30 shadow-md">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg font-medium flex items-center text-white">
-              <UserIcon className="h-5 w-5 mr-2 text-white/70" />
-              Leads Totais
-            </CardTitle>
-            <CardDescription className="text-blue-100/80">
-              Total de conversões
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-end justify-between">
-              <p className="text-4xl font-semibold text-white">
-                {totalLeads}
-              </p>
-              <Badge variant="outline" className="bg-white/20 text-white border-white/40">
-                Total
-              </Badge>
-            </div>
-          </CardContent>
-        </Card>
+        <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
+          <DialogContent className="bg-white/90 border-0 shadow-[0_8px_30px_rgba(0,0,0,0.12)] rounded-3xl p-6">
+            <CardHeader className="p-0 mb-6">
+              <CardTitle className="text-xl font-bold text-gray-900 tracking-[-0.03em] font-inter">Criar Novo Link</CardTitle>
+              <CardDescription className="text-sm text-gray-600 tracking-[-0.03em] font-inter">
+                Gere um novo link de indicação
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-0">
+              <form onSubmit={handleCreateIndication} className="space-y-6">
+                <div className="space-y-2">
+                  <Label htmlFor="name" className="text-sm font-medium text-gray-700 tracking-[-0.03em] font-inter">Nome do Link</Label>
+                  <Input
+                    id="name"
+                    value={newIndication}
+                    onChange={(e) => setNewIndication(e.target.value)}
+                    placeholder="Ex: Consulta de Check-up"
+                    className="bg-white/50 border-gray-200 focus:border-gray-300 text-gray-900 placeholder:text-gray-400 rounded-xl h-11"
+                  />
+                </div>
 
-        <Card className="bg-white/10 backdrop-blur-sm border-l-4 border-blue-200 border-t border-r border-b border-white/30 shadow-md">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg font-medium flex items-center text-white">
-              <ArrowTrendingUpIcon className="h-5 w-5 mr-2 text-blue-200" />
-              Cliques
-            </CardTitle>
-            <CardDescription className="text-blue-100/80">
-              Total de acessos
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-end justify-between">
-              <p className="text-4xl font-semibold text-white">
-                {totalClicks}
-              </p>
-              <p className="text-xs text-blue-100/80">
-                {totalLeads > 0 ? `${Math.round((totalLeads / totalClicks) * 100)}% conv.` : '0% conv.'}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+                <div className="space-y-2">
+                  <Label htmlFor="patientName" className="text-sm font-medium text-gray-700 tracking-[-0.03em] font-inter">Nome do Paciente</Label>
+                  <Input
+                    id="patientName"
+                    value={patientName}
+                    onChange={(e) => setPatientName(e.target.value)}
+                    placeholder="Nome completo do paciente"
+                    className="bg-white/50 border-gray-200 focus:border-gray-300 text-gray-900 placeholder:text-gray-400 rounded-xl h-11"
+                  />
+                </div>
 
-      {/* Criar novo link */}
-      <Card className="bg-white/10 backdrop-blur-sm border border-white/30 shadow-md mb-8">
-        <CardHeader>
-          <CardTitle className="text-lg font-medium text-white">Criar novo link</CardTitle>
-          <CardDescription className="text-blue-100/80">
-            Gere um novo link de indicação personalizado
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleCreateIndication} className="space-y-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="name" className="text-blue-100">Nome da indicação</Label>
-              <div className="flex gap-2">
-                <Input
-                  id="name"
-                  value={newIndication}
-                  onChange={(e) => setNewIndication(e.target.value)}
-                  placeholder="Ex: Instagram, WhatsApp, Facebook..."
-                  className="flex-1 bg-white/10 backdrop-blur-sm border-2 border-white/30 text-white placeholder:text-white/60 focus:ring-2 focus:ring-white/50 focus:border-transparent"
-                />
-                <Button
-                  type="button"
-                  onClick={handleGenerateSlug}
-                  disabled={!newIndication.trim() || isGenerating}
-                  variant="ghost"
-                  size="sm"
-                  className="h-10 w-10 p-0 hover:bg-blue-600/30 text-blue-100"
-                  title="Gerar Link"
-                >
-                  <LinkIcon className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
+                <div className="space-y-2">
+                  <Label htmlFor="patientEmail" className="text-sm font-medium text-gray-700 tracking-[-0.03em] font-inter">E-mail do Paciente</Label>
+                  <Input
+                    id="patientEmail"
+                    type="email"
+                    value={patientEmail}
+                    onChange={(e) => setPatientEmail(e.target.value)}
+                    placeholder="E-mail do paciente"
+                    className="bg-white/50 border-gray-200 focus:border-gray-300 text-gray-900 placeholder:text-gray-400 rounded-xl h-11"
+                  />
+                </div>
 
-            {generatedSlug && (
-              <div className="p-3 bg-blue-600/20 backdrop-blur-sm border border-blue-500/30 rounded-md">
-                <p className="text-sm text-blue-100 mb-2">Link gerado:</p>
-                <div className="flex items-center gap-2 text-sm">
-                  <code className="flex-1 bg-blue-700/30 px-2 py-1 rounded border border-blue-500/30 text-blue-100">
-                    {formatLink(`${baseUrl}/${userSlug}/${generatedSlug}`)}
-                  </code>
+                <div className="space-y-2">
+                  <Label htmlFor="patientPhone" className="text-sm font-medium text-gray-700 tracking-[-0.03em] font-inter">Telefone do Paciente</Label>
+                  <Input
+                    id="patientPhone"
+                    value={patientPhone}
+                    onChange={(e) => setPatientPhone(e.target.value)}
+                    placeholder="Telefone do paciente"
+                    className="bg-white/50 border-gray-200 focus:border-gray-300 text-gray-900 placeholder:text-gray-400 rounded-xl h-11"
+                  />
+                </div>
+
+                <div className="flex gap-4 pt-2">
                   <Button
                     type="button"
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => copyToClipboard(formatLink(`${baseUrl}/${userSlug}/${generatedSlug}`))}
-                    className="h-8 w-8 p-0 hover:bg-blue-600/30 text-blue-200"
+                    variant="outline"
+                    onClick={handleGenerateSlug}
+                    disabled={isGenerating}
+                    className="bg-white/50 border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300 rounded-xl h-11 flex-1"
                   >
-                    <ClipboardIcon className="h-4 w-4" />
+                    {isGenerating ? (
+                      <ArrowPathIcon className="h-4 w-4 animate-spin" />
+                    ) : (
+                      "Gerar Slug"
+                    )}
+                  </Button>
+
+                  <Button
+                    type="submit"
+                    disabled={isLoading}
+                    className="bg-gray-900 hover:bg-gray-800 text-white rounded-xl h-11 flex-1"
+                  >
+                    {isLoading ? (
+                      <ArrowPathIcon className="h-4 w-4 animate-spin" />
+                    ) : (
+                      "Criar Link"
+                    )}
                   </Button>
                 </div>
-              </div>
-            )}
-
-            <div className="pt-4">
-              <Button
-                type="submit"
-                disabled={!newIndication.trim() || isLoading}
-                className="w-full h-10 bg-white text-blue-700 hover:bg-white/90 transition-all border-none shadow-lg disabled:opacity-50"
-              >
-                {isLoading ? 'Criando...' : 'Criar Link de Indicação'}
-              </Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
-
-      {/* Lista de Links */}
-      <div className="space-y-4 mt-8">
-        {indications.map((indication) => (
-          <Card key={indication.id} className="bg-white/10 backdrop-blur-sm border border-white/30 shadow-md">
-            <CardContent className="p-6">
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-lg font-medium text-white mb-1 truncate">
-                    {indication.name || indication.slug}
-                  </h3>
-                  <div className="flex items-center gap-2 bg-blue-600/20 px-3 py-2 rounded border border-blue-500/30">
-                    <code className="text-blue-100 text-sm truncate">
-                      {formatLink(`${baseUrl}/${userSlug}/${indication.slug}`)}
-                    </code>
-                  </div>
-                </div>
-                
-                <div className="flex flex-col md:flex-row gap-3">
-                  <div className="flex items-center gap-2 text-sm text-blue-100/80">
-                    <UserIcon className="h-4 w-4" />
-                    <span>
-                      {indication.stats 
-                        ? indication.stats.leads 
-                        : (indication._count && indication._count.leads !== undefined 
-                          ? indication._count.leads 
-                          : 0)} leads
-                    </span>
-                    <ArrowTrendingUpIcon className="h-4 w-4 ml-2" />
-                    <span>
-                      {indication.stats 
-                        ? indication.stats.clicks 
-                        : (indication._count && indication._count.events !== undefined 
-                          ? indication._count.events 
-                          : 0)} cliques
-                    </span>
-                  </div>
-                  
-                  <div className="flex gap-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-9 w-9 p-0 hover:bg-blue-600/30 text-blue-200"
-                      onClick={() => copyToClipboard(formatLink(`${baseUrl}/${userSlug}/${indication.slug}`))}
-                    >
-                      <ClipboardIcon className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-9 w-9 p-0 hover:bg-green-600/30 text-green-200"
-                      onClick={() => shareOnWhatsApp(`${baseUrl}/${userSlug}/${indication.slug}`)}
-                    >
-                      <ShareIcon className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </div>
+              </form>
             </CardContent>
-          </Card>
-        ))}
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={showEditModal} onOpenChange={setShowEditModal}>
+          <DialogContent className="bg-gray-800/5 border-0 shadow-[0_8px_30px_rgba(0,0,0,0.12)] rounded-2xl">
+            {/* Modal de edição */}
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

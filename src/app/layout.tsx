@@ -4,6 +4,8 @@ import { Inter } from 'next/font/google'
 import { ThemeProvider } from '@/components/theme-provider'
 import { NextAuthProvider } from '@/components/NextAuthProvider'
 import Toaster from '@/components/ui/use-toast'
+import { satoshi } from '@/fonts/satoshi'
+import { cn } from '@/lib/utils'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -39,8 +41,10 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={inter.className} suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning className={cn(satoshi.variable)}>
+      <body className={cn(
+        "min-h-screen bg-background font-sans antialiased tracking-tighter"
+      )}>
         <ThemeProvider
           attribute="class"
           defaultTheme="dark"

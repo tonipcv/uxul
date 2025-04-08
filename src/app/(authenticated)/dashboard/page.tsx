@@ -7,13 +7,14 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { 
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell, Legend
+  PieChart, Pie, Cell, Legend, CartesianGrid, AreaChart, Area
 } from 'recharts';
 import { 
   ChevronUpIcon, 
   PhoneIcon, 
   LinkIcon,
-  ArrowTrendingUpIcon
+  ArrowTrendingUpIcon,
+  UserIcon
 } from "@heroicons/react/24/outline";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -25,8 +26,8 @@ const isValidDate = (date: Date): boolean => {
   return date instanceof Date && !isNaN(date.getTime());
 };
 
-// Cores para os gráficos
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#A05195'];
+// Cores para os gráficos - Atualizando para usar as cores pastel especificadas
+const COLORS = ['#d8fffa', '#ffe6e7', '#def6ff', '#f2f1ff', '#a5b4fc'];
 
 interface Lead {
   id: string;
@@ -66,6 +67,7 @@ interface DashboardData {
   topSources: UtmSource[];
   totalRevenue: number;
   potentialRevenue: number;
+  clickToLeadRate: number;
 }
 
 // Componente para formatar o Tooltip do gráfico
@@ -88,6 +90,7 @@ export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState("overview");
 
   useEffect(() => {
+
     if (session?.user?.id) {
       fetchDashboardData();
     }
@@ -114,7 +117,8 @@ export default function DashboardPage() {
           topIndications: [],
           topSources: [],
           totalRevenue: 0,
-          potentialRevenue: 0
+          potentialRevenue: 0,
+          clickToLeadRate: 0
         });
       }
     } catch (error) {
@@ -130,7 +134,8 @@ export default function DashboardPage() {
         topIndications: [],
         topSources: [],
         totalRevenue: 0,
-        potentialRevenue: 0
+        potentialRevenue: 0,
+        clickToLeadRate: 0
       });
     } finally {
       setLoading(false);
@@ -149,34 +154,34 @@ export default function DashboardPage() {
   })) || [];
 
   return (
-    <div className="min-h-[100dvh] bg-gradient-to-br from-blue-800 via-blue-700 to-blue-900 pt-8 pb-16 px-4">
-      <div className="container mx-auto">
+    <div className="min-h-[100dvh] bg-gray-100 pt-16 pb-24 md:pt-8 md:pb-16 px-4">
+      <div className="container mx-auto pb-24 md:pb-20 lg:pb-8">
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8">
           <div>
-            <h1 className="text-2xl font-light text-white">Dashboard</h1>
-            <p className="text-blue-100/80">Bem-vindo, {session?.user?.name}</p>
+            <h1 className="text-xl md:text-2xl font-bold text-gray-900 tracking-[-0.03em] font-inter">Dashboard</h1>
+            <p className="text-sm md:text-base text-gray-600 tracking-[-0.03em] font-inter">Bem-vindo, {session?.user?.name}</p>
           </div>
           <Button 
             onClick={fetchDashboardData} 
             variant="outline" 
             size="sm" 
-            className="mt-2 md:mt-0 bg-white/10 backdrop-blur-sm border-white/30 text-white hover:bg-white/20 transition-colors"
+            className="mt-2 md:mt-0 bg-gray-800/5 border-0 shadow-[0_4px_12px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.1)] transition-all duration-300 rounded-2xl text-gray-700 hover:bg-gray-800/10"
           >
             Atualizar dados
           </Button>
         </div>
 
         <Tabs defaultValue="overview" value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid grid-cols-2 mb-8 bg-white/10 backdrop-blur-sm border border-white/30 p-1 rounded-md">
+          <TabsList className="grid grid-cols-2 mb-8 bg-gray-800/5 border-0 shadow-[0_4px_12px_rgba(0,0,0,0.05)] p-1 rounded-2xl">
             <TabsTrigger 
               value="overview" 
-              className="data-[state=active]:bg-white data-[state=active]:text-blue-700 data-[state=active]:border-b-2 data-[state=active]:border-blue-300 text-white/80 hover:text-white transition-colors rounded-md"
+              className="data-[state=active]:bg-gray-800/10 data-[state=active]:text-gray-900 data-[state=active]:border-b-0 text-gray-600 hover:text-gray-900 transition-colors rounded-xl"
             >
               Visão Geral
             </TabsTrigger>
             <TabsTrigger 
               value="details" 
-              className="data-[state=active]:bg-white data-[state=active]:text-blue-700 data-[state=active]:border-b-2 data-[state=active]:border-blue-300 text-white/80 hover:text-white transition-colors rounded-md"
+              className="data-[state=active]:bg-gray-800/10 data-[state=active]:text-gray-900 data-[state=active]:border-b-0 text-gray-600 hover:text-gray-900 transition-colors rounded-xl"
             >
               Detalhamento
             </TabsTrigger>
@@ -185,112 +190,105 @@ export default function DashboardPage() {
           <TabsContent value="overview" className="mt-0">
             {/* Cards principais */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-              <Card className="bg-white/10 backdrop-blur-sm border-l-4 border-blue-300 border-t border-r border-b border-white/30 shadow-md">
+              <Card className="bg-gray-800/5 border-0 shadow-[0_8px_30px_rgba(0,0,0,0.12)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.16)] transition-all duration-300 rounded-2xl">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-lg font-medium flex items-center text-white">
-                    <PhoneIcon className="h-5 w-5 mr-2 text-blue-300" />
+                  <CardTitle className="text-base md:text-lg font-bold flex items-center text-gray-900 tracking-[-0.03em] font-inter">
+                    <UserIcon className="h-5 w-5 mr-2 text-[#8b5cf6]" />
                     Total de Leads
                   </CardTitle>
-                  <CardDescription className="text-blue-100/80">
+                  <CardDescription className="text-xs md:text-sm text-gray-500 tracking-[-0.03em] font-inter">
                     Conversões totais
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="flex items-end justify-between">
-                    <p className="text-4xl font-semibold text-white">
+                    <p className="text-2xl md:text-4xl font-semibold text-gray-900">
                       {loading ? '...' : dashboardData?.totalLeads || 0}
                     </p>
-                    <Badge variant="outline" className="bg-blue-500/20 text-blue-100 border-blue-300/50">
-                      <ChevronUpIcon className="h-3 w-3 mr-1" />
+                    <Badge variant="outline" className="bg-[#f2f1ff] text-[#8b5cf6] border-[#d5dbff]">
+                      <ArrowTrendingUpIcon className="h-3 w-3 mr-1" />
                       Ativo
                     </Badge>
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="bg-white/10 backdrop-blur-sm border-l-4 border-white/50 border-t border-r border-b border-white/30 shadow-md">
+              <Card className="bg-gray-800/5 border-0 shadow-[0_8px_30px_rgba(0,0,0,0.12)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.16)] transition-all duration-300 rounded-2xl">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-lg font-medium flex items-center text-white">
-                    <LinkIcon className="h-5 w-5 mr-2 text-white/70" />
+                  <CardTitle className="text-base md:text-lg font-bold flex items-center text-gray-900 tracking-[-0.03em] font-inter">
+                    <LinkIcon className="h-5 w-5 mr-2 text-[#6366f1]" />
                     Links Ativos
                   </CardTitle>
-                  <CardDescription className="text-blue-100/80">
+                  <CardDescription className="text-xs md:text-sm text-gray-500 tracking-[-0.03em] font-inter">
                     Indicações ativas
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="flex items-end justify-between">
-                    <p className="text-4xl font-semibold text-white">
+                    <p className="text-2xl md:text-4xl font-semibold text-gray-900">
                       {loading ? '...' : dashboardData?.totalIndications || 0}
                     </p>
-                    <Badge variant="outline" className="bg-white/20 text-white border-white/40">
+                    <Badge variant="outline" className="bg-[#def6ff] text-[#6366f1] border-[#c9d0ff]">
                       100%
                     </Badge>
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="bg-white/10 backdrop-blur-sm border-l-4 border-green-300 border-t border-r border-b border-white/30 shadow-md">
+              <Card className="bg-gray-800/5 border-0 shadow-[0_8px_30px_rgba(0,0,0,0.12)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.16)] transition-all duration-300 rounded-2xl">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-lg font-medium flex items-center text-white">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 mr-2 text-green-300">
+                  <CardTitle className="text-base md:text-lg font-bold flex items-center text-gray-900 tracking-[-0.03em] font-inter">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 mr-2 text-[#4ade80]" >
                       <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
                     </svg>
                     Faturamento
                   </CardTitle>
-                  <CardDescription className="text-blue-100/80">
+                  <CardDescription className="text-xs md:text-sm text-gray-500 tracking-[-0.03em] font-inter">
                     Clientes fechados
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="flex items-end justify-between">
-                    <p className="text-4xl font-semibold text-white">
+                    <p className="text-2xl md:text-4xl font-semibold text-gray-900">
                       {loading 
                         ? '...' 
                         : new Intl.NumberFormat('pt-BR', { 
                             style: 'currency', 
-                            currency: 'BRL',
-                            minimumFractionDigits: 0,
-                            maximumFractionDigits: 0
-                          }).format(dashboardData?.totalRevenue || 0)
-                      }
+                            currency: 'BRL' 
+                          }).format(dashboardData?.totalRevenue || 0)}
                     </p>
-                    <Badge variant="outline" className="bg-green-500/20 text-green-100 border-green-300/50">
-                      Fechados
+                    <Badge variant="outline" className="bg-[#d8fffa] text-[#4ade80] border-[#bbf7d0]">
+                      <ArrowTrendingUpIcon className="h-3 w-3 mr-1" />
+                      Crescendo
                     </Badge>
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="bg-white/10 backdrop-blur-sm border-l-4 border-yellow-300 border-t border-r border-b border-white/30 shadow-md">
+              <Card className="bg-gray-800/5 border-0 shadow-[0_8px_30px_rgba(0,0,0,0.12)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.16)] transition-all duration-300 rounded-2xl">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-lg font-medium flex items-center text-white">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 mr-2 text-yellow-300">
-                      <circle cx="12" cy="12" r="10"></circle>
-                      <path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"></path>
-                      <path d="M12 18V6"></path>
+                  <CardTitle className="text-base md:text-lg font-bold flex items-center text-gray-900 tracking-[-0.03em] font-inter">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 mr-2 text-[#4ade80]">
+                      <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
                     </svg>
-                    Novos Negócios
+                    Potencial
                   </CardTitle>
-                  <CardDescription className="text-blue-100/80">
-                    Potencial em aberto
+                  <CardDescription className="text-xs md:text-sm text-gray-500 tracking-[-0.03em] font-inter">
+                    Receita potencial
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="flex items-end justify-between">
-                    <p className="text-4xl font-semibold text-white">
+                    <p className="text-2xl md:text-4xl font-semibold text-gray-900">
                       {loading 
                         ? '...' 
                         : new Intl.NumberFormat('pt-BR', { 
                             style: 'currency', 
-                            currency: 'BRL',
-                            minimumFractionDigits: 0,
-                            maximumFractionDigits: 0
-                          }).format(dashboardData?.potentialRevenue || 0)
-                      }
+                            currency: 'BRL' 
+                          }).format(dashboardData?.potentialRevenue || 0)}
                     </p>
-                    <Badge variant="outline" className="bg-yellow-500/20 text-yellow-100 border-yellow-300/50">
-                      Em negociação
+                    <Badge variant="outline" className="bg-[#ffe6e7] text-[#4ade80] border-[#bbf7d0]">
+                      Estimativa
                     </Badge>
                   </div>
                 </CardContent>
@@ -298,21 +296,15 @@ export default function DashboardPage() {
             </div>
 
             {/* Gráficos */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-              <Card className="bg-white/10 backdrop-blur-sm border border-white/30 shadow-sm">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <Card className="bg-gray-800/5 border-0 shadow-[0_8px_30px_rgba(0,0,0,0.12)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.16)] transition-all duration-300 rounded-2xl">
                 <CardHeader>
-                  <CardTitle className="text-lg font-medium text-white">Leads por Origem</CardTitle>
-                  <CardDescription className="text-blue-100/80">
-                    Distribuição de conversões por canal
-                  </CardDescription>
+                  <CardTitle className="text-base md:text-lg font-bold text-gray-900 tracking-[-0.03em] font-inter">Fontes de Tráfego</CardTitle>
+                  <CardDescription className="text-xs md:text-sm text-gray-500 tracking-[-0.03em] font-inter">Principais origens dos leads</CardDescription>
                 </CardHeader>
-                <CardContent className="h-80">
-                  {loading ? (
-                    <div className="h-full w-full flex items-center justify-center">
-                      <p className="text-blue-100/80">Carregando...</p>
-                    </div>
-                  ) : sourceChartData.length > 0 ? (
-                    <ResponsiveContainer width="100%" height="100%" className="text-white">
+                <CardContent>
+                  <div className="h-[300px]">
+                    <ResponsiveContainer width="100%" height="100%">
                       <PieChart>
                         <Pie
                           data={sourceChartData}
@@ -322,144 +314,253 @@ export default function DashboardPage() {
                           outerRadius={80}
                           fill="#8884d8"
                           dataKey="value"
-                          label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                          label={({
+                            cx,
+                            cy,
+                            midAngle,
+                            innerRadius,
+                            outerRadius,
+                            percent,
+                            index,
+                            name
+                          }) => {
+                            const RADIAN = Math.PI / 180;
+                            // Position the label outside the pie
+                            const radius = outerRadius * 1.2;
+                            const x = cx + radius * Math.cos(-midAngle * RADIAN);
+                            const y = cy + radius * Math.sin(-midAngle * RADIAN);
+                            
+                            return (
+                              <text
+                                x={x}
+                                y={y}
+                                fill="#333333"
+                                textAnchor={x > cx ? 'start' : 'end'}
+                                dominantBaseline="central"
+                                fontWeight="500"
+                                fontSize="12"
+                              >
+                                {`${name} ${(percent * 100).toFixed(0)}%`}
+                              </text>
+                            );
+                          }}
                         >
                           {sourceChartData.map((entry, index) => (
                             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                           ))}
                         </Pie>
-                        <Tooltip />
-                        <Legend />
+                        <Tooltip 
+                          contentStyle={{ 
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            border: '1px solid #333',
+                            borderRadius: '8px',
+                            color: '#fff'
+                          }}
+                          itemStyle={{ color: '#fff' }}
+                        />
                       </PieChart>
                     </ResponsiveContainer>
-                  ) : (
-                    <div className="h-full w-full flex items-center justify-center">
-                      <p className="text-blue-100/80">Nenhum dado disponível</p>
-                    </div>
-                  )}
+                  </div>
                 </CardContent>
               </Card>
 
-              <Card className="bg-white/10 backdrop-blur-sm border border-white/30 shadow-sm">
+              <Card className="bg-gray-800/5 border-0 shadow-[0_8px_30px_rgba(0,0,0,0.12)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.16)] transition-all duration-300 rounded-2xl">
                 <CardHeader>
-                  <CardTitle className="text-lg font-medium text-white">Leads por Indicação</CardTitle>
-                  <CardDescription className="text-blue-100/80">
-                    Performance dos links de indicação
-                  </CardDescription>
+                  <CardTitle className="text-base md:text-lg font-bold text-gray-900 tracking-[-0.03em] font-inter">Top Indicações</CardTitle>
+                  <CardDescription className="text-xs md:text-sm text-gray-500 tracking-[-0.03em] font-inter">Indicações com mais leads</CardDescription>
                 </CardHeader>
-                <CardContent className="h-80">
-                  {loading ? (
-                    <div className="h-full w-full flex items-center justify-center">
-                      <p className="text-blue-100/80">Carregando...</p>
-                    </div>
-                  ) : indicationChartData.length > 0 ? (
+                <CardContent>
+                  <div className="h-[300px]">
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart
                         data={indicationChartData}
-                        margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
+                        margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
                       >
+                        <defs>
+                          <linearGradient id="colorBar" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#6366f1" stopOpacity={0.8}/>
+                            <stop offset="95%" stopColor="#d8fffa" stopOpacity={0.2}/>
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#eee" />
                         <XAxis 
                           dataKey="name" 
-                          angle={-45} 
-                          textAnchor="end" 
-                          height={60} 
-                          stroke="#f0f9ff"
-                          fontSize={12}
+                          stroke="#666"
+                          tick={{ fill: '#666' }}
                         />
-                        <YAxis stroke="#f0f9ff" fontSize={12} />
-                        <Tooltip content={<CustomTooltip />} />
-                        <Bar dataKey="leads" fill="#38bdf8" radius={[4, 4, 0, 0]} />
+                        <YAxis 
+                          stroke="#666"
+                          tick={{ fill: '#666' }}
+                        />
+                        <Tooltip 
+                          contentStyle={{ 
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            border: '1px solid #333',
+                            borderRadius: '8px',
+                            color: '#fff'
+                          }}
+                          itemStyle={{ color: '#4d61fc' }}
+                        />
+                        <Bar 
+                          dataKey="leads" 
+                          fill="url(#colorBar)"
+                          radius={[4, 4, 0, 0]}
+                        />
                       </BarChart>
                     </ResponsiveContainer>
-                  ) : (
-                    <div className="h-full w-full flex items-center justify-center">
-                      <p className="text-blue-100/80">Nenhum dado disponível</p>
-                    </div>
-                  )}
+                  </div>
                 </CardContent>
               </Card>
             </div>
 
-            {/* Leads Recentes */}
-            <Card className="bg-white/10 backdrop-blur-sm border border-white/30 shadow-sm">
+            {/* Gráfico de Receita */}
+            <Card className="bg-gray-800/5 border-0 shadow-[0_8px_30px_rgba(0,0,0,0.12)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.16)] transition-all duration-300 rounded-2xl mt-8">
               <CardHeader>
-                <CardTitle className="text-lg font-medium text-white">Leads Recentes</CardTitle>
-                <CardDescription className="text-blue-100/80">
-                  Últimas conversões registradas
+                <CardTitle className="text-base md:text-lg font-bold text-gray-900 tracking-[-0.03em] font-inter">Crescimento de Receita</CardTitle>
+                <CardDescription className="text-xs md:text-sm text-gray-500 tracking-[-0.03em] font-inter">Evolução do faturamento ao longo do tempo</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[300px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart
+                      data={[
+                        { name: 'Jan', value: 4000 },
+                        { name: 'Fev', value: 3000 },
+                        { name: 'Mar', value: 2000 },
+                        { name: 'Abr', value: 2780 },
+                        { name: 'Mai', value: 1890 },
+                        { name: 'Jun', value: 2390 },
+                        { name: 'Jul', value: 3490 },
+                        { name: 'Ago', value: 4000 },
+                        { name: 'Set', value: 5000 },
+                        { name: 'Out', value: 6000 },
+                        { name: 'Nov', value: 7000 },
+                        { name: 'Dez', value: 8000 }
+                      ]}
+                      margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                    >
+                      <defs>
+                        <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#6366f1" stopOpacity={0.8}/>
+                          <stop offset="95%" stopColor="#d8fffa" stopOpacity={0.1}/>
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#eee" />
+                      <XAxis 
+                        dataKey="name"
+                        stroke="#666"
+                        tick={{ fill: '#666' }}
+                      />
+                      <YAxis 
+                        stroke="#666"
+                        tick={{ fill: '#666' }}
+                        tickFormatter={(value) => `R$${value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')}`}
+                      />
+                      <Tooltip 
+                        formatter={(value) => [
+                          `R$ ${value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')}`,
+                          'Receita'
+                        ]}
+                        contentStyle={{ 
+                          backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                          border: '1px solid #333',
+                          borderRadius: '8px',
+                          color: '#fff'
+                        }}
+                        itemStyle={{ color: '#4d61fc' }}
+                      />
+                      <Area 
+                        type="monotone" 
+                        dataKey="value" 
+                        stroke="#4d61fc" 
+                        fill="url(#colorRevenue)" 
+                        strokeWidth={2}
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Estatísticas */}
+            <Card className="bg-gray-800/5 border-0 shadow-[0_8px_30px_rgba(0,0,0,0.12)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.16)] transition-all duration-300 rounded-2xl mt-8">
+              <CardHeader>
+                <CardTitle className="text-base md:text-lg font-bold text-gray-900 tracking-[-0.03em] font-inter">Estatísticas</CardTitle>
+                <CardDescription className="text-xs md:text-sm text-gray-500 tracking-[-0.03em] font-inter">
+                  Métricas e indicadores de desempenho
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {loading ? (
-                  <p className="text-blue-100/80">Carregando...</p>
-                ) : dashboardData?.recentLeads && dashboardData.recentLeads.length > 0 ? (
-                  <div className="space-y-4">
-                    {dashboardData.recentLeads.map((lead) => (
-                      <div key={lead.id} className="flex justify-between items-center p-3 rounded-lg bg-white/5 border border-white/20">
-                        <div className="flex items-center">
-                          <div className="bg-blue-500/20 text-blue-100 h-10 w-10 rounded-full flex items-center justify-center mr-3">
-                            {lead.name.charAt(0).toUpperCase()}
-                          </div>
-                          <div>
-                            <p className="text-white font-medium">{lead.name}</p>
-                            <p className="text-xs text-blue-100/70 flex items-center">
-                              <span className="inline-block h-2 w-2 rounded-full bg-green-400 mr-1"></span>
-                              {lead.indication?.name || lead.indication?.slug || "Link principal"}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-white text-sm font-medium">{lead.phone}</p>
-                          <p className="text-xs text-blue-100/70">
-                            {lead.createdAt && isValidDate(new Date(lead.createdAt)) 
-                              ? format(new Date(lead.createdAt), "dd/MM/yyyy", { locale: ptBR })
-                              : "Data não disponível"}
-                          </p>
-                        </div>
+                <div className="space-y-6">
+                  <div>
+                    <p className="text-sm text-gray-500 mb-1">Taxa de Conversão</p>
+                    <div className="flex items-center">
+                      <div className="w-full bg-gray-100 h-2 rounded-full mr-3">
+                        <div 
+                          className="bg-gradient-to-r from-[#def6ff] to-[#f2f1ff] h-2 rounded-full" 
+                          style={{ width: `${Math.min(dashboardData?.conversionRate || 0, 100)}%` }}
+                        ></div>
                       </div>
-                    ))}
+                      <span className="text-sm text-gray-900 font-medium">
+                        {Math.min(dashboardData?.conversionRate || 0, 100)}%
+                      </span>
+                    </div>
                   </div>
-                ) : (
-                  <div className="bg-white/5 rounded-lg p-6 text-center">
-                    <p className="text-blue-100/80">Nenhum lead registrado ainda.</p>
+                  
+                  <Separator className="bg-gray-200" />
+                  
+                  <div>
+                    <p className="text-sm text-gray-500 mb-1">Eficiência de Captura</p>
+                    <div className="flex items-center">
+                      <div className="w-full bg-gray-100 h-2 rounded-full mr-3">
+                        <div 
+                          className="bg-gradient-to-r from-[#def6ff] to-[#ffe6e7] h-2 rounded-full" 
+                          style={{ width: `${Math.min(dashboardData?.clickToLeadRate || 0, 100)}%` }}
+                        ></div>
+                      </div>
+                      <span className="text-sm text-gray-900 font-medium">
+                        {Math.min(dashboardData?.clickToLeadRate || 0, 100)}%
+                      </span>
+                    </div>
                   </div>
-                )}
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
 
           <TabsContent value="details" className="mt-0">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card className="bg-white/10 backdrop-blur-sm border border-white/30 shadow-sm md:col-span-2">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card className="bg-gray-800/5 border-0 shadow-[0_8px_30px_rgba(0,0,0,0.12)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.16)] transition-all duration-300 rounded-2xl lg:col-span-2">
                 <CardHeader>
-                  <CardTitle className="text-lg font-medium text-white">Todos os Indicadores</CardTitle>
-                  <CardDescription className="text-blue-100/80">
+                  <CardTitle className="text-base md:text-lg font-bold text-gray-900 tracking-[-0.03em] font-inter">Todos os Indicadores</CardTitle>
+                  <CardDescription className="text-xs md:text-sm text-gray-500 tracking-[-0.03em] font-inter">
                     Detalhamento completo dos links de indicação
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   {loading ? (
-                    <p className="text-blue-100/80">Carregando...</p>
+                    <p className="text-gray-500">Carregando...</p>
                   ) : dashboardData?.topIndications && dashboardData.topIndications.length > 0 ? (
                     <div className="space-y-4">
-                      <div className="grid grid-cols-12 text-xs text-blue-100/70 pb-2 border-b border-white/20">
+                      <div className="grid grid-cols-12 text-sm text-gray-500 pb-2 border-b border-gray-200">
                         <div className="col-span-5">INDICADOR</div>
                         <div className="col-span-4">LINK</div>
                         <div className="col-span-2 text-right">LEADS</div>
                         <div className="col-span-1 text-right">CLIQUES</div>
                       </div>
                       {dashboardData.topIndications.map((indication) => (
-                        <div key={indication.id} className="grid grid-cols-12 items-center py-3">
-                          <div className="col-span-5 text-white font-medium">{indication.name || indication.slug}</div>
-                          <div className="col-span-4 text-xs text-blue-100/70 truncate">
+                        <div key={indication.id} className="grid grid-cols-12 items-center py-3 hover:bg-gray-50 rounded-md transition-colors">
+                          <div className="col-span-5 text-gray-900 font-medium">{indication.name || indication.slug}</div>
+                          <div className="col-span-4 text-sm text-gray-500 truncate">
                             med1.app/{session?.user?.name || '...'}/{indication.slug}
                           </div>
                           <div className="col-span-2 text-right">
-                            <Badge className="bg-blue-500/20 text-blue-100 border-blue-300/50">
+                            <Badge className="bg-blue-50 text-blue-700 border-blue-200">
                               {indication._count.leads}
                             </Badge>
                           </div>
                           <div className="col-span-1 text-right">
-                            <Badge variant="outline" className="border-white/30 text-white/80">
+                            <Badge variant="outline" className="border-gray-200 text-gray-600">
                               {indication._count.events}
                             </Badge>
                           </div>
@@ -467,106 +568,108 @@ export default function DashboardPage() {
                       ))}
                     </div>
                   ) : (
-                    <div className="bg-white/5 rounded-lg p-6 text-center">
-                      <p className="text-blue-100/80">Nenhum indicador registrado ainda.</p>
+                    <div className="bg-gray-50 rounded-lg p-6 text-center">
+                      <p className="text-gray-500">Nenhum indicador registrado ainda.</p>
                     </div>
                   )}
                 </CardContent>
               </Card>
 
-              <Card className="bg-white/10 backdrop-blur-sm border border-white/30 shadow-sm">
+              <Card className="bg-gray-800/5 border-0 shadow-[0_8px_30px_rgba(0,0,0,0.12)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.16)] transition-all duration-300 rounded-2xl">
                 <CardHeader>
-                  <CardTitle className="text-lg font-medium text-white">Origem do Tráfego</CardTitle>
-                  <CardDescription className="text-blue-100/80">
+                  <CardTitle className="text-base md:text-lg font-bold text-gray-900 tracking-[-0.03em] font-inter">Origem do Tráfego</CardTitle>
+                  <CardDescription className="text-xs md:text-sm text-gray-500 tracking-[-0.03em] font-inter">
                     Detalhamento das fontes de tráfego
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   {loading ? (
-                    <p className="text-blue-100/80">Carregando...</p>
+                    <p className="text-gray-500">Carregando...</p>
                   ) : dashboardData?.topSources && dashboardData.topSources.length > 0 ? (
                     <div className="space-y-4">
-                      <div className="grid grid-cols-12 text-xs text-blue-100/70 pb-2 border-b border-white/20">
+                      <div className="grid grid-cols-12 text-sm text-gray-500 pb-2 border-b border-gray-200">
                         <div className="col-span-7">FONTE</div>
                         <div className="col-span-3 text-right">LEADS</div>
                         <div className="col-span-2 text-right">%</div>
                       </div>
                       {dashboardData.topSources.map((source, index) => (
-                        <div key={index} className="grid grid-cols-12 items-center py-3">
+                        <div key={index} className="grid grid-cols-12 items-center py-3 hover:bg-gray-50 rounded-md transition-colors">
                           <div className="col-span-7 flex items-center">
                             <div 
                               className="h-3 w-3 rounded-full mr-2" 
-                              style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                              style={{ backgroundColor: index % 2 === 0 ? '#3b82f6' : '#10b981' }}
                             ></div>
-                            <span className="text-white">{source.source || "Direto"}</span>
+                            <span className="text-gray-900">{source.source || "Direto"}</span>
                           </div>
                           <div className="col-span-3 text-right">
-                            <Badge className="bg-white/10 text-white border-0">
+                            <Badge className="bg-gray-50 text-gray-700 border-gray-200">
                               {source.count}
                             </Badge>
                           </div>
-                          <div className="col-span-2 text-right text-white">
+                          <div className="col-span-2 text-right text-gray-900 font-medium">
                             {Math.round((source.count / dashboardData.totalLeads) * 100)}%
                           </div>
                         </div>
                       ))}
                     </div>
                   ) : (
-                    <div className="bg-white/5 rounded-lg p-6 text-center">
-                      <p className="text-blue-100/80">Nenhuma origem registrada ainda.</p>
+                    <div className="bg-gray-50 rounded-lg p-6 text-center">
+                      <p className="text-gray-500">Nenhuma origem registrada ainda.</p>
                     </div>
                   )}
                 </CardContent>
               </Card>
 
-              <Card className="bg-white/10 backdrop-blur-sm border border-white/30 shadow-sm">
+              <Card className="bg-gray-800/5 border-0 shadow-[0_8px_30px_rgba(0,0,0,0.12)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.16)] transition-all duration-300 rounded-2xl">
                 <CardHeader>
-                  <CardTitle className="text-lg font-medium text-white">Estatísticas</CardTitle>
-                  <CardDescription className="text-blue-100/80">
+                  <CardTitle className="text-base md:text-lg font-bold text-gray-900 tracking-[-0.03em] font-inter">Estatísticas</CardTitle>
+                  <CardDescription className="text-xs md:text-sm text-gray-500 tracking-[-0.03em] font-inter">
                     Métricas e indicadores de desempenho
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-6">
                     <div>
-                      <p className="text-sm text-blue-100/80 mb-1">Taxa de Conversão</p>
+                      <p className="text-sm text-gray-500 mb-1">Taxa de Conversão</p>
                       <div className="flex items-center">
-                        <div className="w-full bg-white/10 h-2 rounded-full mr-3">
+                        <div className="w-full bg-gray-100 h-2 rounded-full mr-3">
                           <div 
-                            className="bg-gradient-to-r from-green-400 to-emerald-300 h-2 rounded-full" 
-                            style={{ width: `${dashboardData?.conversionRate || 0}%` }}
+                            className="bg-gradient-to-r from-[#def6ff] to-[#f2f1ff] h-2 rounded-full" 
+                            style={{ width: `${Math.min(dashboardData?.conversionRate || 0, 100)}%` }}
                           ></div>
                         </div>
-                        <span className="text-sm text-white font-medium">{dashboardData?.conversionRate || 0}%</span>
+                        <span className="text-sm text-gray-900 font-medium">
+                          {Math.min(dashboardData?.conversionRate || 0, 100)}%
+                        </span>
                       </div>
                     </div>
                     
-                    <Separator className="bg-white/20" />
+                    <Separator className="bg-gray-200" />
                     
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <p className="text-sm text-blue-100/80 mb-1">Total de Cliques</p>
-                        <p className="text-xl font-medium text-white">{dashboardData?.totalClicks || 0}</p>
+                        <p className="text-sm text-gray-500 mb-1">Total de Cliques</p>
+                        <p className="text-xl font-medium text-gray-900">{dashboardData?.totalClicks || 0}</p>
                       </div>
                       <div>
-                        <p className="text-sm text-blue-100/80 mb-1">Eficiência</p>
-                        <p className="text-xl font-medium text-white">
+                        <p className="text-sm text-gray-500 mb-1">Eficiência</p>
+                        <p className="text-xl font-medium text-gray-900">
                           {dashboardData?.totalClicks 
                             ? (dashboardData.totalLeads / dashboardData.totalClicks).toFixed(2) 
                             : "0.00"}
                         </p>
                       </div>
                       <div>
-                        <p className="text-sm text-blue-100/80 mb-1">Leads por Link</p>
-                        <p className="text-xl font-medium text-white">
+                        <p className="text-sm text-gray-500 mb-1">Leads por Link</p>
+                        <p className="text-xl font-medium text-gray-900">
                           {dashboardData?.totalIndications 
                             ? (dashboardData.totalLeads / dashboardData.totalIndications).toFixed(1) 
                             : "0.0"}
                         </p>
                       </div>
                       <div>
-                        <p className="text-sm text-blue-100/80 mb-1">Cliques por Link</p>
-                        <p className="text-xl font-medium text-white">
+                        <p className="text-sm text-gray-500 mb-1">Cliques por Link</p>
+                        <p className="text-xl font-medium text-gray-900">
                           {dashboardData?.totalIndications 
                             ? (dashboardData.totalClicks / dashboardData.totalIndications).toFixed(1) 
                             : "0.0"}

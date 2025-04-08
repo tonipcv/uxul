@@ -2,6 +2,8 @@
 @tailwind components;
 @tailwind utilities;
 
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap');
+
 @layer base {
   @font-face {
     font-family: 'Helvetica Neue';
@@ -56,6 +58,10 @@
     --radius: 0.5rem;
 
     --turquoise: 171 77% 64%;
+
+    --foreground-rgb: 255, 255, 255;
+    --background-start-rgb: 0, 0, 0;
+    --background-end-rgb: 0, 0, 0;
   }
 
   .dark {
@@ -97,5 +103,23 @@
   }
   body {
     @apply bg-background text-foreground;
+    color: rgb(var(--foreground-rgb));
+    background: linear-gradient(
+        to bottom,
+        transparent,
+        rgb(var(--background-end-rgb))
+      )
+      rgb(var(--background-start-rgb));
+    font-family: 'Montserrat', sans-serif;
   }
+}
+
+.font-montserrat {
+  font-family: 'Montserrat', sans-serif;
+}
+
+.neon-glow {
+  filter: drop-shadow(0 0 5px rgba(59, 130, 246, 0.5))
+          drop-shadow(0 0 10px rgba(59, 130, 246, 0.3))
+          drop-shadow(0 0 15px rgba(59, 130, 246, 0.2));
 }

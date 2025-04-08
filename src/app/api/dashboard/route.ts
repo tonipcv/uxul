@@ -61,7 +61,7 @@ export async function GET(req: NextRequest) {
 
     // Calcular taxa de conversão (leads / cliques)
     const conversionRate = totalClicks > 0 
-      ? Math.round((totalLeads / totalClicks) * 100) 
+      ? Math.min(Math.round((totalLeads / totalClicks) * 100), 100) 
       : 0;
 
     // Buscar leads recentes (últimos 5)

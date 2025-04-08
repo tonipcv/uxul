@@ -7,11 +7,13 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { PlusIcon, TrashIcon, PencilIcon, ArrowPathIcon, LinkIcon, BookmarkIcon, ArrowLeftIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, TrashIcon, PencilIcon, ArrowPathIcon, LinkIcon, BookmarkIcon, ArrowLeftIcon, Cog6ToothIcon } from '@heroicons/react/24/outline';
 import { toast } from '@/components/ui/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
+import Link from 'next/link';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface InterestOption {
   id: string;
@@ -23,6 +25,7 @@ interface InterestOption {
 
 export default function InterestOptionsPage() {
   const router = useRouter();
+  const pathname = usePathname();
   const { data: session } = useSession();
   const [options, setOptions] = useState<InterestOption[]>([]);
   const [loading, setLoading] = useState(true);
@@ -111,12 +114,23 @@ export default function InterestOptionsPage() {
         return;
       }
 
-      const method = isEditing ? 'PUT' : 'POST';
-      const response = await fetch('/api/interest-options', {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
-      });
+      let response;
+      
+      if (isEditing && formData.id) {
+        // Atualizar opção existente com PATCH
+        response = await fetch(`/api/interest-options/${formData.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(formData)
+        });
+      } else {
+        // Criar nova opção com POST
+        response = await fetch('/api/interest-options', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(formData)
+        });
+      }
 
       if (response.ok) {
         const result = await response.json();
@@ -153,7 +167,8 @@ export default function InterestOptionsPage() {
     }
 
     try {
-      const response = await fetch(`/api/interest-options?id=${id}`, {
+      // Utilizar a API RESTful padrão para excluir pelo ID
+      const response = await fetch(`/api/interest-options/${id}`, {
         method: 'DELETE'
       });
 
@@ -184,230 +199,236 @@ export default function InterestOptionsPage() {
   // Mostrar um spinner enquanto carrega
   if (!session) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-blue-800">
+      <div className="flex items-center justify-center min-h-screen bg-gray-100">
         <div className="w-12 h-12 rounded-full border-4 border-blue-500 border-t-transparent animate-spin"></div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-5xl mx-auto pt-4 bg-blue-800 min-h-screen p-6">
-      <div className="flex items-center mb-6">
-        <Button 
-          variant="ghost" 
-          className="text-blue-200 hover:text-white mr-2"
-          onClick={() => router.push('/profile')}
-        >
-          <ArrowLeftIcon className="h-4 w-4 mr-2" />
-          Voltar ao Perfil
-        </Button>
-        <h1 className="text-2xl font-semibold text-white">Configurar Opções de Interesse</h1>
-      </div>
-      
-      <Card className="bg-blue-900/80 backdrop-blur-sm border border-blue-700/50 shadow-md mb-6">
-        <CardHeader className="flex flex-row items-center justify-between border-b border-blue-700/30 pb-4">
+    <div className="min-h-[100dvh] bg-gray-100 pt-16 pb-24 md:pt-8 md:pb-16 px-4">
+      <div className="container mx-auto pb-24 md:pb-20 lg:pb-8">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6">
           <div>
-            <CardTitle className="text-xl font-medium text-white flex items-center gap-2">
-              <BookmarkIcon className="h-5 w-5" />
-              Opções de Interesse
-            </CardTitle>
-            <CardDescription className="text-blue-100/70 mt-1">
-              Configure as opções de interesse que aparecem nos seus formulários de captura
-            </CardDescription>
+            <h1 className="text-xl md:text-2xl font-bold text-gray-900 tracking-[-0.03em] font-inter">Configurações</h1>
+            <p className="text-sm md:text-base text-gray-600 tracking-[-0.03em] font-inter">Gerencie as configurações do sistema</p>
           </div>
-          <Button 
-            onClick={handleAddOption}
-            className="bg-blue-600/40 text-white hover:bg-blue-600/70 transition-colors border border-blue-500/30"
-          >
-            <PlusIcon className="h-4 w-4 mr-1.5" /> Nova Opção
-          </Button>
-        </CardHeader>
-        <CardContent className="pt-6">
-          {loading ? (
-            <div className="flex justify-center items-center py-10">
-              <div className="w-10 h-10 rounded-full border-4 border-blue-500 border-t-transparent animate-spin"></div>
-            </div>
-          ) : options.length === 0 ? (
-            <div className="text-center py-10 bg-blue-950 border border-dashed border-blue-600/50 rounded-lg">
-              <BookmarkIcon className="h-10 w-10 text-blue-300/50 mx-auto mb-3" />
-              <p className="text-blue-100/80 mb-4">
-                Você ainda não tem opções de interesse configuradas
-              </p>
+          <div className="flex gap-2 mt-2 md:mt-0">
+            <Link href="/profile">
               <Button 
-                onClick={handleAddOption} 
-                className="bg-blue-600/40 text-white hover:bg-blue-600/70 transition-colors border border-blue-500/30"
+                variant="outline" 
+                size="sm"
+                className="bg-gray-800/5 border-0 shadow-[0_4px_12px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.1)] transition-all duration-300 rounded-2xl text-gray-700 hover:bg-gray-800/10"
               >
-                <PlusIcon className="h-4 w-4 mr-1.5" /> Adicionar Primeira Opção
+                <ArrowLeftIcon className="h-4 w-4 mr-2" />
+                Voltar ao Perfil
               </Button>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {options.map(option => (
-                <div 
-                  key={option.id} 
-                  className="p-4 bg-blue-950 border border-blue-600/50 rounded-lg flex justify-between items-center"
+            </Link>
+          </div>
+        </div>
+        
+        {/* Settings navigation tabs */}
+        <div className="mb-6">
+          <Tabs defaultValue="interest-options" className="w-full">
+            <TabsList className="w-full bg-gray-800/5 border-0 shadow-[0_4px_12px_rgba(0,0,0,0.05)] rounded-2xl p-1 h-auto">
+              <Link href="/settings/interest-options" className="w-full">
+                <TabsTrigger 
+                  value="interest-options" 
+                  className={`text-sm py-2.5 rounded-xl transition-all data-[state=active]:shadow-md data-[state=active]:bg-white data-[state=active]:text-gray-900 ${pathname?.includes('/interest-options') ? 'shadow-md bg-white text-gray-900' : 'text-gray-600 hover:text-gray-900'}`}
                 >
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-medium text-white">{option.label}</h3>
-                      {option.isDefault && (
-                        <Badge className="bg-blue-600/50 text-white border-blue-500/50 text-xs">Padrão</Badge>
-                      )}
-                    </div>
-                    <div className="text-sm text-blue-100/80 mt-1">
-                      Valor: <code className="bg-blue-800/80 px-1.5 py-0.5 rounded text-blue-200">{option.value}</code>
-                    </div>
-                    {option.redirectUrl && (
-                      <div className="text-xs text-blue-100/70 mt-1 flex items-center">
-                        <LinkIcon className="h-3 w-3 mr-1" /> 
-                        <span className="truncate">{option.redirectUrl}</span>
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex space-x-2">
-                    <Button 
-                      size="sm" 
-                      variant="ghost" 
-                      onClick={() => handleEditOption(option)}
-                      className="h-8 w-8 p-0 text-blue-100/70 hover:text-white hover:bg-blue-600/30 border border-transparent hover:border-blue-500/30"
-                    >
-                      <PencilIcon className="h-4 w-4" />
-                    </Button>
-                    <Button 
-                      size="sm" 
-                      variant="ghost" 
-                      onClick={() => handleDeleteOption(option.id, option.label)}
-                      className="h-8 w-8 p-0 text-blue-100/70 hover:text-red-400 hover:bg-red-900/20 border border-transparent hover:border-red-500/30"
-                    >
-                      <TrashIcon className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Seção de Ajuda */}
-      <Card className="bg-blue-900/80 backdrop-blur-sm border border-blue-700/50 shadow-md">
-        <CardHeader className="border-b border-blue-700/30">
-          <CardTitle className="text-lg font-medium text-white">Como Usar</CardTitle>
-        </CardHeader>
-        <CardContent className="pt-6 space-y-4 text-blue-100/80">
-          <p>
-            As opções de interesse são exibidas no formulário de captura de leads e permitem direcionar os pacientes para diferentes páginas após o envio do formulário.
-          </p>
-          
-          <div className="space-y-2">
-            <h3 className="text-white font-medium">Benefícios:</h3>
-            <ul className="list-disc pl-5 space-y-1">
-              <li>Segmente seus leads por diferentes interesses</li>
-              <li>Redirecione para páginas específicas dependendo da escolha</li>
-              <li>Personalize a experiência de cada tipo de paciente</li>
-            </ul>
-          </div>
-          
-          <div className="space-y-2">
-            <h3 className="text-white font-medium">Exemplo de uso:</h3>
-            <div className="bg-blue-800/90 p-4 rounded-lg border border-blue-600/50">
-              <p><strong className="text-white">Consulta em Goiás</strong> - Redireciona para uma página com informações sobre o consultório em Goiás</p>
-              <p><strong className="text-white">Treinamento Online</strong> - Redireciona para a página de cursos</p>
-              <p><strong className="text-white">Consulta Padrão</strong> - Usa a página de agradecimento padrão</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Modal para adicionar/editar opção */}
-      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="bg-blue-900 backdrop-blur-sm border border-blue-700/50 text-white">
-          <DialogHeader>
-            <DialogTitle className="text-xl">
-              {isEditing ? 'Editar Opção de Interesse' : 'Nova Opção de Interesse'}
-            </DialogTitle>
-          </DialogHeader>
-          <form onSubmit={handleSubmit}>
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="label" className="text-blue-100">Nome (exibido no formulário)</Label>
-                <Input
-                  id="label"
-                  name="label"
-                  value={formData.label}
-                  onChange={handleInputChange}
-                  placeholder="Ex: Consulta em Goiás"
-                  className="bg-blue-800/50 border-blue-600/50 text-white focus:border-blue-400"
-                />
+                  Opções de Interesse
+                </TabsTrigger>
+              </Link>
+              <Link href="/settings/integrations" className="w-full">
+                <TabsTrigger 
+                  value="integrations" 
+                  className={`text-sm py-2.5 rounded-xl transition-all data-[state=active]:shadow-md data-[state=active]:bg-white data-[state=active]:text-gray-900 ${pathname?.includes('/integrations') ? 'shadow-md bg-white text-gray-900' : 'text-gray-600 hover:text-gray-900'}`}
+                >
+                  Integrações
+                </TabsTrigger>
+              </Link>
+            </TabsList>
+          </Tabs>
+        </div>
+        
+        <Card className="bg-gray-800/5 border-0 shadow-[0_8px_30px_rgba(0,0,0,0.12)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.16)] transition-all duration-300 rounded-2xl mb-6">
+          <CardHeader>
+            <div className="flex flex-col md:flex-row md:items-center justify-between">
+              <div>
+                <CardTitle className="text-base md:text-lg font-bold text-gray-900 tracking-[-0.03em] font-inter flex items-center gap-2">
+                  <BookmarkIcon className="h-5 w-5 text-[#6366f1]" />
+                  Opções de Interesse
+                </CardTitle>
+                <CardDescription className="text-xs md:text-sm text-gray-500 tracking-[-0.03em] font-inter mt-1">
+                  Configure as opções que aparecem nos seus formulários de captura
+                </CardDescription>
               </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="value" className="text-blue-100">Valor (identificador)</Label>
-                <Input
-                  id="value"
-                  name="value"
-                  value={formData.value}
-                  onChange={handleInputChange}
-                  placeholder="Ex: consulta_goias"
-                  className="bg-blue-800/50 border-blue-600/50 text-white focus:border-blue-400"
-                />
-                <p className="text-xs text-blue-200/60">
-                  Identificador único usado internamente e para rastreamento
-                </p>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="redirectUrl" className="text-blue-100">URL de Redirecionamento (opcional)</Label>
-                <Input
-                  id="redirectUrl"
-                  name="redirectUrl"
-                  value={formData.redirectUrl || ''}
-                  onChange={handleInputChange}
-                  placeholder="https://exemplo.com.br/pagina-de-obrigado"
-                  className="bg-blue-800/50 border-blue-600/50 text-white focus:border-blue-400"
-                />
-                <p className="text-xs text-blue-200/60">
-                  URL para onde o usuário será redirecionado após enviar o formulário
-                </p>
-              </div>
-              
-              <div className="flex items-center space-x-2 pt-2">
-                <Switch
-                  id="isDefault"
-                  checked={formData.isDefault || false}
-                  onCheckedChange={handleSwitchChange}
-                />
-                <Label htmlFor="isDefault" className="text-blue-100">Definir como opção padrão</Label>
-              </div>
-            </div>
-            
-            <DialogFooter className="pt-4 border-t border-blue-700/30">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setIsModalOpen(false)}
-                className="border border-blue-600/50 hover:bg-blue-700/50 text-blue-100"
-                disabled={isSubmitting}
-              >
-                Cancelar
-              </Button>
               <Button 
-                type="submit"
-                disabled={isSubmitting}
-                className="bg-blue-600 hover:bg-blue-700 text-white border border-blue-500/50"
+                onClick={handleAddOption}
+                className="mt-4 md:mt-0 bg-[#6366f1] hover:bg-[#4f46e5] text-white shadow-md shadow-blue-500/20 rounded-xl transition-all duration-300"
               >
-                {isSubmitting ? (
-                  <ArrowPathIcon className="h-4 w-4 animate-spin" />
-                ) : isEditing ? (
-                  'Atualizar'
-                ) : (
-                  'Adicionar'
-                )}
+                <PlusIcon className="h-4 w-4 mr-1.5" /> Nova Opção
               </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <div className="flex justify-center items-center py-10">
+                <div className="w-10 h-10 rounded-full border-4 border-blue-500 border-t-transparent animate-spin"></div>
+              </div>
+            ) : options.length === 0 ? (
+              <div className="text-center py-10 bg-white/80 backdrop-blur-sm border border-dashed border-gray-300 rounded-xl">
+                <BookmarkIcon className="h-10 w-10 text-gray-400 mx-auto mb-3" />
+                <p className="text-gray-600 mb-4">
+                  Você ainda não tem opções de interesse configuradas
+                </p>
+                <Button 
+                  onClick={handleAddOption} 
+                  className="bg-[#6366f1] hover:bg-[#4f46e5] text-white shadow-md shadow-blue-500/20 rounded-xl transition-all duration-300"
+                >
+                  <PlusIcon className="h-4 w-4 mr-1.5" /> Adicionar Primeira Opção
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {options.map(option => (
+                  <div 
+                    key={option.id} 
+                    className="p-4 bg-white/80 backdrop-blur-sm border border-gray-200 rounded-xl shadow-sm flex flex-col md:flex-row justify-between md:items-center gap-4"
+                  >
+                    <div>
+                      <div className="flex items-center">
+                        <h3 className="font-medium text-gray-900">{option.label}</h3>
+                        {option.isDefault && (
+                          <Badge className="ml-2 bg-green-100 text-green-800 border-green-200">
+                            Padrão
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="mt-1 text-sm text-gray-600 space-y-1">
+                        <div className="flex items-center">
+                          <span className="text-gray-500 mr-2">Valor:</span> 
+                          <code className="bg-gray-100 px-1.5 py-0.5 rounded text-gray-800">{option.value}</code>
+                        </div>
+                        {option.redirectUrl && (
+                          <div className="flex items-center">
+                            <LinkIcon className="h-3.5 w-3.5 text-gray-500 mr-1" />
+                            <span className="text-gray-500 mr-2">Redirecionamento:</span>
+                            <span className="text-gray-800 text-xs truncate max-w-[240px]">{option.redirectUrl}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2 ml-auto">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="bg-gray-800/5 border-0 shadow-[0_4px_12px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.1)] transition-all duration-300 rounded-2xl text-gray-700 hover:bg-gray-800/10"
+                        onClick={() => handleEditOption(option)}
+                      >
+                        <PencilIcon className="h-3.5 w-3.5 mr-1.5" />
+                        Editar
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="bg-red-50 text-red-600 border-0 shadow-sm hover:bg-red-100 transition-all duration-300 rounded-2xl"
+                        onClick={() => handleDeleteOption(option.id, option.label)}
+                      >
+                        <TrashIcon className="h-3.5 w-3.5 mr-1.5" />
+                        Excluir
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Modal de adição/edição */}
+        <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+          <DialogContent className="bg-white rounded-2xl border-0 shadow-[0_25px_50px_rgba(0,0,0,0.25)] max-w-md">
+            <DialogHeader>
+              <DialogTitle className="text-lg font-bold text-gray-900">{isEditing ? 'Editar Opção' : 'Nova Opção'}</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleSubmit}>
+              <div className="space-y-4 py-2">
+                <div className="space-y-2">
+                  <Label htmlFor="label" className="text-sm text-gray-700">Nome da Opção*</Label>
+                  <Input
+                    id="label"
+                    name="label"
+                    value={formData.label}
+                    onChange={handleInputChange}
+                    placeholder="Ex: Consulta, Exame, Avaliação..."
+                    className="bg-white shadow-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="value" className="text-sm text-gray-700">Valor da Opção*</Label>
+                  <Input
+                    id="value"
+                    name="value"
+                    value={formData.value}
+                    onChange={handleInputChange}
+                    placeholder="Ex: consulta, exame, avaliacao..."
+                    className="bg-white shadow-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                  />
+                  <p className="text-xs text-gray-500">Este valor será usado na URL do link</p>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="redirectUrl" className="text-sm text-gray-700">URL de Redirecionamento (opcional)</Label>
+                  <Input
+                    id="redirectUrl"
+                    name="redirectUrl"
+                    value={formData.redirectUrl || ''}
+                    onChange={handleInputChange}
+                    placeholder="https://exemplo.com/pagina"
+                    className="bg-white shadow-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                  />
+                  <p className="text-xs text-gray-500">Deixe em branco para usar a página padrão</p>
+                </div>
+                
+                <div className="flex items-center space-x-2 pt-2">
+                  <Switch
+                    id="isDefault"
+                    checked={formData.isDefault}
+                    onCheckedChange={handleSwitchChange}
+                    className="data-[state=checked]:bg-[#6366f1]"
+                  />
+                  <Label htmlFor="isDefault" className="text-sm text-gray-700">Definir como opção padrão</Label>
+                </div>
+              </div>
+              
+              <DialogFooter className="pt-4">
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => setIsModalOpen(false)}
+                  className="border border-gray-300 bg-white text-gray-700 rounded-xl shadow-sm"
+                >
+                  Cancelar
+                </Button>
+                <Button 
+                  type="submit" 
+                  disabled={isSubmitting}
+                  className="bg-[#6366f1] hover:bg-[#4f46e5] text-white shadow-md shadow-blue-500/20 rounded-xl ml-2"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <ArrowPathIcon className="h-4 w-4 mr-2 animate-spin" />
+                      Processando...
+                    </>
+                  ) : isEditing ? 'Salvar Alterações' : 'Adicionar Opção'}
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+      </div>
     </div>
   );
 } 

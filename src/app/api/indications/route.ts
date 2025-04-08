@@ -41,87 +41,46 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    // Extrair parâmetros da query
-    const url = new URL(req.url);
-    const withStats = url.searchParams.get('withStats') === 'true';
-    const period = url.searchParams.get('period') || 'month';
-
-    // Determinar a data de início com base no período (se withStats=true)
-    const startDate = new Date();
-    switch (period) {
-      case 'day':
-        startDate.setDate(startDate.getDate() - 1);
-        break;
-      case 'week':
-        startDate.setDate(startDate.getDate() - 7);
-        break;
-      case 'month':
-        startDate.setDate(startDate.getDate() - 30);
-        break;
-      case 'year':
-        startDate.setFullYear(startDate.getFullYear() - 1);
-        break;
-      case 'all':
-        // Não aplicar filtro de data
-        startDate.setFullYear(2000);
-        break;
-      default:
-        startDate.setDate(startDate.getDate() - 30); // Padrão: último mês
-    }
-
-    // Buscar indicações com ou sem estatísticas
-    if (withStats) {
-      const indications = await prisma.indication.findMany({
-        where: { userId: session.user.id },
-        orderBy: { createdAt: 'desc' },
-        include: {
-          _count: {
-            select: {
-              events: {
-                where: {
-                  type: 'click',
-                  createdAt: { gte: startDate }
-                }
-              },
-              leads: {
-                where: {
-                  createdAt: { gte: startDate }
-                }
+    // Buscar indicações com estatísticas
+    const indications = await prisma.indication.findMany({
+      where: { userId: session.user.id },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        _count: {
+          select: {
+            events: {
+              where: {
+                type: 'click'
               }
-            }
+            },
+            leads: true
+          }
+        },
+        leads: {
+          where: {
+            status: 'converted'
+          },
+          select: {
+            id: true
           }
         }
-      });
+      }
+    });
 
-      // Formatar os resultados com estatísticas
-      const formattedIndications = indications.map(indication => {
-        const clicks = indication._count.events;
-        const leads = indication._count.leads;
-        
-        return {
-          id: indication.id,
-          slug: indication.slug,
-          name: indication.name || indication.slug,
-          createdAt: indication.createdAt,
-          stats: {
-            clicks,
-            leads,
-            conversionRate: clicks > 0 ? Math.round((leads / clicks) * 100) : 0,
-            period
-          }
-        };
-      });
+    // Formatar os resultados
+    const formattedIndications = indications.map(indication => ({
+      id: indication.id,
+      slug: indication.slug,
+      name: indication.name || indication.slug,
+      createdAt: indication.createdAt,
+      _count: {
+        events: indication._count.events,
+        leads: indication._count.leads,
+        converted: indication.leads.length
+      }
+    }));
 
-      return NextResponse.json(formattedIndications);
-    } else {
-      // Buscar indicações sem estatísticas (mais rápido)
-      const indications = await prisma.indication.findMany({
-        where: { userId: session.user.id },
-        orderBy: { createdAt: 'desc' }
-      });
-
-      return NextResponse.json(indications);
-    }
+    return NextResponse.json(formattedIndications);
   } catch (error) {
     console.error('Erro ao buscar indicações:', error);
     return NextResponse.json(
@@ -168,11 +127,19 @@ export async function POST(req: NextRequest) {
 
     // Extrair dados do corpo da requisição
     const data = await req.json();
-    const { name } = data;
+    const { name, patientName, patientEmail, patientPhone } = data;
 
     if (!name || typeof name !== 'string' || name.trim() === '') {
       return NextResponse.json(
         { error: 'Nome da indicação é obrigatório' },
+        { status: 400 }
+      );
+    }
+
+    // Validar dados do paciente
+    if (!patientName || !patientEmail || !patientPhone) {
+      return NextResponse.json(
+        { error: 'Dados do paciente são obrigatórios' },
         { status: 400 }
       );
     }
@@ -197,12 +164,45 @@ export async function POST(req: NextRequest) {
     // Se já existe, adicionar um sufixo numérico
     const slug = existingCount > 0 ? `${baseSlug}-${existingCount + 1}` : baseSlug;
 
-    // Criar a nova indicação
+    // Criar o lead primeiro
+    const lead = await prisma.lead.create({
+      data: {
+        name: patientName,
+        phone: patientPhone,
+        userId: session.user.id,
+        status: 'Novo'
+      }
+    });
+
+    // Criar o paciente vinculado ao lead
+    const patient = await prisma.patient.create({
+      data: {
+        name: patientName,
+        email: patientEmail,
+        phone: patientPhone,
+        userId: session.user.id,
+        leadId: lead.id
+      }
+    });
+
+    // Criar a nova indicação vinculada ao lead
     const newIndication = await prisma.indication.create({
       data: {
         name,
         slug,
-        userId: session.user.id
+        userId: session.user.id,
+        leads: {
+          connect: {
+            id: lead.id
+          }
+        }
+      },
+      include: {
+        leads: {
+          include: {
+            patient: true
+          }
+        }
       }
     });
 

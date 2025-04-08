@@ -6,22 +6,21 @@ import { getToken } from 'next-auth/jwt'
 // Regex para detectar URLs no formato /{slug}/{indicador}
 const INDICATION_REGEX = /^\/([^\/]+)\/([^\/]+)$/;
 
-// Lista de rotas que requerem plano premium
-const PREMIUM_ROUTES = [
-  '/reports',
-  '/analytics',
-  '/dashboard', // Adicionado novamente para bloquear acesso ao dashboard para usuários free
-  '/dashboard/analytics',
-  '/advanced-settings',
+// Lista de rotas que devem ser acessíveis por todos os usuários autenticados
+const AUTH_ROUTES = [
+  '/profile',
+  '/dashboard',
   '/dashboard/indications',
   '/dashboard/leads',
   '/dashboard/pipeline'
 ];
 
-// Lista de rotas que devem ser acessíveis por todos os usuários autenticados
-const AUTH_ROUTES = [
-  '/profile'
-  // Dashboard removido para que seja verificado apenas como rota premium
+// Lista de rotas que requerem plano premium
+const PREMIUM_ROUTES = [
+  '/reports',
+  '/analytics',
+  '/dashboard/analytics',
+  '/advanced-settings'
 ];
 
 // Lista de e-mails com acesso premium

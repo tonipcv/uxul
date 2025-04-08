@@ -1,7 +1,7 @@
 'use client';
 
 import { useSession, signOut } from "next-auth/react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState, useEffect } from "react";
@@ -16,6 +16,7 @@ import { useUserPlan } from "@/hooks/use-user-plan";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import Link from "next/link";
+import { Separator } from "@/components/ui/separator";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -191,297 +192,278 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="container max-w-3xl mx-auto p-4 pt-20 lg:pt-10">
-      <Card className="bg-white/10 backdrop-blur-sm border border-white/30 shadow-md">
-        <CardHeader className="flex flex-row items-center justify-between border-b border-blue-500/20 pb-4">
-          <CardTitle className="text-xl font-medium text-white">Seu Perfil</CardTitle>
-          <div className="flex items-center gap-2">
-            {isPremium ? (
-              <Badge className="bg-blue-500/30 text-blue-100 border-blue-400/30 mr-2">
-                <SparklesIcon className="h-3.5 w-3.5 mr-1" />
-                Premium
-              </Badge>
-            ) : (
-              <Badge className="bg-white/20 text-white/80 border-white/30 mr-2">
-                Free
-              </Badge>
-            )}
-            {!isEditing && (
-              <>
-                <Button 
-                  variant="outline" 
-                  className="bg-white text-blue-700 hover:bg-white/90 transition-colors border-none"
-                  onClick={() => setIsEditing(true)}
-                >
-                  Editar Perfil
-                </Button>
-                <Link href="/settings/interest-options">
-                  <Button 
-                    variant="outline" 
-                    className="bg-blue-600/40 text-white hover:bg-blue-600/50 transition-colors border border-blue-500/30 ml-2"
-                  >
-                    Configurações
-                  </Button>
-                </Link>
-              </>
-            )}
+    <div className="min-h-[100dvh] bg-gray-100 pt-16 pb-24 md:pt-8 md:pb-16 px-4">
+      <div className="container mx-auto pb-24 md:pb-20 lg:pb-8">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8">
+          <div>
+            <h1 className="text-xl md:text-2xl font-bold text-gray-900 tracking-[-0.03em] font-inter">Seu Perfil</h1>
+            <p className="text-sm md:text-base text-gray-600 tracking-[-0.03em] font-inter">Gerencie seus dados e configurações</p>
           </div>
-        </CardHeader>
-        <CardContent className="space-y-8 pt-6">
-          {/* Profile Summary */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {/* Profile Image */}
-            <div className="flex flex-col items-center space-y-4">
-              <div className="relative group">
-                <div className="relative w-32 h-32 rounded-full overflow-hidden border-2 border-blue-300/40 bg-blue-900/30">
-                  {image ? (
-                    <Image
-                      src={image}
-                      alt="Profile"
-                      fill
-                      className="object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-blue-800/30">
-                      <CameraIcon className="h-12 w-12 text-blue-200" />
-                    </div>
-                  )}
-                </div>
-                <label 
-                  className="absolute inset-0 flex items-center justify-center bg-blue-600/50 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer rounded-full"
-                  htmlFor="image-upload"
+          {!isEditing && (
+            <div className="flex gap-2 mt-2 md:mt-0">
+              <Button 
+                variant="outline" 
+                size="sm"
+                className="bg-gray-800/5 border-0 shadow-[0_4px_12px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.1)] transition-all duration-300 rounded-2xl text-gray-700 hover:bg-gray-800/10"
+                onClick={() => setIsEditing(true)}
+              >
+                Editar Perfil
+              </Button>
+              <Link href="/settings/interest-options">
+                <Button 
+                  variant="outline"
+                  size="sm"
+                  className="bg-gray-800/5 border-0 shadow-[0_4px_12px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.1)] transition-all duration-300 rounded-2xl text-gray-700 hover:bg-gray-800/10"
                 >
-                  <CameraIcon className="h-8 w-8 text-white" />
-                </label>
-                <input
-                  type="file"
-                  id="image-upload"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handleImageUpload}
-                  disabled={isUploading}
-                />
-                {isUploading && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-blue-600/50 rounded-full">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
-                  </div>
-                )}
-              </div>
-              <p className="text-sm text-blue-100/80">
-                Clique na imagem para alterar sua foto
-              </p>
+                  Configurações
+                </Button>
+              </Link>
             </div>
+          )}
+        </div>
 
-            {/* Profile Info */}
-            <div className="md:col-span-2 space-y-6">
-              {isEditing ? (
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <label className="text-sm text-blue-100 font-medium">Nome</label>
-                    <Input
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      className="bg-white/10 backdrop-blur-sm border-2 border-white/30 text-white placeholder:text-white/60 focus:ring-2 focus:ring-white/50 focus:border-transparent"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-sm text-blue-100 font-medium">Especialidade</label>
-                    <Input
-                      value={specialty}
-                      onChange={(e) => setSpecialty(e.target.value)}
-                      className="bg-white/10 backdrop-blur-sm border-2 border-white/30 text-white placeholder:text-white/60 focus:ring-2 focus:ring-white/50 focus:border-transparent"
-                      placeholder="Ex: Cardiologista, Nutricionista..."
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <label className="text-sm text-blue-100 font-medium">Email</label>
-                    <p className="text-lg text-white">{email}</p>
-                  </div>
-                  
-                  <div className="space-y-1">
-                    <Label htmlFor="pageTemplate" className="text-sm text-gray-300">
-                      Template da Página
-                    </Label>
-                    <Select value={pageTemplate} onValueChange={setPageTemplate}>
-                      <SelectTrigger id="pageTemplate" className="bg-blue-950/50 border-white/10 focus:border-blue-500/70 text-white">
-                        <SelectValue placeholder="Escolha o template" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-navy-800 border-white/10 text-white">
-                        <SelectItem value="default">Padrão (Claro)</SelectItem>
-                        <SelectItem value="dark">Escuro</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <p className="text-xs text-gray-400">Escolha o estilo visual para sua página de captação</p>
-                  </div>
-
-                  <div className="pt-4 flex gap-3">
-                    <Button 
-                      onClick={() => handleSave()}
-                      className="bg-white text-blue-700 hover:bg-white/90 border-none"
-                    >
-                      Salvar Alterações
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      onClick={() => setIsEditing(false)}
-                      className="bg-blue-700/30 border-blue-500/30 text-blue-100 hover:bg-blue-600/40"
-                    >
-                      Cancelar
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-5">
-                  <div>
-                    <h2 className="text-2xl font-light text-white">{name}</h2>
-                    {specialty && (
-                      <div className="flex items-center space-x-2">
-                        <UserIcon className="h-4 w-4 mr-1.5 text-blue-300" />
-                        <span className="text-blue-50">{specialty}</span>
+        {/* Visão geral do perfil */}
+        <Card className="bg-gray-800/5 border-0 shadow-[0_8px_30px_rgba(0,0,0,0.12)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.16)] transition-all duration-300 rounded-2xl mb-6">
+          <CardHeader>
+            <CardTitle className="text-base md:text-lg font-bold text-gray-900 tracking-[-0.03em] font-inter">
+              Informações Pessoais
+            </CardTitle>
+            <CardDescription className="text-xs md:text-sm text-gray-500 tracking-[-0.03em] font-inter">
+              Dados da sua conta
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {/* Foto de perfil */}
+              <div className="flex flex-col items-center space-y-4">
+                <div className="relative group">
+                  <div className="relative w-32 h-32 rounded-full overflow-hidden border border-gray-300 bg-gray-200">
+                    {image ? (
+                      <Image
+                        src={image}
+                        alt="Profile"
+                        fill
+                        className="object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-gray-300">
+                        <CameraIcon className="h-12 w-12 text-gray-500" />
                       </div>
                     )}
                   </div>
-                  
-                  <div className="space-y-2">
-                    <div className="flex items-center text-blue-100/80">
-                      <UserIcon className="h-4 w-4 mr-2" />
-                      <span>Username: <span className="text-white font-medium">{slug}</span></span>
+                  <label 
+                    className="absolute inset-0 flex items-center justify-center bg-gray-800/50 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer rounded-full"
+                    htmlFor="image-upload"
+                  >
+                    <CameraIcon className="h-8 w-8 text-white" />
+                  </label>
+                  <input
+                    type="file"
+                    id="image-upload"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleImageUpload}
+                    disabled={isUploading}
+                  />
+                  {isUploading && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-gray-800/50 rounded-full">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
                     </div>
-                    
-                    <div className="flex items-center text-blue-100/80">
-                      <LinkIcon className="h-4 w-4 mr-2" />
-                      <span>Seu link: <span className="text-white">{baseUrl}/{slug}</span></span>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="ml-2 h-6 w-6 p-0 hover:bg-blue-600/30 text-blue-200"
-                        onClick={copyProfileLinkToClipboard}
-                      >
-                        <ClipboardDocumentIcon className="h-4 w-4" />
-                      </Button>
-                    </div>
-                    
-                    <div className="text-blue-100/80">
-                      <span className="mr-4">
-                        <UserGroupIcon className="h-4 w-4 inline mr-1" />
-                        {leadCount} leads
-                      </span>
-                      <span>
-                        <LinkIcon className="h-4 w-4 inline mr-1" />
-                        {indicationCount} indicações
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Exibição do template selecionado */}
-                  <div className="flex items-center space-x-2">
-                    <SwatchIcon className="h-4 w-4 mr-1.5 text-blue-300" />
-                    <span className="text-blue-50">
-                      Template: {pageTemplate === 'dark' ? 'Escuro' : 'Padrão (Claro)'}
-                    </span>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-          
-          {/* Plano do Usuário */}
-          <Card className="bg-white/10 backdrop-blur-sm border border-white/30">
-            <CardHeader className="border-b border-blue-500/20">
-              <CardTitle className="text-lg font-medium text-white">Seu Plano</CardTitle>
-            </CardHeader>
-            <CardContent className="pt-6">
-              <div className="flex flex-col md:flex-row md:items-center justify-between">
-                <div className="space-y-2">
-                  {isPremium ? (
-                    <>
-                      <div className="flex items-center">
-                        <SparklesIcon className="h-5 w-5 text-blue-300 mr-2" />
-                        <h3 className="text-xl font-medium text-blue-200">Plano Premium</h3>
-                      </div>
-                      <p className="text-blue-100/80">
-                        Acesso total a todos os recursos da plataforma
-                      </p>
-                      {planExpiresAt && (
-                        <p className="text-sm text-blue-100/60">
-                          Expira em: {format(planExpiresAt, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
-                          {daysRemaining !== null && daysRemaining <= 30 && (
-                            <span className="ml-2 text-amber-300">
-                              ({daysRemaining} {daysRemaining === 1 ? 'dia' : 'dias'} restantes)
-                            </span>
-                          )}
-                        </p>
-                      )}
-                    </>
-                  ) : (
-                    <>
-                      <div className="flex items-center">
-                        <svg className="h-5 w-5 text-blue-200/70 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                        <h3 className="text-xl font-medium text-blue-200">Plano Gratuito</h3>
-                      </div>
-                      <p className="text-blue-100/80">
-                        Acesso básico com recursos limitados
-                      </p>
-                    </>
                   )}
                 </div>
-                <div className="mt-4 md:mt-0">
-                  <Button 
-                    onClick={() => router.push('/pricing')}
-                    className={isPremium ? "bg-blue-600/30 border border-blue-400/30 text-blue-100 hover:bg-blue-600/40" : "bg-white text-blue-700 hover:bg-white/90 border-none"}
-                  >
-                    <ShoppingCartIcon className="h-4 w-4 mr-2" />
-                    {isPremium ? "Gerenciar Assinatura" : "Fazer Upgrade"}
-                  </Button>
-                </div>
+                <p className="text-xs text-gray-500">
+                  Clique na imagem para alterar sua foto
+                </p>
               </div>
-            </CardContent>
-          </Card>
-          
-          {/* Estatísticas e Resumo */}
-          <Card className="bg-white/10 backdrop-blur-sm border border-white/30">
-            <CardHeader className="border-b border-blue-500/20">
-              <CardTitle className="text-lg font-medium text-white">Resumo da Atividade</CardTitle>
-            </CardHeader>
-            <CardContent className="pt-6">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="bg-blue-600/20 backdrop-blur-sm p-4 rounded-lg text-center border border-blue-500/30">
-                  <p className="text-2xl font-light text-white">{leadCount}</p>
-                  <p className="text-sm text-blue-100/80">Leads Totais</p>
-                </div>
-                <div className="bg-blue-600/20 backdrop-blur-sm p-4 rounded-lg text-center border border-blue-500/30">
-                  <p className="text-2xl font-light text-white">{indicationCount}</p>
-                  <p className="text-sm text-blue-100/80">Links de Indicação</p>
-                </div>
-                <div className="bg-blue-600/20 backdrop-blur-sm p-4 rounded-lg text-center border border-blue-500/30">
-                  <p className="text-2xl font-light text-white">0</p>
-                  <p className="text-sm text-blue-100/80">Taxa de Conversão</p>
-                </div>
-                <div className="bg-blue-600/20 backdrop-blur-sm p-4 rounded-lg text-center border border-blue-500/30">
-                  <p className="text-2xl font-light text-white">0</p>
-                  <p className="text-sm text-blue-100/80">Cliques Totais</p>
-                </div>
+
+              {/* Dados do perfil */}
+              <div className="md:col-span-2 space-y-6">
+                {isEditing ? (
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label className="text-sm text-gray-700 font-medium">Nome</Label>
+                      <Input
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        className="bg-white shadow-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-sm text-gray-700 font-medium">Especialidade</Label>
+                      <Input
+                        value={specialty}
+                        onChange={(e) => setSpecialty(e.target.value)}
+                        className="bg-white shadow-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                        placeholder="Ex: Cardiologista, Nutricionista..."
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label className="text-sm text-gray-700 font-medium">Email</Label>
+                      <p className="text-gray-900">{email}</p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-sm text-gray-700 font-medium">Template da Página</Label>
+                      <Select value={pageTemplate} onValueChange={setPageTemplate}>
+                        <SelectTrigger className="bg-white shadow-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500">
+                          <SelectValue placeholder="Selecione um template" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-white rounded-xl border border-gray-200 shadow-md">
+                          <SelectItem value="default" className="focus:bg-blue-50">Padrão</SelectItem>
+                          <SelectItem value="minimal" className="focus:bg-blue-50">Minimalista</SelectItem>
+                          <SelectItem value="pro" className="focus:bg-blue-50">Profissional</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div className="pt-4 flex gap-2">
+                      <Button 
+                        type="button" 
+                        onClick={() => handleSave()}
+                        className="bg-[#6366f1] hover:bg-[#4f46e5] text-white shadow-md shadow-blue-500/20 rounded-xl"
+                      >
+                        Salvar Alterações
+                      </Button>
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        onClick={() => setIsEditing(false)}
+                        className="border border-gray-300 bg-white text-gray-700 rounded-xl shadow-sm"
+                      >
+                        Cancelar
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-5">
+                    <div>
+                      <h2 className="text-xl font-bold text-gray-900 tracking-[-0.03em] font-inter">{name}</h2>
+                      {specialty && (
+                        <div className="flex items-center mt-1">
+                          <UserIcon className="h-4 w-4 mr-1.5 text-gray-500" />
+                          <span className="text-gray-700 text-sm">{specialty}</span>
+                        </div>
+                      )}
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <div className="flex items-center text-gray-700">
+                        <UserIcon className="h-4 w-4 mr-2 text-gray-500" />
+                        <span className="text-sm">Username: <span className="font-medium">{slug}</span></span>
+                      </div>
+                      
+                      <div className="flex items-center text-gray-700">
+                        <LinkIcon className="h-4 w-4 mr-2 text-gray-500" />
+                        <span className="text-sm">Seu link: <span className="text-gray-900">{baseUrl}/{slug}</span></span>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="ml-2 h-6 w-6 p-0 hover:bg-gray-100 text-gray-500 rounded-lg"
+                          onClick={copyProfileLinkToClipboard}
+                        >
+                          <ClipboardDocumentIcon className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      
+                      <div className="flex items-center space-x-4 mt-2">
+                        <div className="text-sm bg-[#f2f1ff] text-[#8b5cf6] px-2 py-1 rounded-md flex items-center">
+                          <UserGroupIcon className="h-4 w-4 inline mr-1" />
+                          {leadCount} leads
+                        </div>
+                        <div className="text-sm bg-[#def6ff] text-[#6366f1] px-2 py-1 rounded-md flex items-center">
+                          <LinkIcon className="h-4 w-4 inline mr-1" />
+                          {indicationCount} indicações
+                        </div>
+                        {isPremium && (
+                          <div className="text-sm bg-[#d8fffa] text-[#4ade80] px-2 py-1 rounded-md flex items-center">
+                            <SparklesIcon className="h-4 w-4 inline mr-1" />
+                            Premium
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
-            </CardContent>
-          </Card>
-          
-          {/* Botão de Logout */}
-          <div className="pt-4">
-            <Button 
-              variant="outline" 
-              className="w-full bg-red-500/20 border-red-400/30 text-red-100 hover:bg-red-500/30 transition-colors"
-              onClick={() => signOut({ callbackUrl: '/auth/signin' })}
-            >
-              <ArrowRightOnRectangleIcon className="h-4 w-4 mr-2" />
-              Sair da Conta
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Métricas do usuário */}
+        <Card className="bg-gray-800/5 border-0 shadow-[0_8px_30px_rgba(0,0,0,0.12)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.16)] transition-all duration-300 rounded-2xl mb-6">
+          <CardHeader>
+            <CardTitle className="text-base md:text-lg font-bold text-gray-900 tracking-[-0.03em] font-inter">
+              Métricas e Estatísticas
+            </CardTitle>
+            <CardDescription className="text-xs md:text-sm text-gray-500 tracking-[-0.03em] font-inter">
+              Desempenho da sua conta
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <Card className="bg-gray-800/5 border-0 shadow-[0_4px_12px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.1)] transition-all duration-300 rounded-2xl">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3 mb-2">
+                    <UserGroupIcon className="h-5 w-5 text-[#8b5cf6]" />
+                    <p className="text-sm text-gray-700">Leads Totais</p>
+                  </div>
+                  <p className="text-2xl md:text-3xl font-bold text-gray-900">{leadCount}</p>
+                </CardContent>
+              </Card>
+              
+              <Card className="bg-gray-800/5 border-0 shadow-[0_4px_12px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.1)] transition-all duration-300 rounded-2xl">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3 mb-2">
+                    <LinkIcon className="h-5 w-5 text-[#6366f1]" />
+                    <p className="text-sm text-gray-700">Links de Indicação</p>
+                  </div>
+                  <p className="text-2xl md:text-3xl font-bold text-gray-900">{indicationCount}</p>
+                </CardContent>
+              </Card>
+              
+              <Card className="bg-gray-800/5 border-0 shadow-[0_4px_12px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.1)] transition-all duration-300 rounded-2xl">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3 mb-2">
+                    <SwatchIcon className="h-5 w-5 text-[#4ade80]" />
+                    <p className="text-sm text-gray-700">Taxa de Conversão</p>
+                  </div>
+                  <p className="text-2xl md:text-3xl font-bold text-gray-900">
+                    {indicationCount && leadCount
+                      ? `${Math.round((leadCount / indicationCount) * 100)}%`
+                      : "0%"}
+                  </p>
+                </CardContent>
+              </Card>
+              
+              <Card className="bg-gray-800/5 border-0 shadow-[0_4px_12px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.1)] transition-all duration-300 rounded-2xl">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3 mb-2">
+                    <ShoppingCartIcon className="h-5 w-5 text-gray-700" />
+                    <p className="text-sm text-gray-700">Status da Conta</p>
+                  </div>
+                  <p className="text-2xl md:text-3xl font-bold text-gray-900">
+                    {isPremium ? "Premium" : "Free"}
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Botão de Logout */}
+        <div className="pt-2">
+          <Button 
+            variant="outline" 
+            className="w-full bg-gray-800/5 border-0 shadow-[0_4px_12px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.1)] transition-all duration-300 rounded-2xl text-gray-700 hover:bg-gray-800/10"
+            onClick={() => signOut({ callbackUrl: '/auth/signin' })}
+          >
+            <ArrowRightOnRectangleIcon className="h-4 w-4 mr-2" />
+            Sair da Conta
+          </Button>
+        </div>
+      </div>
     </div>
   );
 } 

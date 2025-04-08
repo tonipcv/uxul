@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { compare } from "bcryptjs";
 import { NextRequest } from 'next/server';
 import { getToken } from 'next-auth/jwt';
+import crypto from 'crypto';
 
 declare module "next-auth" {
   interface Session {
@@ -87,4 +88,14 @@ export async function isAuthenticated(req: NextRequest): Promise<boolean> {
   });
   
   return !!session;
+}
+
+export async function generatePatientAccessToken() {
+  const token = crypto.randomBytes(32).toString('hex');
+  const hashedToken = crypto
+    .createHash('sha256')
+    .update(token)
+    .digest('hex');
+
+  return { token, hashedToken };
 } 
