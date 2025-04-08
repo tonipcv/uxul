@@ -120,12 +120,12 @@ function PatientPageContent() {
 
   return (
     <div className="min-h-screen bg-black text-white">
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-8 pt-24">
         {/* Header */}
-        <div className="flex justify-between items-center mb-12">
+        <div className="flex justify-between items-center mb-8">
           {/* Logo */}
           <Link href="/" className="inline-block">
-            <h1 className="text-3xl font-montserrat font-light text-white tracking-wider">MED1</h1>
+            <h1 className="text-2xl font-montserrat font-light text-white tracking-wider">MED1</h1>
           </Link>
           {/* Logout Button */}
           <Button
@@ -133,15 +133,15 @@ function PatientPageContent() {
             className="text-zinc-400 hover:text-white hover:bg-zinc-800"
             onClick={() => router.push('/patient/access')}
           >
-            <LogOut className="h-5 w-5 mr-2" />
+            <LogOut className="h-4 w-4 mr-2" />
             Sair
           </Button>
         </div>
 
         <div className="max-w-4xl mx-auto">
           {/* Dados do Paciente */}
-          <div className="bg-zinc-900/50 backdrop-blur-sm rounded-xl p-8 border border-zinc-800 mb-8">
-            <h2 className="text-2xl font-semibold mb-6">Dados do Paciente</h2>
+          <div className="bg-zinc-900/50 backdrop-blur-sm rounded-xl p-6 border border-zinc-800 mb-6">
+            <h2 className="text-xl font-semibold mb-4">Dados do Paciente</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="flex items-center space-x-4">
                 <User className="h-5 w-5 text-zinc-400" />
@@ -179,8 +179,8 @@ function PatientPageContent() {
           </div>
 
           {/* Dados do Médico */}
-          <div className="bg-zinc-900/50 backdrop-blur-sm rounded-xl p-8 border border-zinc-800 mb-8">
-            <h2 className="text-2xl font-semibold mb-6">Dados do Médico</h2>
+          <div className="bg-zinc-900/50 backdrop-blur-sm rounded-xl p-6 border border-zinc-800 mb-6">
+            <h2 className="text-xl font-semibold mb-4">Dados do Médico</h2>
             <div className="flex items-center space-x-6">
               {patient.user.image && (
                 <div className="relative h-20 w-20 rounded-full overflow-hidden">
@@ -202,8 +202,8 @@ function PatientPageContent() {
 
           {/* Prontuário */}
           {patient.lead?.medicalNotes && (
-            <div className="bg-zinc-900/50 backdrop-blur-sm rounded-xl p-8 border border-zinc-800 mb-8">
-              <h2 className="text-2xl font-semibold mb-6">Prontuário</h2>
+            <div className="bg-zinc-900/50 backdrop-blur-sm rounded-xl p-6 border border-zinc-800 mb-6">
+              <h2 className="text-xl font-semibold mb-4">Prontuário</h2>
               <div className="prose prose-invert max-w-none">
                 <p className="text-white whitespace-pre-wrap">{patient.lead.medicalNotes}</p>
               </div>
@@ -211,8 +211,8 @@ function PatientPageContent() {
           )}
 
           {/* Link de Indicação */}
-          <div className="bg-zinc-900/50 backdrop-blur-sm rounded-xl p-8 border border-zinc-800">
-            <h2 className="text-2xl font-semibold mb-6">Link de Indicação</h2>
+          <div className="bg-zinc-900/50 backdrop-blur-sm rounded-xl p-6 border border-zinc-800">
+            <h2 className="text-xl font-semibold mb-4">Link de Indicação</h2>
             <div className="space-y-6">
               {patient.lead?.indication ? (
                 <>

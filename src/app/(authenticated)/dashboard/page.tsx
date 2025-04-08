@@ -14,12 +14,19 @@ import {
   PhoneIcon, 
   LinkIcon,
   ArrowTrendingUpIcon,
-  UserIcon
+  UserIcon,
+  CurrencyDollarIcon,
+  UsersIcon,
+  RocketLaunchIcon,
+  UserPlusIcon
 } from "@heroicons/react/24/outline";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ArrowPathIcon } from "@heroicons/react/24/outline";
+import { Skeleton } from "@/components/ui/skeleton";
 
 // Função para verificar se uma data é válida
 const isValidDate = (date: Date): boolean => {
@@ -68,6 +75,8 @@ interface DashboardData {
   totalRevenue: number;
   potentialRevenue: number;
   clickToLeadRate: number;
+  totalPatients: number;
+  revenue: number;
 }
 
 // Componente para formatar o Tooltip do gráfico
@@ -88,9 +97,9 @@ export default function DashboardPage() {
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("overview");
+  const [selectedPeriod, setSelectedPeriod] = useState("7d");
 
   useEffect(() => {
-
     if (session?.user?.id) {
       fetchDashboardData();
     }
@@ -118,7 +127,9 @@ export default function DashboardPage() {
           topSources: [],
           totalRevenue: 0,
           potentialRevenue: 0,
-          clickToLeadRate: 0
+          clickToLeadRate: 0,
+          totalPatients: 0,
+          revenue: 0
         });
       }
     } catch (error) {
@@ -135,7 +146,9 @@ export default function DashboardPage() {
         topSources: [],
         totalRevenue: 0,
         potentialRevenue: 0,
-        clickToLeadRate: 0
+        clickToLeadRate: 0,
+        totalPatients: 0,
+        revenue: 0
       });
     } finally {
       setLoading(false);
@@ -154,34 +167,51 @@ export default function DashboardPage() {
   })) || [];
 
   return (
-    <div className="min-h-[100dvh] bg-gray-100 pt-16 pb-24 md:pt-8 md:pb-16 px-4">
-      <div className="container mx-auto pb-24 md:pb-20 lg:pb-8">
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8">
+    <div className="min-h-[100dvh] bg-gray-100 pt-20 pb-24 md:pt-12 md:pb-16 px-4">
+      <div className="container mx-auto pl-1 sm:pl-4 md:pl-8 lg:pl-16 max-w-[98%] sm:max-w-[95%] md:max-w-[90%] lg:max-w-[85%]">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6">
           <div>
-            <h1 className="text-xl md:text-2xl font-bold text-gray-900 tracking-[-0.03em] font-inter">Dashboard</h1>
-            <p className="text-sm md:text-base text-gray-600 tracking-[-0.03em] font-inter">Bem-vindo, {session?.user?.name}</p>
+            <h1 className="text-xl sm:text-lg md:text-xl font-bold text-gray-900 tracking-[-0.03em] font-inter">Dashboard</h1>
+            <p className="text-sm sm:text-xs md:text-sm text-gray-600 tracking-[-0.03em] font-inter">Visualize o desempenho da sua clínica</p>
           </div>
-          <Button 
-            onClick={fetchDashboardData} 
-            variant="outline" 
-            size="sm" 
-            className="mt-2 md:mt-0 bg-gray-800/5 border-0 shadow-[0_4px_12px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.1)] transition-all duration-300 rounded-2xl text-gray-700 hover:bg-gray-800/10"
-          >
-            Atualizar dados
-          </Button>
+
+          <div className="flex items-center gap-2 mt-4 md:mt-0">
+            <Select 
+              value={selectedPeriod} 
+              onValueChange={setSelectedPeriod}
+            >
+              <SelectTrigger className="w-full sm:w-[180px] h-10 sm:h-8 bg-gray-800/5 border-0 shadow-[0_4px_12px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.1)] transition-all duration-300 rounded-2xl text-gray-700 hover:bg-gray-800/10 text-sm sm:text-xs">
+                <SelectValue placeholder="Escolha o período" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="7d">Últimos 7 dias</SelectItem>
+                <SelectItem value="30d">Últimos 30 dias</SelectItem>
+                <SelectItem value="90d">Últimos 90 dias</SelectItem>
+                <SelectItem value="year">Este ano</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Button
+              onClick={fetchDashboardData}
+              className="h-10 sm:h-8 bg-gray-800/5 border-0 shadow-[0_4px_12px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.1)] transition-all duration-300 rounded-2xl text-gray-700 hover:bg-gray-800/10 text-sm sm:text-xs"
+            >
+              <ArrowPathIcon className="h-4 w-4 sm:h-3.5 sm:w-3.5 mr-2 sm:mr-1.5" />
+              Atualizar
+            </Button>
+          </div>
         </div>
 
         <Tabs defaultValue="overview" value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid grid-cols-2 mb-8 bg-gray-800/5 border-0 shadow-[0_4px_12px_rgba(0,0,0,0.05)] p-1 rounded-2xl">
+          <TabsList className="grid grid-cols-2 mb-6 bg-gray-800/5 border-0 shadow-[0_4px_12px_rgba(0,0,0,0.05)] p-1 rounded-2xl max-w-[240px]">
             <TabsTrigger 
               value="overview" 
-              className="data-[state=active]:bg-gray-800/10 data-[state=active]:text-gray-900 data-[state=active]:border-b-0 text-gray-600 hover:text-gray-900 transition-colors rounded-xl"
+              className="data-[state=active]:bg-gray-800/10 data-[state=active]:text-gray-900 data-[state=active]:border-b-0 text-gray-600 hover:text-gray-900 transition-colors rounded-xl text-xs"
             >
               Visão Geral
             </TabsTrigger>
             <TabsTrigger 
               value="details" 
-              className="data-[state=active]:bg-gray-800/10 data-[state=active]:text-gray-900 data-[state=active]:border-b-0 text-gray-600 hover:text-gray-900 transition-colors rounded-xl"
+              className="data-[state=active]:bg-gray-800/10 data-[state=active]:text-gray-900 data-[state=active]:border-b-0 text-gray-600 hover:text-gray-900 transition-colors rounded-xl text-xs"
             >
               Detalhamento
             </TabsTrigger>
@@ -189,106 +219,108 @@ export default function DashboardPage() {
           
           <TabsContent value="overview" className="mt-0">
             {/* Cards principais */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
               <Card className="bg-gray-800/5 border-0 shadow-[0_8px_30px_rgba(0,0,0,0.12)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.16)] transition-all duration-300 rounded-2xl">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-base md:text-lg font-bold flex items-center text-gray-900 tracking-[-0.03em] font-inter">
-                    <UserIcon className="h-5 w-5 mr-2 text-[#8b5cf6]" />
-                    Total de Leads
-                  </CardTitle>
-                  <CardDescription className="text-xs md:text-sm text-gray-500 tracking-[-0.03em] font-inter">
-                    Conversões totais
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-end justify-between">
-                    <p className="text-2xl md:text-4xl font-semibold text-gray-900">
-                      {loading ? '...' : dashboardData?.totalLeads || 0}
-                    </p>
-                    <Badge variant="outline" className="bg-[#f2f1ff] text-[#8b5cf6] border-[#d5dbff]">
-                      <ArrowTrendingUpIcon className="h-3 w-3 mr-1" />
-                      Ativo
-                    </Badge>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-gray-800/5 border-0 shadow-[0_8px_30px_rgba(0,0,0,0.12)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.16)] transition-all duration-300 rounded-2xl">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-base md:text-lg font-bold flex items-center text-gray-900 tracking-[-0.03em] font-inter">
-                    <LinkIcon className="h-5 w-5 mr-2 text-[#6366f1]" />
-                    Links Ativos
-                  </CardTitle>
-                  <CardDescription className="text-xs md:text-sm text-gray-500 tracking-[-0.03em] font-inter">
-                    Indicações ativas
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-end justify-between">
-                    <p className="text-2xl md:text-4xl font-semibold text-gray-900">
-                      {loading ? '...' : dashboardData?.totalIndications || 0}
-                    </p>
-                    <Badge variant="outline" className="bg-[#def6ff] text-[#6366f1] border-[#c9d0ff]">
-                      100%
-                    </Badge>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-gray-800/5 border-0 shadow-[0_8px_30px_rgba(0,0,0,0.12)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.16)] transition-all duration-300 rounded-2xl">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-base md:text-lg font-bold flex items-center text-gray-900 tracking-[-0.03em] font-inter">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 mr-2 text-[#4ade80]" >
-                      <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
-                    </svg>
+                <CardHeader className="pb-2 sm:pb-1 pt-4 sm:pt-3 px-6 sm:px-4">
+                  <CardTitle className="text-base sm:text-sm md:text-base font-bold flex items-center text-gray-900 tracking-[-0.03em] font-inter">
+                    <CurrencyDollarIcon className="h-5 w-5 sm:h-4 sm:w-4 mr-2 text-emerald-500" />
                     Faturamento
                   </CardTitle>
-                  <CardDescription className="text-xs md:text-sm text-gray-500 tracking-[-0.03em] font-inter">
-                    Clientes fechados
+                  <CardDescription className="text-sm sm:text-xs text-gray-500 tracking-[-0.03em] font-inter">
+                    Receita no período selecionado
                   </CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="pt-0 pb-4 sm:pb-3 px-6 sm:px-4">
                   <div className="flex items-end justify-between">
-                    <p className="text-2xl md:text-4xl font-semibold text-gray-900">
-                      {loading 
-                        ? '...' 
-                        : new Intl.NumberFormat('pt-BR', { 
-                            style: 'currency', 
-                            currency: 'BRL' 
-                          }).format(dashboardData?.totalRevenue || 0)}
+                    <p className="text-2xl sm:text-xl md:text-2xl font-semibold text-gray-900">
+                      {loading ? (
+                        <Skeleton className="h-9 w-24 bg-gray-200" />
+                      ) : (
+                        `R$ ${dashboardData?.revenue?.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 }) || '0'}`
+                      )}
                     </p>
-                    <Badge variant="outline" className="bg-[#d8fffa] text-[#4ade80] border-[#bbf7d0]">
-                      <ArrowTrendingUpIcon className="h-3 w-3 mr-1" />
-                      Crescendo
+                    <Badge variant="outline" className="bg-emerald-50 text-emerald-600 border-emerald-200 text-sm sm:text-xs">
+                      <ArrowTrendingUpIcon className="h-3.5 w-3.5 sm:h-3 sm:w-3 mr-1" />
+                      {loading ? <Skeleton className="h-4 w-12" /> : '15%'}
                     </Badge>
                   </div>
                 </CardContent>
               </Card>
 
               <Card className="bg-gray-800/5 border-0 shadow-[0_8px_30px_rgba(0,0,0,0.12)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.16)] transition-all duration-300 rounded-2xl">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-base md:text-lg font-bold flex items-center text-gray-900 tracking-[-0.03em] font-inter">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 mr-2 text-[#4ade80]">
-                      <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
-                    </svg>
-                    Potencial
+                <CardHeader className="pb-2 sm:pb-1 pt-4 sm:pt-3 px-6 sm:px-4">
+                  <CardTitle className="text-base sm:text-sm md:text-base font-bold flex items-center text-gray-900 tracking-[-0.03em] font-inter">
+                    <UsersIcon className="h-5 w-5 sm:h-4 sm:w-4 mr-2 text-sky-500" />
+                    Pacientes
                   </CardTitle>
-                  <CardDescription className="text-xs md:text-sm text-gray-500 tracking-[-0.03em] font-inter">
-                    Receita potencial
+                  <CardDescription className="text-sm sm:text-xs text-gray-500 tracking-[-0.03em] font-inter">
+                    Total de pacientes ativos
                   </CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="pt-0 pb-4 sm:pb-3 px-6 sm:px-4">
                   <div className="flex items-end justify-between">
-                    <p className="text-2xl md:text-4xl font-semibold text-gray-900">
-                      {loading 
-                        ? '...' 
-                        : new Intl.NumberFormat('pt-BR', { 
-                            style: 'currency', 
-                            currency: 'BRL' 
-                          }).format(dashboardData?.potentialRevenue || 0)}
+                    <p className="text-2xl sm:text-xl md:text-2xl font-semibold text-gray-900">
+                      {loading ? (
+                        <Skeleton className="h-9 w-16 bg-gray-200" />
+                      ) : (
+                        dashboardData?.totalPatients?.toLocaleString('pt-BR') || '0'
+                      )}
                     </p>
-                    <Badge variant="outline" className="bg-[#ffe6e7] text-[#4ade80] border-[#bbf7d0]">
-                      Estimativa
+                    <Badge variant="outline" className="bg-sky-50 text-sky-600 border-sky-200 text-sm sm:text-xs">
+                      Ativos
+                    </Badge>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-gray-800/5 border-0 shadow-[0_8px_30px_rgba(0,0,0,0.12)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.16)] transition-all duration-300 rounded-2xl">
+                <CardHeader className="pb-2 sm:pb-1 pt-4 sm:pt-3 px-6 sm:px-4">
+                  <CardTitle className="text-base sm:text-sm md:text-base font-bold flex items-center text-gray-900 tracking-[-0.03em] font-inter">
+                    <RocketLaunchIcon className="h-5 w-5 sm:h-4 sm:w-4 mr-2 text-purple-500" />
+                    Potencial
+                  </CardTitle>
+                  <CardDescription className="text-sm sm:text-xs text-gray-500 tracking-[-0.03em] font-inter">
+                    Receita potencial prevista
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="pt-0 pb-4 sm:pb-3 px-6 sm:px-4">
+                  <div className="flex items-end justify-between">
+                    <p className="text-2xl sm:text-xl md:text-2xl font-semibold text-gray-900">
+                      {loading ? (
+                        <Skeleton className="h-9 w-24 bg-gray-200" />
+                      ) : (
+                        `R$ ${dashboardData?.potentialRevenue?.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 }) || '0'}`
+                      )}
+                    </p>
+                    <Badge variant="outline" className="bg-purple-50 text-purple-600 border-purple-200 text-sm sm:text-xs">
+                      Previsto
+                    </Badge>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-gray-800/5 border-0 shadow-[0_8px_30px_rgba(0,0,0,0.12)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.16)] transition-all duration-300 rounded-2xl">
+                <CardHeader className="pb-2 sm:pb-1 pt-4 sm:pt-3 px-6 sm:px-4">
+                  <CardTitle className="text-base sm:text-sm md:text-base font-bold flex items-center text-gray-900 tracking-[-0.03em] font-inter">
+                    <UserPlusIcon className="h-5 w-5 sm:h-4 sm:w-4 mr-2 text-amber-500" />
+                    Indicações
+                  </CardTitle>
+                  <CardDescription className="text-sm sm:text-xs text-gray-500 tracking-[-0.03em] font-inter">
+                    Total de indicações
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="pt-0 pb-4 sm:pb-3 px-6 sm:px-4">
+                  <div className="flex items-end justify-between">
+                    <p className="text-2xl sm:text-xl md:text-2xl font-semibold text-gray-900">
+                      {loading ? (
+                        <Skeleton className="h-9 w-16 bg-gray-200" />
+                      ) : (
+                        dashboardData?.totalIndications?.toLocaleString('pt-BR') || '0'
+                      )}
+                    </p>
+                    <Badge variant="outline" className="bg-amber-50 text-amber-600 border-amber-200 text-sm sm:text-xs">
+                      <ArrowTrendingUpIcon className="h-3.5 w-3.5 sm:h-3 sm:w-3 mr-1" />
+                      {loading ? <Skeleton className="h-4 w-12" /> : '8%'}
                     </Badge>
                   </div>
                 </CardContent>
@@ -296,14 +328,18 @@ export default function DashboardPage() {
             </div>
 
             {/* Gráficos */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
               <Card className="bg-gray-800/5 border-0 shadow-[0_8px_30px_rgba(0,0,0,0.12)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.16)] transition-all duration-300 rounded-2xl">
-                <CardHeader>
-                  <CardTitle className="text-base md:text-lg font-bold text-gray-900 tracking-[-0.03em] font-inter">Fontes de Tráfego</CardTitle>
-                  <CardDescription className="text-xs md:text-sm text-gray-500 tracking-[-0.03em] font-inter">Principais origens dos leads</CardDescription>
+                <CardHeader className="pb-1 pt-3 px-4">
+                  <CardTitle className="text-sm md:text-base font-bold text-gray-900 tracking-[-0.03em] font-inter">
+                    Fontes de Tráfego
+                  </CardTitle>
+                  <CardDescription className="text-xs text-gray-500 tracking-[-0.03em] font-inter">
+                    Principais origens dos leads
+                  </CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <div className="h-[300px]">
+                <CardContent className="pb-3 px-4">
+                  <div className="h-[220px]">
                     <ResponsiveContainer width="100%" height="100%">
                       <PieChart>
                         <Pie
@@ -365,12 +401,16 @@ export default function DashboardPage() {
               </Card>
 
               <Card className="bg-gray-800/5 border-0 shadow-[0_8px_30px_rgba(0,0,0,0.12)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.16)] transition-all duration-300 rounded-2xl">
-                <CardHeader>
-                  <CardTitle className="text-base md:text-lg font-bold text-gray-900 tracking-[-0.03em] font-inter">Top Indicações</CardTitle>
-                  <CardDescription className="text-xs md:text-sm text-gray-500 tracking-[-0.03em] font-inter">Indicações com mais leads</CardDescription>
+                <CardHeader className="pb-1 pt-3 px-4">
+                  <CardTitle className="text-sm md:text-base font-bold text-gray-900 tracking-[-0.03em] font-inter">
+                    Top Indicações
+                  </CardTitle>
+                  <CardDescription className="text-xs text-gray-500 tracking-[-0.03em] font-inter">
+                    Indicações com mais leads
+                  </CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <div className="h-[300px]">
+                <CardContent className="pb-3 px-4">
+                  <div className="h-[220px]">
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart
                         data={indicationChartData}
@@ -413,14 +453,18 @@ export default function DashboardPage() {
               </Card>
             </div>
 
-            {/* Gráfico de Receita */}
-            <Card className="bg-gray-800/5 border-0 shadow-[0_8px_30px_rgba(0,0,0,0.12)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.16)] transition-all duration-300 rounded-2xl mt-8">
-              <CardHeader>
-                <CardTitle className="text-base md:text-lg font-bold text-gray-900 tracking-[-0.03em] font-inter">Crescimento de Receita</CardTitle>
-                <CardDescription className="text-xs md:text-sm text-gray-500 tracking-[-0.03em] font-inter">Evolução do faturamento ao longo do tempo</CardDescription>
+            {/* Card de crescimento */}
+            <Card className="bg-gray-800/5 border-0 shadow-[0_8px_30px_rgba(0,0,0,0.12)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.16)] transition-all duration-300 rounded-2xl mb-6">
+              <CardHeader className="pb-1 pt-3 px-4">
+                <CardTitle className="text-sm md:text-base font-bold text-gray-900 tracking-[-0.03em] font-inter">
+                  Crescimento de Receita
+                </CardTitle>
+                <CardDescription className="text-xs text-gray-500 tracking-[-0.03em] font-inter">
+                  Evolução do faturamento ao longo do tempo
+                </CardDescription>
               </CardHeader>
-              <CardContent>
-                <div className="h-[300px]">
+              <CardContent className="pb-3 px-4">
+                <div className="h-[250px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <AreaChart
                       data={[

@@ -19,7 +19,8 @@ import {
   ArrowTrendingUpIcon,
   ChartBarIcon,
   EyeIcon,
-  PlusIcon
+  PlusIcon,
+  TrashIcon
 } from "@heroicons/react/24/outline";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -99,6 +100,13 @@ export default function LeadsPage() {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [selectedStatus, setSelectedStatus] = useState("");
+  const [selectedSource, setSelectedSource] = useState("");
+  const [selectedIndication, setSelectedIndication] = useState("");
+  const [selectedInterest, setSelectedInterest] = useState("");
+  const [searchText, setSearchText] = useState("");
+  const [totalLeads, setTotalLeads] = useState(0);
+  const [displayedLeads, setDisplayedLeads] = useState<Lead[]>([]);
 
   useEffect(() => {
     if (session?.user?.id) {
@@ -137,6 +145,8 @@ export default function LeadsPage() {
       if (response.ok) {
         const data = await response.json();
         setDashboardData(data);
+        setTotalLeads(data.totalLeads);
+        setDisplayedLeads(data.totalLeads > 0 ? leads : []);
       }
     } catch (error) {
       console.error('Erro ao buscar dados do dashboard:', error);
@@ -152,11 +162,16 @@ export default function LeadsPage() {
         // Verificar se data existe na resposta e é um array
         if (result.data && Array.isArray(result.data)) {
           setLeads(result.data);
+          setTotalLeads(result.data.length);
+          setDisplayedLeads(result.data);
         } else if (Array.isArray(result)) {
           // Fallback para o caso de a API retornar diretamente um array
           setLeads(result);
+          setTotalLeads(result.length);
+          setDisplayedLeads(result);
         } else {
           setLeads([]);
+          setTotalLeads(0);
         }
       } else {
         setLeads([]);
@@ -502,39 +517,39 @@ export default function LeadsPage() {
   };
 
   return (
-    <div className="min-h-[100dvh] bg-gray-100 pt-8 pb-16 px-4">
-      <div className="container mx-auto">
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8">
+    <div className="min-h-[100dvh] bg-gray-100 pt-20 pb-24 md:pt-12 md:pb-16 px-4">
+      <div className="container mx-auto pl-1 sm:pl-4 md:pl-8 lg:pl-16 max-w-[98%] sm:max-w-[95%] md:max-w-[90%] lg:max-w-[85%]">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6">
           <div>
-            <h1 className="text-xl md:text-2xl font-bold text-gray-900 tracking-[-0.03em] font-inter">Leads</h1>
-            <p className="text-sm md:text-base text-gray-600 tracking-[-0.03em] font-inter">Gerencie seus leads</p>
+            <h1 className="text-xl sm:text-lg md:text-xl font-bold text-gray-900 tracking-[-0.03em] font-inter">Leads</h1>
+            <p className="text-sm sm:text-xs md:text-sm text-gray-600 tracking-[-0.03em] font-inter">Gerencie seus leads</p>
           </div>
           <Button 
             onClick={() => setShowCreateModal(true)}
-            className="mt-2 md:mt-0 bg-gray-800/5 border-0 shadow-[0_4px_12px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.1)] transition-all duration-300 rounded-2xl text-gray-700 hover:bg-gray-800/10"
+            className="mt-4 md:mt-0 h-10 sm:h-8 bg-gray-800/5 border-0 shadow-[0_4px_12px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.1)] transition-all duration-300 rounded-2xl text-gray-700 hover:bg-gray-800/10 text-sm sm:text-xs"
           >
-            <PlusIcon className="h-4 w-4 mr-2" />
+            <PlusIcon className="h-4 w-4 sm:h-3.5 sm:w-3.5 mr-2 sm:mr-1.5" />
             Novo Lead
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <Card className="bg-gray-800/5 border-0 shadow-[0_8px_30px_rgba(0,0,0,0.12)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.16)] transition-all duration-300 rounded-2xl">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg font-medium flex items-center text-gray-900">
-                <UserIcon className="h-5 w-5 mr-2 text-sky-500" />
+            <CardHeader className="pb-2 sm:pb-1 pt-4 sm:pt-3 px-6 sm:px-4">
+              <CardTitle className="text-base sm:text-sm md:text-base font-bold flex items-center text-gray-900 tracking-[-0.03em] font-inter">
+                <UserIcon className="h-5 w-5 sm:h-4 sm:w-4 mr-2 text-sky-500" />
                 Total de Leads
               </CardTitle>
-              <CardDescription className="text-gray-500">
+              <CardDescription className="text-sm sm:text-xs text-gray-500 tracking-[-0.03em] font-inter">
                 Todos os leads registrados
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-0 pb-4 sm:pb-3 px-6 sm:px-4">
               <div className="flex items-end justify-between">
-                <p className="text-4xl font-semibold text-gray-900">
+                <p className="text-2xl sm:text-xl md:text-2xl font-semibold text-gray-900">
                   {dashboardData?.totalLeads || 0}
                 </p>
-                <Badge variant="outline" className="bg-sky-50 text-sky-600 border-sky-200">
+                <Badge variant="outline" className="bg-sky-50 text-sky-600 border-sky-200 text-sm sm:text-xs">
                   Ativo
                 </Badge>
               </div>
@@ -542,22 +557,22 @@ export default function LeadsPage() {
           </Card>
 
           <Card className="bg-gray-800/5 border-0 shadow-[0_8px_30px_rgba(0,0,0,0.12)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.16)] transition-all duration-300 rounded-2xl">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg font-medium flex items-center text-gray-900">
-                <CheckCircleIcon className="h-5 w-5 mr-2 text-emerald-500" />
+            <CardHeader className="pb-2 sm:pb-1 pt-4 sm:pt-3 px-6 sm:px-4">
+              <CardTitle className="text-base sm:text-sm md:text-base font-bold flex items-center text-gray-900 tracking-[-0.03em] font-inter">
+                <CheckCircleIcon className="h-5 w-5 sm:h-4 sm:w-4 mr-2 text-emerald-500" />
                 Pacientes Fechados
               </CardTitle>
-              <CardDescription className="text-gray-500">
+              <CardDescription className="text-sm sm:text-xs text-gray-500 tracking-[-0.03em] font-inter">
                 Pacientes que fecharam no pipeline
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-0 pb-4 sm:pb-3 px-6 sm:px-4">
               <div className="flex items-end justify-between">
-                <p className="text-4xl font-semibold text-gray-900">
+                <p className="text-2xl sm:text-xl md:text-2xl font-semibold text-gray-900">
                   {leads.filter(lead => lead.status === 'Fechado').length}
                 </p>
-                <Badge variant="outline" className="bg-emerald-50 text-emerald-600 border-emerald-200">
-                  <ArrowTrendingUpIcon className="h-3 w-3 mr-1" />
+                <Badge variant="outline" className="bg-emerald-50 text-emerald-600 border-emerald-200 text-sm sm:text-xs">
+                  <ArrowTrendingUpIcon className="h-4 w-4 sm:h-3 sm:w-3 mr-1" />
                   Crescendo
                 </Badge>
               </div>
@@ -565,21 +580,21 @@ export default function LeadsPage() {
           </Card>
 
           <Card className="bg-gray-800/5 border-0 shadow-[0_8px_30px_rgba(0,0,0,0.12)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.16)] transition-all duration-300 rounded-2xl">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg font-medium flex items-center text-gray-900">
-                <ChartBarIcon className="h-5 w-5 mr-2 text-purple-500" />
+            <CardHeader className="pb-2 sm:pb-1 pt-4 sm:pt-3 px-6 sm:px-4">
+              <CardTitle className="text-base sm:text-sm md:text-base font-bold flex items-center text-gray-900 tracking-[-0.03em] font-inter">
+                <ChartBarIcon className="h-5 w-5 sm:h-4 sm:w-4 mr-2 text-purple-500" />
                 Taxa de Conversão
               </CardTitle>
-              <CardDescription className="text-gray-500">
+              <CardDescription className="text-sm sm:text-xs text-gray-500 tracking-[-0.03em] font-inter">
                 Média de conversão
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-0 pb-4 sm:pb-3 px-6 sm:px-4">
               <div className="flex items-end justify-between">
-                <p className="text-4xl font-semibold text-gray-900">
+                <p className="text-2xl sm:text-xl md:text-2xl font-semibold text-gray-900">
                   {dashboardData?.conversionRate || 0}%
                 </p>
-                <Badge variant="outline" className="bg-purple-50 text-purple-600 border-purple-200">
+                <Badge variant="outline" className="bg-purple-50 text-purple-600 border-purple-200 text-sm sm:text-xs">
                   Média
                 </Badge>
               </div>
@@ -588,76 +603,76 @@ export default function LeadsPage() {
         </div>
 
         <Card className="bg-gray-800/5 border-0 shadow-[0_8px_30px_rgba(0,0,0,0.12)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.16)] transition-all duration-300 rounded-2xl">
-          <CardHeader>
-            <CardTitle className="text-lg font-medium text-gray-900">Lista de Leads</CardTitle>
-            <CardDescription className="text-gray-500">
+          <CardHeader className="pb-2 sm:pb-1 pt-4 sm:pt-3 px-6 sm:px-4">
+            <CardTitle className="text-base sm:text-sm md:text-base font-bold text-gray-900 tracking-[-0.03em] font-inter">Lista de Leads</CardTitle>
+            <CardDescription className="text-sm sm:text-xs text-gray-500 tracking-[-0.03em] font-inter">
               Gerencie seus leads e pacientes
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pb-4 sm:pb-3 px-6 sm:px-4">
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-gray-200">
-                    <th className="py-3 px-4 text-left text-sm font-medium text-gray-500">Nome</th>
-                    <th className="py-3 px-4 text-left text-sm font-medium text-gray-500">Email</th>
-                    <th className="py-3 px-4 text-left text-sm font-medium text-gray-500">Telefone</th>
-                    <th className="py-3 px-4 text-left text-sm font-medium text-gray-500">Origem</th>
-                    <th className="py-3 px-4 text-left text-sm font-medium text-gray-500">Status</th>
-                    <th className="py-3 px-4 text-left text-sm font-medium text-gray-500">Data</th>
-                    <th className="py-3 px-4 text-right text-sm font-medium text-gray-500">Ações</th>
+                    <th className="py-3 sm:py-2 px-4 sm:px-3 text-left text-sm sm:text-xs font-medium text-gray-500">Nome</th>
+                    <th className="py-3 sm:py-2 px-4 sm:px-3 text-left text-sm sm:text-xs font-medium text-gray-500">Email</th>
+                    <th className="py-3 sm:py-2 px-4 sm:px-3 text-left text-sm sm:text-xs font-medium text-gray-500">Telefone</th>
+                    <th className="py-3 sm:py-2 px-4 sm:px-3 text-left text-sm sm:text-xs font-medium text-gray-500">Origem</th>
+                    <th className="py-3 sm:py-2 px-4 sm:px-3 text-left text-sm sm:text-xs font-medium text-gray-500">Status</th>
+                    <th className="py-3 sm:py-2 px-4 sm:px-3 text-left text-sm sm:text-xs font-medium text-gray-500">Data</th>
+                    <th className="py-3 sm:py-2 px-4 sm:px-3 text-right text-sm sm:text-xs font-medium text-gray-500">Ações</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
                   {leads.map((lead) => (
                     <tr key={lead.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="py-4 px-4">
-                        <div className="font-medium text-gray-900">{lead.name}</div>
+                      <td className="py-3 sm:py-2 px-4 sm:px-3">
+                        <div className="font-medium text-base sm:text-sm text-gray-900">{lead.name}</div>
                       </td>
-                      <td className="py-4 px-4">
-                        <div className="text-gray-600">{lead.email || 'Não informado'}</div>
+                      <td className="py-3 sm:py-2 px-4 sm:px-3">
+                        <div className="text-gray-600 text-sm sm:text-xs">{lead.email || 'Não informado'}</div>
                       </td>
-                      <td className="py-4 px-4">
-                        <div className="text-gray-600">{lead.phone}</div>
+                      <td className="py-3 sm:py-2 px-4 sm:px-3">
+                        <div className="text-gray-600 text-sm sm:text-xs">{lead.phone}</div>
                       </td>
-                      <td className="py-4 px-4">
-                        <div className="text-gray-600">{lead.source || 'Não informado'}</div>
+                      <td className="py-3 sm:py-2 px-4 sm:px-3">
+                        <div className="text-gray-600 text-sm sm:text-xs">{lead.source || 'Não informado'}</div>
                       </td>
-                      <td className="py-4 px-4">
+                      <td className="py-3 sm:py-2 px-4 sm:px-3">
                         <Badge 
                           variant="outline" 
                           className={`${
                             lead.status === 'converted' 
                               ? 'bg-emerald-50 text-emerald-600 border-emerald-200' 
                               : 'bg-sky-50 text-sky-600 border-sky-200'
-                          }`}
+                          } text-sm sm:text-xs`}
                         >
                           {lead.status === 'converted' ? 'Paciente' : 'Lead'}
                         </Badge>
                       </td>
-                      <td className="py-4 px-4">
-                        <div className="text-gray-600">
+                      <td className="py-3 sm:py-2 px-4 sm:px-3">
+                        <div className="text-gray-600 text-sm sm:text-xs">
                           {new Date(lead.createdAt).toLocaleDateString('pt-BR')}
                         </div>
                       </td>
-                      <td className="py-4 px-4">
+                      <td className="py-3 sm:py-2 px-4 sm:px-3">
                         <div className="flex justify-end gap-2">
                           <Button
                             variant="outline"
                             size="sm"
-                            className="bg-white border-sky-300 text-sky-700 hover:bg-sky-50 hover:border-sky-400 hover:text-sky-800 transition-colors"
+                            className="bg-white border-sky-300 text-sky-700 hover:bg-sky-50 hover:border-sky-400 hover:text-sky-800 transition-colors text-sm sm:text-xs h-9 sm:h-7 px-3 sm:px-2"
                             onClick={() => openEditModal(lead)}
                           >
-                            <PencilIcon className="h-4 w-4 mr-2" />
+                            <PencilIcon className="h-4 w-4 sm:h-3 sm:w-3 mr-2 sm:mr-1" />
                             Editar
                           </Button>
                           <Button
                             variant="outline"
                             size="sm"
-                            className="bg-white border-sky-300 text-sky-700 hover:bg-sky-50 hover:border-sky-400 hover:text-sky-800 transition-colors"
+                            className="bg-white border-sky-300 text-sky-700 hover:bg-sky-50 hover:border-sky-400 hover:text-sky-800 transition-colors text-sm sm:text-xs h-9 sm:h-7 px-3 sm:px-2"
                             onClick={() => handleViewLead(lead)}
                           >
-                            <EyeIcon className="h-4 w-4 mr-2" />
+                            <EyeIcon className="h-4 w-4 sm:h-3 sm:w-3 mr-2 sm:mr-1" />
                             Ver
                           </Button>
                         </div>
@@ -672,56 +687,56 @@ export default function LeadsPage() {
 
         {/* Modal de criação */}
         <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
-          <DialogContent className="bg-white/90 border-0 shadow-[0_8px_30px_rgba(0,0,0,0.12)] rounded-3xl p-6">
-            <CardHeader className="p-0 mb-6">
-              <CardTitle className="text-xl font-bold text-gray-900 tracking-[-0.03em] font-inter">Novo Lead</CardTitle>
-              <CardDescription className="text-sm text-gray-600 tracking-[-0.03em] font-inter">
+          <DialogContent className="bg-white/90 border-0 shadow-[0_8px_30px_rgba(0,0,0,0.12)] rounded-3xl p-5 sm:p-4">
+            <CardHeader className="p-0 mb-5 sm:mb-4">
+              <CardTitle className="text-lg sm:text-base font-bold text-gray-900 tracking-[-0.03em] font-inter">Novo Lead</CardTitle>
+              <CardDescription className="text-sm sm:text-xs text-gray-600 tracking-[-0.03em] font-inter">
                 Adicione um novo lead ao sistema
               </CardDescription>
             </CardHeader>
             <CardContent className="p-0">
-              <form onSubmit={handleCreateLead} className="space-y-6">
-                <div className="space-y-2">
-                  <Label htmlFor="name" className="text-sm font-medium text-gray-700 tracking-[-0.03em] font-inter">Nome</Label>
+              <form onSubmit={handleCreateLead} className="space-y-5 sm:space-y-4">
+                <div className="space-y-2 sm:space-y-1">
+                  <Label htmlFor="name" className="text-sm sm:text-xs font-medium text-gray-700 tracking-[-0.03em] font-inter">Nome</Label>
                   <Input
                     id="name"
                     value={newLead.name}
                     onChange={(e) => setNewLead({ ...newLead, name: e.target.value })}
                     placeholder="Nome completo"
-                    className="bg-white/50 border-gray-200 focus:border-gray-300 text-gray-900 placeholder:text-gray-400 rounded-xl h-11"
+                    className="bg-white/50 border-gray-200 focus:border-gray-300 text-gray-900 placeholder:text-gray-400 rounded-xl h-10 sm:h-9 text-base sm:text-sm"
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="email" className="text-sm font-medium text-gray-700 tracking-[-0.03em] font-inter">E-mail</Label>
+                <div className="space-y-2 sm:space-y-1">
+                  <Label htmlFor="email" className="text-sm sm:text-xs font-medium text-gray-700 tracking-[-0.03em] font-inter">E-mail</Label>
                   <Input
                     id="email"
                     type="email"
                     value={newLead.email}
                     onChange={(e) => setNewLead({ ...newLead, email: e.target.value })}
                     placeholder="E-mail do lead"
-                    className="bg-white/50 border-gray-200 focus:border-gray-300 text-gray-900 placeholder:text-gray-400 rounded-xl h-11"
+                    className="bg-white/50 border-gray-200 focus:border-gray-300 text-gray-900 placeholder:text-gray-400 rounded-xl h-10 sm:h-9 text-base sm:text-sm"
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="phone" className="text-sm font-medium text-gray-700 tracking-[-0.03em] font-inter">Telefone</Label>
+                <div className="space-y-2 sm:space-y-1">
+                  <Label htmlFor="phone" className="text-sm sm:text-xs font-medium text-gray-700 tracking-[-0.03em] font-inter">Telefone</Label>
                   <Input
                     id="phone"
                     value={newLead.phone}
                     onChange={(e) => setNewLead({ ...newLead, phone: e.target.value })}
                     placeholder="Telefone do lead"
-                    className="bg-white/50 border-gray-200 focus:border-gray-300 text-gray-900 placeholder:text-gray-400 rounded-xl h-11"
+                    className="bg-white/50 border-gray-200 focus:border-gray-300 text-gray-900 placeholder:text-gray-400 rounded-xl h-10 sm:h-9 text-base sm:text-sm"
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="source" className="text-sm font-medium text-gray-700 tracking-[-0.03em] font-inter">Origem</Label>
+                <div className="space-y-2 sm:space-y-1">
+                  <Label htmlFor="source" className="text-sm sm:text-xs font-medium text-gray-700 tracking-[-0.03em] font-inter">Origem</Label>
                   <Select
                     value={newLead.source}
                     onValueChange={(value) => setNewLead({ ...newLead, source: value })}
                   >
-                    <SelectTrigger className="bg-white/50 border-gray-200 focus:border-gray-300 text-gray-900 rounded-xl h-11">
+                    <SelectTrigger className="bg-white/50 border-gray-200 focus:border-gray-300 text-gray-900 rounded-xl h-10 sm:h-9 text-base sm:text-sm">
                       <SelectValue placeholder="Selecione a origem" />
                     </SelectTrigger>
                     <SelectContent>
@@ -733,12 +748,12 @@ export default function LeadsPage() {
                   </Select>
                 </div>
 
-                <div className="flex gap-4 pt-2">
+                <div className="flex gap-3 pt-2 sm:pt-1">
                   <Button
                     type="button"
                     variant="outline"
                     onClick={() => setShowCreateModal(false)}
-                    className="bg-white/50 border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300 rounded-xl h-11 flex-1"
+                    className="bg-white/50 border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300 rounded-xl h-10 sm:h-9 flex-1 text-sm sm:text-xs"
                   >
                     Cancelar
                   </Button>
@@ -746,10 +761,10 @@ export default function LeadsPage() {
                   <Button
                     type="submit"
                     disabled={isLoading}
-                    className="bg-gray-900 hover:bg-gray-800 text-white rounded-xl h-11 flex-1"
+                    className="bg-gray-900 hover:bg-gray-800 text-white rounded-xl h-10 sm:h-9 flex-1 text-sm sm:text-xs"
                   >
                     {isLoading ? (
-                      <ArrowPathIcon className="h-4 w-4 animate-spin" />
+                      <ArrowPathIcon className="h-4 w-4 sm:h-3 sm:w-3 animate-spin" />
                     ) : (
                       "Criar Lead"
                     )}

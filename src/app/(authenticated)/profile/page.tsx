@@ -192,19 +192,19 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-[100dvh] bg-gray-100 pt-16 pb-24 md:pt-8 md:pb-16 px-4">
-      <div className="container mx-auto pb-24 md:pb-20 lg:pb-8">
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8">
+    <div className="min-h-[100dvh] bg-gray-100 pt-20 pb-16 md:pt-12 md:pb-12 px-4">
+      <div className="container mx-auto pl-1 sm:pl-4 md:pl-8 lg:pl-16 max-w-[98%] sm:max-w-[95%] md:max-w-[90%] lg:max-w-[85%]">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-4 sm:mb-3">
           <div>
-            <h1 className="text-xl md:text-2xl font-bold text-gray-900 tracking-[-0.03em] font-inter">Seu Perfil</h1>
-            <p className="text-sm md:text-base text-gray-600 tracking-[-0.03em] font-inter">Gerencie seus dados e configurações</p>
+            <h1 className="text-lg md:text-xl font-bold text-gray-900 tracking-[-0.03em] font-inter">Seu Perfil</h1>
+            <p className="text-xs md:text-sm text-gray-600 tracking-[-0.03em] font-inter">Gerencie seus dados e configurações</p>
           </div>
           {!isEditing && (
             <div className="flex gap-2 mt-2 md:mt-0">
               <Button 
                 variant="outline" 
                 size="sm"
-                className="bg-gray-800/5 border-0 shadow-[0_4px_12px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.1)] transition-all duration-300 rounded-2xl text-gray-700 hover:bg-gray-800/10"
+                className="bg-gray-800/5 border-0 shadow-[0_4px_12px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.1)] transition-all duration-300 rounded-2xl text-gray-700 hover:bg-gray-800/10 h-8 text-xs"
                 onClick={() => setIsEditing(true)}
               >
                 Editar Perfil
@@ -213,7 +213,7 @@ export default function ProfilePage() {
                 <Button 
                   variant="outline"
                   size="sm"
-                  className="bg-gray-800/5 border-0 shadow-[0_4px_12px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.1)] transition-all duration-300 rounded-2xl text-gray-700 hover:bg-gray-800/10"
+                  className="bg-gray-800/5 border-0 shadow-[0_4px_12px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.1)] transition-all duration-300 rounded-2xl text-gray-700 hover:bg-gray-800/10 h-8 text-xs"
                 >
                   Configurações
                 </Button>
@@ -223,21 +223,21 @@ export default function ProfilePage() {
         </div>
 
         {/* Visão geral do perfil */}
-        <Card className="bg-gray-800/5 border-0 shadow-[0_8px_30px_rgba(0,0,0,0.12)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.16)] transition-all duration-300 rounded-2xl mb-6">
-          <CardHeader>
-            <CardTitle className="text-base md:text-lg font-bold text-gray-900 tracking-[-0.03em] font-inter">
+        <Card className="bg-gray-800/5 border-0 shadow-[0_8px_30px_rgba(0,0,0,0.12)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.16)] transition-all duration-300 rounded-2xl mb-4">
+          <CardHeader className="px-4 py-3 sm:p-3">
+            <CardTitle className="text-sm md:text-base font-bold text-gray-900 tracking-[-0.03em] font-inter">
               Informações Pessoais
             </CardTitle>
-            <CardDescription className="text-xs md:text-sm text-gray-500 tracking-[-0.03em] font-inter">
+            <CardDescription className="text-xs text-gray-500 tracking-[-0.03em] font-inter">
               Dados da sua conta
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <CardContent className="px-4 py-3 sm:p-3">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
               {/* Foto de perfil */}
-              <div className="flex flex-col items-center space-y-4">
+              <div className="flex flex-col items-center space-y-3">
                 <div className="relative group">
-                  <div className="relative w-32 h-32 rounded-full overflow-hidden border border-gray-300 bg-gray-200">
+                  <div className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden border border-gray-300 bg-gray-200">
                     {image ? (
                       <Image
                         src={image}
@@ -247,7 +247,7 @@ export default function ProfilePage() {
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center bg-gray-300">
-                        <CameraIcon className="h-12 w-12 text-gray-500" />
+                        <CameraIcon className="h-10 w-10 text-gray-500" />
                       </div>
                     )}
                   </div>
@@ -255,7 +255,7 @@ export default function ProfilePage() {
                     className="absolute inset-0 flex items-center justify-center bg-gray-800/50 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer rounded-full"
                     htmlFor="image-upload"
                   >
-                    <CameraIcon className="h-8 w-8 text-white" />
+                    <CameraIcon className="h-6 w-6 text-white" />
                   </label>
                   <input
                     type="file"
@@ -267,7 +267,7 @@ export default function ProfilePage() {
                   />
                   {isUploading && (
                     <div className="absolute inset-0 flex items-center justify-center bg-gray-800/50 rounded-full">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
                     </div>
                   )}
                 </div>
@@ -277,52 +277,52 @@ export default function ProfilePage() {
               </div>
 
               {/* Dados do perfil */}
-              <div className="md:col-span-2 space-y-6">
+              <div className="md:col-span-2 space-y-4">
                 {isEditing ? (
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label className="text-sm text-gray-700 font-medium">Nome</Label>
+                  <div className="space-y-3">
+                    <div className="space-y-1">
+                      <Label className="text-xs text-gray-700 font-medium">Nome</Label>
                       <Input
                         value={name}
                         onChange={(e) => setName(e.target.value)}
-                        className="bg-white shadow-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                        className="bg-white shadow-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 h-8 text-xs"
                       />
                     </div>
 
-                    <div className="space-y-2">
-                      <Label className="text-sm text-gray-700 font-medium">Especialidade</Label>
+                    <div className="space-y-1">
+                      <Label className="text-xs text-gray-700 font-medium">Especialidade</Label>
                       <Input
                         value={specialty}
                         onChange={(e) => setSpecialty(e.target.value)}
-                        className="bg-white shadow-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                        className="bg-white shadow-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 h-8 text-xs"
                         placeholder="Ex: Cardiologista, Nutricionista..."
                       />
                     </div>
                     
-                    <div className="space-y-2">
-                      <Label className="text-sm text-gray-700 font-medium">Email</Label>
-                      <p className="text-gray-900">{email}</p>
+                    <div className="space-y-1">
+                      <Label className="text-xs text-gray-700 font-medium">Email</Label>
+                      <p className="text-xs text-gray-900">{email}</p>
                     </div>
 
-                    <div className="space-y-2">
-                      <Label className="text-sm text-gray-700 font-medium">Template da Página</Label>
+                    <div className="space-y-1">
+                      <Label className="text-xs text-gray-700 font-medium">Template da Página</Label>
                       <Select value={pageTemplate} onValueChange={setPageTemplate}>
-                        <SelectTrigger className="bg-white shadow-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500">
+                        <SelectTrigger className="bg-white shadow-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 h-8 text-xs">
                           <SelectValue placeholder="Selecione um template" />
                         </SelectTrigger>
                         <SelectContent className="bg-white rounded-xl border border-gray-200 shadow-md">
-                          <SelectItem value="default" className="focus:bg-blue-50">Padrão</SelectItem>
-                          <SelectItem value="minimal" className="focus:bg-blue-50">Minimalista</SelectItem>
-                          <SelectItem value="pro" className="focus:bg-blue-50">Profissional</SelectItem>
+                          <SelectItem value="default" className="focus:bg-blue-50 text-xs">Padrão</SelectItem>
+                          <SelectItem value="minimal" className="focus:bg-blue-50 text-xs">Minimalista</SelectItem>
+                          <SelectItem value="pro" className="focus:bg-blue-50 text-xs">Profissional</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
                     
-                    <div className="pt-4 flex gap-2">
+                    <div className="pt-2 flex gap-2">
                       <Button 
                         type="button" 
                         onClick={() => handleSave()}
-                        className="bg-[#6366f1] hover:bg-[#4f46e5] text-white shadow-md shadow-blue-500/20 rounded-xl"
+                        className="bg-[#6366f1] hover:bg-[#4f46e5] text-white shadow-md shadow-blue-500/20 rounded-xl h-8 text-xs"
                       >
                         Salvar Alterações
                       </Button>
@@ -330,55 +330,55 @@ export default function ProfilePage() {
                         type="button" 
                         variant="outline" 
                         onClick={() => setIsEditing(false)}
-                        className="border border-gray-300 bg-white text-gray-700 rounded-xl shadow-sm"
+                        className="border border-gray-300 bg-white text-gray-700 rounded-xl shadow-sm h-8 text-xs"
                       >
                         Cancelar
                       </Button>
                     </div>
                   </div>
                 ) : (
-                  <div className="space-y-5">
+                  <div className="space-y-3">
                     <div>
-                      <h2 className="text-xl font-bold text-gray-900 tracking-[-0.03em] font-inter">{name}</h2>
+                      <h2 className="text-base sm:text-lg font-bold text-gray-900 tracking-[-0.03em] font-inter">{name}</h2>
                       {specialty && (
                         <div className="flex items-center mt-1">
-                          <UserIcon className="h-4 w-4 mr-1.5 text-gray-500" />
-                          <span className="text-gray-700 text-sm">{specialty}</span>
+                          <UserIcon className="h-3.5 w-3.5 mr-1 text-gray-500" />
+                          <span className="text-gray-700 text-xs">{specialty}</span>
                         </div>
                       )}
                     </div>
                     
-                    <div className="space-y-2">
+                    <div className="space-y-1.5">
                       <div className="flex items-center text-gray-700">
-                        <UserIcon className="h-4 w-4 mr-2 text-gray-500" />
-                        <span className="text-sm">Username: <span className="font-medium">{slug}</span></span>
+                        <UserIcon className="h-3.5 w-3.5 mr-1.5 text-gray-500" />
+                        <span className="text-xs">Username: <span className="font-medium">{slug}</span></span>
                       </div>
                       
                       <div className="flex items-center text-gray-700">
-                        <LinkIcon className="h-4 w-4 mr-2 text-gray-500" />
-                        <span className="text-sm">Seu link: <span className="text-gray-900">{baseUrl}/{slug}</span></span>
+                        <LinkIcon className="h-3.5 w-3.5 mr-1.5 text-gray-500" />
+                        <span className="text-xs">Seu link: <span className="text-gray-900">{baseUrl}/{slug}</span></span>
                         <Button 
                           variant="ghost" 
                           size="sm" 
-                          className="ml-2 h-6 w-6 p-0 hover:bg-gray-100 text-gray-500 rounded-lg"
+                          className="ml-1 h-5 w-5 p-0 hover:bg-gray-100 text-gray-500 rounded-lg"
                           onClick={copyProfileLinkToClipboard}
                         >
-                          <ClipboardDocumentIcon className="h-4 w-4" />
+                          <ClipboardDocumentIcon className="h-3.5 w-3.5" />
                         </Button>
                       </div>
                       
-                      <div className="flex items-center space-x-4 mt-2">
-                        <div className="text-sm bg-[#f2f1ff] text-[#8b5cf6] px-2 py-1 rounded-md flex items-center">
-                          <UserGroupIcon className="h-4 w-4 inline mr-1" />
+                      <div className="flex items-center space-x-3 mt-1.5">
+                        <div className="text-xs bg-[#f2f1ff] text-[#8b5cf6] px-1.5 py-0.5 rounded-md flex items-center">
+                          <UserGroupIcon className="h-3.5 w-3.5 inline mr-1" />
                           {leadCount} leads
                         </div>
-                        <div className="text-sm bg-[#def6ff] text-[#6366f1] px-2 py-1 rounded-md flex items-center">
-                          <LinkIcon className="h-4 w-4 inline mr-1" />
+                        <div className="text-xs bg-[#def6ff] text-[#6366f1] px-1.5 py-0.5 rounded-md flex items-center">
+                          <LinkIcon className="h-3.5 w-3.5 inline mr-1" />
                           {indicationCount} indicações
                         </div>
                         {isPremium && (
-                          <div className="text-sm bg-[#d8fffa] text-[#4ade80] px-2 py-1 rounded-md flex items-center">
-                            <SparklesIcon className="h-4 w-4 inline mr-1" />
+                          <div className="text-xs bg-[#d8fffa] text-[#4ade80] px-1.5 py-0.5 rounded-md flex items-center">
+                            <SparklesIcon className="h-3.5 w-3.5 inline mr-1" />
                             Premium
                           </div>
                         )}
@@ -392,44 +392,44 @@ export default function ProfilePage() {
         </Card>
 
         {/* Métricas do usuário */}
-        <Card className="bg-gray-800/5 border-0 shadow-[0_8px_30px_rgba(0,0,0,0.12)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.16)] transition-all duration-300 rounded-2xl mb-6">
-          <CardHeader>
-            <CardTitle className="text-base md:text-lg font-bold text-gray-900 tracking-[-0.03em] font-inter">
+        <Card className="bg-gray-800/5 border-0 shadow-[0_8px_30px_rgba(0,0,0,0.12)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.16)] transition-all duration-300 rounded-2xl mb-4">
+          <CardHeader className="px-4 py-3 sm:p-3">
+            <CardTitle className="text-sm md:text-base font-bold text-gray-900 tracking-[-0.03em] font-inter">
               Métricas e Estatísticas
             </CardTitle>
-            <CardDescription className="text-xs md:text-sm text-gray-500 tracking-[-0.03em] font-inter">
+            <CardDescription className="text-xs text-gray-500 tracking-[-0.03em] font-inter">
               Desempenho da sua conta
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <CardContent className="px-4 py-3 sm:p-3">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               <Card className="bg-gray-800/5 border-0 shadow-[0_4px_12px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.1)] transition-all duration-300 rounded-2xl">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3 mb-2">
-                    <UserGroupIcon className="h-5 w-5 text-[#8b5cf6]" />
-                    <p className="text-sm text-gray-700">Leads Totais</p>
+                <CardContent className="p-3">
+                  <div className="flex items-center gap-2 mb-1">
+                    <UserGroupIcon className="h-4 w-4 text-[#8b5cf6]" />
+                    <p className="text-xs text-gray-700">Leads Totais</p>
                   </div>
-                  <p className="text-2xl md:text-3xl font-bold text-gray-900">{leadCount}</p>
+                  <p className="text-lg md:text-xl font-bold text-gray-900">{leadCount}</p>
                 </CardContent>
               </Card>
               
               <Card className="bg-gray-800/5 border-0 shadow-[0_4px_12px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.1)] transition-all duration-300 rounded-2xl">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3 mb-2">
-                    <LinkIcon className="h-5 w-5 text-[#6366f1]" />
-                    <p className="text-sm text-gray-700">Links de Indicação</p>
+                <CardContent className="p-3">
+                  <div className="flex items-center gap-2 mb-1">
+                    <LinkIcon className="h-4 w-4 text-[#6366f1]" />
+                    <p className="text-xs text-gray-700">Links de Indicação</p>
                   </div>
-                  <p className="text-2xl md:text-3xl font-bold text-gray-900">{indicationCount}</p>
+                  <p className="text-lg md:text-xl font-bold text-gray-900">{indicationCount}</p>
                 </CardContent>
               </Card>
               
               <Card className="bg-gray-800/5 border-0 shadow-[0_4px_12px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.1)] transition-all duration-300 rounded-2xl">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3 mb-2">
-                    <SwatchIcon className="h-5 w-5 text-[#4ade80]" />
-                    <p className="text-sm text-gray-700">Taxa de Conversão</p>
+                <CardContent className="p-3">
+                  <div className="flex items-center gap-2 mb-1">
+                    <SwatchIcon className="h-4 w-4 text-[#4ade80]" />
+                    <p className="text-xs text-gray-700">Taxa de Conversão</p>
                   </div>
-                  <p className="text-2xl md:text-3xl font-bold text-gray-900">
+                  <p className="text-lg md:text-xl font-bold text-gray-900">
                     {indicationCount && leadCount
                       ? `${Math.round((leadCount / indicationCount) * 100)}%`
                       : "0%"}
@@ -438,12 +438,12 @@ export default function ProfilePage() {
               </Card>
               
               <Card className="bg-gray-800/5 border-0 shadow-[0_4px_12px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.1)] transition-all duration-300 rounded-2xl">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3 mb-2">
-                    <ShoppingCartIcon className="h-5 w-5 text-gray-700" />
-                    <p className="text-sm text-gray-700">Status da Conta</p>
+                <CardContent className="p-3">
+                  <div className="flex items-center gap-2 mb-1">
+                    <ShoppingCartIcon className="h-4 w-4 text-gray-700" />
+                    <p className="text-xs text-gray-700">Status da Conta</p>
                   </div>
-                  <p className="text-2xl md:text-3xl font-bold text-gray-900">
+                  <p className="text-lg md:text-xl font-bold text-gray-900">
                     {isPremium ? "Premium" : "Free"}
                   </p>
                 </CardContent>
@@ -453,13 +453,13 @@ export default function ProfilePage() {
         </Card>
 
         {/* Botão de Logout */}
-        <div className="pt-2">
+        <div className="pt-1">
           <Button 
             variant="outline" 
-            className="w-full bg-gray-800/5 border-0 shadow-[0_4px_12px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.1)] transition-all duration-300 rounded-2xl text-gray-700 hover:bg-gray-800/10"
+            className="w-full bg-gray-800/5 border-0 shadow-[0_4px_12px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.1)] transition-all duration-300 rounded-2xl text-gray-700 hover:bg-gray-800/10 h-8 text-xs"
             onClick={() => signOut({ callbackUrl: '/auth/signin' })}
           >
-            <ArrowRightOnRectangleIcon className="h-4 w-4 mr-2" />
+            <ArrowRightOnRectangleIcon className="h-3.5 w-3.5 mr-1.5" />
             Sair da Conta
           </Button>
         </div>

@@ -54,15 +54,15 @@ function ValidateTokenContent() {
   }, [router, searchParams]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white flex flex-col items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white flex flex-col items-center justify-center p-4 pt-20">
       <div className="w-full max-w-md">
-        <Link href="/" className="flex justify-center mb-8">
+        <Link href="/" className="flex justify-center mb-6">
           <Image
             src="/logo.png"
             alt="Logo"
             width={150}
             height={50}
-            className="h-12 w-auto"
+            className="h-10 w-auto"
           />
         </Link>
 
@@ -105,7 +105,7 @@ function ValidateTokenContent() {
 export default function ValidateTokenPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white flex flex-col items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white flex flex-col items-center justify-center p-4 pt-20">
         <div className="w-full max-w-md text-center">
           <Loader2 className="h-8 w-8 animate-spin text-blue-600 mx-auto" />
           <p className="mt-4 text-gray-600">Carregando...</p>

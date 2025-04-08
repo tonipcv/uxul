@@ -306,16 +306,16 @@ export default function IndicationsPage() {
   }
   
   return (
-    <div className="min-h-[100dvh] bg-gray-100 pt-8 pb-16 px-4">
-      <div className="container mx-auto">
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8">
+    <div className="min-h-[100dvh] bg-gray-100 pt-20 pb-24 md:pt-12 md:pb-16 px-4">
+      <div className="container mx-auto pl-4 md:pl-8 lg:pl-16 max-w-[95%] md:max-w-[90%] lg:max-w-[85%]">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6">
           <div>
-            <h1 className="text-xl md:text-2xl font-bold text-gray-900 tracking-[-0.03em] font-inter">Indicações</h1>
-            <p className="text-sm md:text-base text-gray-600 tracking-[-0.03em] font-inter">Gerencie suas indicações</p>
+            <h1 className="text-lg md:text-xl font-bold text-gray-900 tracking-[-0.03em] font-inter">Indicações</h1>
+            <p className="text-xs md:text-sm text-gray-600 tracking-[-0.03em] font-inter">Gerencie suas indicações</p>
           </div>
           <Button 
             onClick={() => setShowCreateModal(true)}
-            className="mt-2 md:mt-0 bg-gray-800/5 border-0 shadow-[0_4px_12px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.1)] transition-all duration-300 rounded-2xl text-gray-700 hover:bg-gray-800/10"
+            className="mt-2 md:mt-0 bg-gray-800/5 border-0 shadow-[0_4px_12px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.1)] transition-all duration-300 rounded-2xl text-gray-700 hover:bg-gray-800/10 text-xs"
           >
             <PlusIcon className="h-4 w-4 mr-2" />
             Nova Indicação
@@ -323,77 +323,77 @@ export default function IndicationsPage() {
         </div>
 
         <Card className="bg-gray-800/5 border-0 shadow-[0_8px_30px_rgba(0,0,0,0.12)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.16)] transition-all duration-300 rounded-2xl">
-          <CardHeader>
-            <CardTitle className="text-lg font-medium text-gray-900">Links de Indicação</CardTitle>
-            <CardDescription className="text-gray-500">
+          <CardHeader className="pb-1 pt-3 px-4">
+            <CardTitle className="text-sm md:text-base font-bold text-gray-900 tracking-[-0.03em] font-inter">Links de Indicação</CardTitle>
+            <CardDescription className="text-xs text-gray-500 tracking-[-0.03em] font-inter">
               Gerencie seus links de indicação
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pb-3 px-4">
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-gray-200">
-                    <th className="py-3 px-4 text-left text-sm font-medium text-gray-500">Nome</th>
-                    <th className="py-3 px-4 text-left text-sm font-medium text-gray-500">Link</th>
-                    <th className="py-3 px-4 text-left text-sm font-medium text-gray-500">Cliques</th>
-                    <th className="py-3 px-4 text-left text-sm font-medium text-gray-500">Leads</th>
-                    <th className="py-3 px-4 text-left text-sm font-medium text-gray-500">Pacientes</th>
-                    <th className="py-3 px-4 text-left text-sm font-medium text-gray-500">Conversão</th>
-                    <th className="py-3 px-4 text-right text-sm font-medium text-gray-500">Ações</th>
+                    <th className="py-2 px-3 text-left text-xs font-medium text-gray-500">Nome</th>
+                    <th className="py-2 px-3 text-left text-xs font-medium text-gray-500">Link</th>
+                    <th className="py-2 px-3 text-left text-xs font-medium text-gray-500">Cliques</th>
+                    <th className="py-2 px-3 text-left text-xs font-medium text-gray-500">Leads</th>
+                    <th className="py-2 px-3 text-left text-xs font-medium text-gray-500">Pacientes</th>
+                    <th className="py-2 px-3 text-left text-xs font-medium text-gray-500">Conversão</th>
+                    <th className="py-2 px-3 text-right text-xs font-medium text-gray-500">Ações</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
                   {indications.map((indication) => (
                     <tr key={indication.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="py-4 px-4">
-                        <div className="font-medium text-gray-900">{indication.name}</div>
+                      <td className="py-2 px-3">
+                        <div className="font-medium text-sm text-gray-900">{indication.name}</div>
                       </td>
-                      <td className="py-4 px-4">
-                        <div className="text-gray-600 text-sm">
+                      <td className="py-2 px-3">
+                        <div className="text-gray-600 text-xs">
                           {`${baseUrl}/${userSlug}/${indication.slug}`}
                         </div>
                       </td>
-                      <td className="py-4 px-4">
-                        <div className="text-gray-900 font-medium">
+                      <td className="py-2 px-3">
+                        <div className="text-gray-900 font-medium text-sm">
                           {indication._count?.events || 0}
                         </div>
                       </td>
-                      <td className="py-4 px-4">
-                        <div className="text-gray-900 font-medium">
+                      <td className="py-2 px-3">
+                        <div className="text-gray-900 font-medium text-sm">
                           {indication._count?.leads || 0}
                         </div>
                       </td>
-                      <td className="py-4 px-4">
-                        <div className="text-gray-900 font-medium">
+                      <td className="py-2 px-3">
+                        <div className="text-gray-900 font-medium text-sm">
                           {indication._count?.converted || 0}
                         </div>
                       </td>
-                      <td className="py-4 px-4">
-                        <div className="text-gray-900 font-medium">
+                      <td className="py-2 px-3">
+                        <div className="text-gray-900 font-medium text-sm">
                           {indication._count?.events 
                             ? `${Math.round((indication._count.converted / indication._count.events) * 100)}%`
                             : '0%'}
                         </div>
                       </td>
-                      <td className="py-4 px-4">
+                      <td className="py-2 px-3">
                         <div className="flex justify-end gap-2">
                           <Button
                             variant="outline"
                             size="sm"
-                            className="bg-white border-sky-300 text-sky-700 hover:bg-sky-50 hover:border-sky-400 hover:text-sky-800 transition-colors"
+                            className="bg-white border-sky-300 text-sky-700 hover:bg-sky-50 hover:border-sky-400 hover:text-sky-800 transition-colors text-xs h-7 px-2"
                             onClick={() => copyToClipboard(`${baseUrl}/${userSlug}/${indication.slug}`)}
                           >
-                            <ClipboardIcon className="h-4 w-4 mr-2" />
+                            <ClipboardIcon className="h-3 w-3 mr-1" />
                             Copiar
                           </Button>
                           <Button
                             variant="outline"
                             size="sm"
-                            className="bg-white border-sky-300 text-sky-700 hover:bg-sky-50 hover:border-sky-400 hover:text-sky-800 transition-colors"
+                            className="bg-white border-sky-300 text-sky-700 hover:bg-sky-50 hover:border-sky-400 hover:text-sky-800 transition-colors text-xs h-7 px-2"
                             onClick={() => shareOnWhatsApp(`${baseUrl}/${userSlug}/${indication.slug}`)}
                           >
-                            <ShareIcon className="h-4 w-4 mr-2" />
+                            <ShareIcon className="h-3 w-3 mr-1" />
                             Compartilhar
                           </Button>
                         </div>
@@ -407,70 +407,70 @@ export default function IndicationsPage() {
         </Card>
 
         <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
-          <DialogContent className="bg-white/90 border-0 shadow-[0_8px_30px_rgba(0,0,0,0.12)] rounded-3xl p-6">
-            <CardHeader className="p-0 mb-6">
-              <CardTitle className="text-xl font-bold text-gray-900 tracking-[-0.03em] font-inter">Criar Novo Link</CardTitle>
-              <CardDescription className="text-sm text-gray-600 tracking-[-0.03em] font-inter">
+          <DialogContent className="bg-white/90 border-0 shadow-[0_8px_30px_rgba(0,0,0,0.12)] rounded-3xl p-4">
+            <CardHeader className="p-0 mb-4">
+              <CardTitle className="text-sm md:text-base font-bold text-gray-900 tracking-[-0.03em] font-inter">Criar Novo Link</CardTitle>
+              <CardDescription className="text-xs text-gray-600 tracking-[-0.03em] font-inter">
                 Gere um novo link de indicação
               </CardDescription>
             </CardHeader>
             <CardContent className="p-0">
-              <form onSubmit={handleCreateIndication} className="space-y-6">
-                <div className="space-y-2">
-                  <Label htmlFor="name" className="text-sm font-medium text-gray-700 tracking-[-0.03em] font-inter">Nome do Link</Label>
+              <form onSubmit={handleCreateIndication} className="space-y-4">
+                <div className="space-y-1">
+                  <Label htmlFor="name" className="text-xs font-medium text-gray-700 tracking-[-0.03em] font-inter">Nome do Link</Label>
                   <Input
                     id="name"
                     value={newIndication}
                     onChange={(e) => setNewIndication(e.target.value)}
                     placeholder="Ex: Consulta de Check-up"
-                    className="bg-white/50 border-gray-200 focus:border-gray-300 text-gray-900 placeholder:text-gray-400 rounded-xl h-11"
+                    className="bg-white/50 border-gray-200 focus:border-gray-300 text-gray-900 placeholder:text-gray-400 rounded-xl h-9 text-sm"
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="patientName" className="text-sm font-medium text-gray-700 tracking-[-0.03em] font-inter">Nome do Paciente</Label>
+                <div className="space-y-1">
+                  <Label htmlFor="patientName" className="text-xs font-medium text-gray-700 tracking-[-0.03em] font-inter">Nome do Paciente</Label>
                   <Input
                     id="patientName"
                     value={patientName}
                     onChange={(e) => setPatientName(e.target.value)}
                     placeholder="Nome completo do paciente"
-                    className="bg-white/50 border-gray-200 focus:border-gray-300 text-gray-900 placeholder:text-gray-400 rounded-xl h-11"
+                    className="bg-white/50 border-gray-200 focus:border-gray-300 text-gray-900 placeholder:text-gray-400 rounded-xl h-9 text-sm"
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="patientEmail" className="text-sm font-medium text-gray-700 tracking-[-0.03em] font-inter">E-mail do Paciente</Label>
+                <div className="space-y-1">
+                  <Label htmlFor="patientEmail" className="text-xs font-medium text-gray-700 tracking-[-0.03em] font-inter">E-mail do Paciente</Label>
                   <Input
                     id="patientEmail"
                     type="email"
                     value={patientEmail}
                     onChange={(e) => setPatientEmail(e.target.value)}
                     placeholder="E-mail do paciente"
-                    className="bg-white/50 border-gray-200 focus:border-gray-300 text-gray-900 placeholder:text-gray-400 rounded-xl h-11"
+                    className="bg-white/50 border-gray-200 focus:border-gray-300 text-gray-900 placeholder:text-gray-400 rounded-xl h-9 text-sm"
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="patientPhone" className="text-sm font-medium text-gray-700 tracking-[-0.03em] font-inter">Telefone do Paciente</Label>
+                <div className="space-y-1">
+                  <Label htmlFor="patientPhone" className="text-xs font-medium text-gray-700 tracking-[-0.03em] font-inter">Telefone do Paciente</Label>
                   <Input
                     id="patientPhone"
                     value={patientPhone}
                     onChange={(e) => setPatientPhone(e.target.value)}
                     placeholder="Telefone do paciente"
-                    className="bg-white/50 border-gray-200 focus:border-gray-300 text-gray-900 placeholder:text-gray-400 rounded-xl h-11"
+                    className="bg-white/50 border-gray-200 focus:border-gray-300 text-gray-900 placeholder:text-gray-400 rounded-xl h-9 text-sm"
                   />
                 </div>
 
-                <div className="flex gap-4 pt-2">
+                <div className="flex gap-3 pt-1">
                   <Button
                     type="button"
                     variant="outline"
                     onClick={handleGenerateSlug}
                     disabled={isGenerating}
-                    className="bg-white/50 border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300 rounded-xl h-11 flex-1"
+                    className="bg-white/50 border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300 rounded-xl h-9 flex-1 text-xs"
                   >
                     {isGenerating ? (
-                      <ArrowPathIcon className="h-4 w-4 animate-spin" />
+                      <ArrowPathIcon className="h-3 w-3 animate-spin" />
                     ) : (
                       "Gerar Slug"
                     )}
@@ -479,10 +479,10 @@ export default function IndicationsPage() {
                   <Button
                     type="submit"
                     disabled={isLoading}
-                    className="bg-gray-900 hover:bg-gray-800 text-white rounded-xl h-11 flex-1"
+                    className="bg-gray-900 hover:bg-gray-800 text-white rounded-xl h-9 flex-1 text-xs"
                   >
                     {isLoading ? (
-                      <ArrowPathIcon className="h-4 w-4 animate-spin" />
+                      <ArrowPathIcon className="h-3 w-3 animate-spin" />
                     ) : (
                       "Criar Link"
                     )}
@@ -494,7 +494,7 @@ export default function IndicationsPage() {
         </Dialog>
 
         <Dialog open={showEditModal} onOpenChange={setShowEditModal}>
-          <DialogContent className="bg-gray-800/5 border-0 shadow-[0_8px_30px_rgba(0,0,0,0.12)] rounded-2xl">
+          <DialogContent className="bg-gray-800/5 border-0 shadow-[0_8px_30px_rgba(0,0,0,0.12)] rounded-2xl p-4">
             {/* Modal de edição */}
           </DialogContent>
         </Dialog>
