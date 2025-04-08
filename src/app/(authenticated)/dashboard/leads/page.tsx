@@ -517,8 +517,8 @@ export default function LeadsPage() {
   };
 
   return (
-    <div className="min-h-[100dvh] bg-gray-100 pt-20 pb-24 md:pt-12 md:pb-16 px-4">
-      <div className="container mx-auto pl-1 sm:pl-4 md:pl-8 lg:pl-16 max-w-[98%] sm:max-w-[95%] md:max-w-[90%] lg:max-w-[85%]">
+    <div className="min-h-[100dvh] bg-gray-100 pt-20 pb-24 md:pt-12 md:pb-16 px-2 sm:px-4">
+      <div className="container mx-auto px-0 sm:pl-4 md:pl-8 lg:pl-16 max-w-full sm:max-w-[95%] md:max-w-[90%] lg:max-w-[85%]">
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6">
           <div>
             <h1 className="text-xl sm:text-lg md:text-xl font-bold text-gray-900 tracking-[-0.03em] font-inter">Leads</h1>
@@ -526,7 +526,7 @@ export default function LeadsPage() {
           </div>
           <Button 
             onClick={() => setShowCreateModal(true)}
-            className="mt-4 md:mt-0 h-10 sm:h-8 bg-gray-800/5 border-0 shadow-[0_4px_12px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.1)] transition-all duration-300 rounded-2xl text-gray-700 hover:bg-gray-800/10 text-sm sm:text-xs"
+            className="w-full md:w-auto mt-4 md:mt-0 h-10 sm:h-8 bg-gray-800/5 border-0 shadow-[0_4px_12px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.1)] transition-all duration-300 rounded-2xl text-gray-700 hover:bg-gray-800/10 text-sm sm:text-xs"
           >
             <PlusIcon className="h-4 w-4 sm:h-3.5 sm:w-3.5 mr-2 sm:mr-1.5" />
             Novo Lead
@@ -610,8 +610,177 @@ export default function LeadsPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="pb-4 sm:pb-3 px-6 sm:px-4">
-            <div className="overflow-x-auto">
-              <table className="w-full">
+            {/* Mobile Search and Filter */}
+            <div className="md:hidden mb-3">
+              <div className="relative mb-3">
+                <Input
+                  type="text"
+                  placeholder="Buscar leads..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-9 bg-white text-sm border-gray-200 rounded-xl"
+                />
+                <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              </div>
+              
+              <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1 -mx-1 px-1">
+                <Badge
+                  onClick={() => setActiveTab("all")}
+                  className={`cursor-pointer whitespace-nowrap py-1 ${
+                    activeTab === "all" 
+                      ? "bg-gray-800/5 text-gray-800 border-gray-300" 
+                      : "bg-white text-gray-500 border-gray-200 hover:bg-gray-50"
+                  }`}
+                >
+                  Todos ({leads.length})
+                </Badge>
+                <Badge
+                  onClick={() => setActiveTab("novos")}
+                  className={`cursor-pointer whitespace-nowrap py-1 ${
+                    activeTab === "novos" 
+                      ? "bg-blue-50 text-blue-600 border-blue-200" 
+                      : "bg-white text-gray-500 border-gray-200 hover:bg-gray-50"
+                  }`}
+                >
+                  Novos ({leadStats.novos})
+                </Badge>
+                <Badge
+                  onClick={() => setActiveTab("agendados")}
+                  className={`cursor-pointer whitespace-nowrap py-1 ${
+                    activeTab === "agendados" 
+                      ? "bg-emerald-50 text-emerald-600 border-emerald-200" 
+                      : "bg-white text-gray-500 border-gray-200 hover:bg-gray-50"
+                  }`}
+                >
+                  Agendados ({leadStats.agendados})
+                </Badge>
+                <Badge
+                  onClick={() => setActiveTab("fechados")}
+                  className={`cursor-pointer whitespace-nowrap py-1 ${
+                    activeTab === "fechados" 
+                      ? "bg-purple-50 text-purple-600 border-purple-200" 
+                      : "bg-white text-gray-500 border-gray-200 hover:bg-gray-50"
+                  }`}
+                >
+                  Fechados ({leadStats.fechados})
+                </Badge>
+              </div>
+            </div>
+            
+            <div className="overflow-x-auto -mx-4 px-4">
+              {/* Mobile view for small screens */}
+              <div className="md:hidden space-y-3">
+                {filteredLeads.length > 0 ? (
+                  filteredLeads.map((lead) => (
+                    <div key={lead.id} className="bg-white p-3.5 rounded-xl shadow-sm border border-gray-100">
+                      <div className="flex justify-between items-start mb-2.5">
+                        <div className="font-semibold text-base text-gray-900">{lead.name}</div>
+                        <div>
+                          {(() => {
+                            switch (lead.status) {
+                              case 'Novo':
+                                return <Badge className="bg-blue-50 text-blue-600 border-blue-200 text-[10px]">Novo</Badge>;
+                              case 'Agendado':
+                                return <Badge className="bg-emerald-50 text-emerald-600 border-emerald-200 text-[10px]">Agendado</Badge>;
+                              case 'Compareceu':
+                                return <Badge className="bg-green-50 text-green-600 border-green-200 text-[10px]">Compareceu</Badge>;
+                              case 'Fechado':
+                                return <Badge className="bg-purple-50 text-purple-600 border-purple-200 text-[10px]">Fechado</Badge>;
+                              case 'Não veio':
+                                return <Badge className="bg-red-50 text-red-600 border-red-200 text-[10px]">Não veio</Badge>;
+                              case 'Cancelado':
+                                return <Badge className="bg-gray-50 text-gray-600 border-gray-200 text-[10px]">Cancelado</Badge>;
+                              case 'converted':
+                                return <Badge className="bg-emerald-50 text-emerald-600 border-emerald-200 text-[10px]">Paciente</Badge>;
+                              default:
+                                return <Badge className="bg-sky-50 text-sky-600 border-sky-200 text-[10px]">Lead</Badge>;
+                            }
+                          })()}
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-2 mb-3 text-xs">
+                        <div className="flex">
+                          <div className="w-20 flex items-center gap-1 text-gray-500">
+                            <PhoneIcon className="h-3 w-3" />
+                            <span>Telefone:</span>
+                          </div>
+                          <div className="text-gray-700 font-medium">{lead.phone}</div>
+                        </div>
+                        
+                        <div className="flex">
+                          <div className="w-20 flex items-center gap-1 text-gray-500">
+                            <UserIcon className="h-3 w-3" />
+                            <span>Email:</span>
+                          </div>
+                          <div className="text-gray-700 font-medium truncate">{lead.email || 'Não informado'}</div>
+                        </div>
+                        
+                        <div className="flex">
+                          <div className="w-20 flex items-center gap-1 text-gray-500">
+                            <BriefcaseIcon className="h-3 w-3" />
+                            <span>Origem:</span>
+                          </div>
+                          <div className="text-gray-700 font-medium">
+                            {lead.source ? (
+                              <Badge variant="outline" className="bg-gray-50/50 text-gray-600 border-gray-200 text-[10px] px-1.5 py-0 h-4">
+                                {lead.source}
+                              </Badge>
+                            ) : (
+                              'Não informado'
+                            )}
+                          </div>
+                        </div>
+                        
+                        <div className="flex">
+                          <div className="w-20 flex items-center gap-1 text-gray-500">
+                            <CalendarIcon className="h-3 w-3" />
+                            <span>Data:</span>
+                          </div>
+                          <div className="text-gray-700 font-medium">
+                            {new Date(lead.createdAt).toLocaleDateString('pt-BR')}
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="flex gap-2 pt-1">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="bg-white border-gray-200 text-gray-700 hover:bg-gray-50 hover:text-gray-800 transition-colors text-xs h-8 px-2 flex-1 rounded-lg"
+                          onClick={() => openEditModal(lead)}
+                        >
+                          <PencilIcon className="h-3 w-3 mr-1.5" />
+                          Editar
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="bg-white border-gray-200 text-gray-700 hover:bg-gray-50 hover:text-gray-800 transition-colors text-xs h-8 px-2 flex-1 rounded-lg"
+                          onClick={() => handleViewLead(lead)}
+                        >
+                          <EyeIcon className="h-3 w-3 mr-1.5" />
+                          Ver
+                        </Button>
+                      </div>
+                    </div>
+                  ))
+                ) : !loading ? (
+                  <div className="bg-white p-4 rounded-xl shadow-sm text-center text-gray-500 text-sm">
+                    Nenhum lead encontrado
+                  </div>
+                ) : null}
+                
+                {loading && (
+                  <div className="bg-white p-4 rounded-xl shadow-sm text-center text-gray-500 text-sm">
+                    <ArrowPathIcon className="h-5 w-5 mx-auto animate-spin text-gray-400 mb-2" />
+                    Carregando leads...
+                  </div>
+                )}
+              </div>
+              
+              {/* Desktop table view */}
+              <table className="w-full hidden md:table">
                 <thead>
                   <tr className="border-b border-gray-200">
                     <th className="py-3 sm:py-2 px-4 sm:px-3 text-left text-sm sm:text-xs font-medium text-gray-500">Nome</th>
@@ -624,7 +793,7 @@ export default function LeadsPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {leads.map((lead) => (
+                  {filteredLeads.map((lead) => (
                     <tr key={lead.id} className="hover:bg-gray-50 transition-colors">
                       <td className="py-3 sm:py-2 px-4 sm:px-3">
                         <div className="font-medium text-base sm:text-sm text-gray-900">{lead.name}</div>
@@ -639,16 +808,26 @@ export default function LeadsPage() {
                         <div className="text-gray-600 text-sm sm:text-xs">{lead.source || 'Não informado'}</div>
                       </td>
                       <td className="py-3 sm:py-2 px-4 sm:px-3">
-                        <Badge 
-                          variant="outline" 
-                          className={`${
-                            lead.status === 'converted' 
-                              ? 'bg-emerald-50 text-emerald-600 border-emerald-200' 
-                              : 'bg-sky-50 text-sky-600 border-sky-200'
-                          } text-sm sm:text-xs`}
-                        >
-                          {lead.status === 'converted' ? 'Paciente' : 'Lead'}
-                        </Badge>
+                        {(() => {
+                          switch (lead.status) {
+                            case 'Novo':
+                              return <Badge className="bg-blue-50 text-blue-600 border-blue-200 text-xs">Novo</Badge>;
+                            case 'Agendado':
+                              return <Badge className="bg-emerald-50 text-emerald-600 border-emerald-200 text-xs">Agendado</Badge>;
+                            case 'Compareceu':
+                              return <Badge className="bg-green-50 text-green-600 border-green-200 text-xs">Compareceu</Badge>;
+                            case 'Fechado':
+                              return <Badge className="bg-purple-50 text-purple-600 border-purple-200 text-xs">Fechado</Badge>;
+                            case 'Não veio':
+                              return <Badge className="bg-red-50 text-red-600 border-red-200 text-xs">Não veio</Badge>;
+                            case 'Cancelado':
+                              return <Badge className="bg-gray-50 text-gray-600 border-gray-200 text-xs">Cancelado</Badge>;
+                            case 'converted':
+                              return <Badge className="bg-emerald-50 text-emerald-600 border-emerald-200 text-xs">Paciente</Badge>;
+                            default:
+                              return <Badge className="bg-sky-50 text-sky-600 border-sky-200 text-xs">Lead</Badge>;
+                          }
+                        })()}
                       </td>
                       <td className="py-3 sm:py-2 px-4 sm:px-3">
                         <div className="text-gray-600 text-sm sm:text-xs">
@@ -679,6 +858,14 @@ export default function LeadsPage() {
                       </td>
                     </tr>
                   ))}
+                  
+                  {filteredLeads.length === 0 && !loading && (
+                    <tr>
+                      <td colSpan={7} className="py-4 text-center text-gray-500 text-sm">
+                        Nenhum lead encontrado
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
@@ -687,7 +874,7 @@ export default function LeadsPage() {
 
         {/* Modal de criação */}
         <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
-          <DialogContent className="bg-white/90 border-0 shadow-[0_8px_30px_rgba(0,0,0,0.12)] rounded-3xl p-5 sm:p-4">
+          <DialogContent className="bg-white/90 border-0 shadow-[0_8px_30px_rgba(0,0,0,0.12)] rounded-3xl p-5 sm:p-4 w-[95vw] max-w-md mx-auto">
             <CardHeader className="p-0 mb-5 sm:mb-4">
               <CardTitle className="text-lg sm:text-base font-bold text-gray-900 tracking-[-0.03em] font-inter">Novo Lead</CardTitle>
               <CardDescription className="text-sm sm:text-xs text-gray-600 tracking-[-0.03em] font-inter">
@@ -748,7 +935,7 @@ export default function LeadsPage() {
                   </Select>
                 </div>
 
-                <div className="flex gap-3 pt-2 sm:pt-1">
+                <div className="flex flex-col sm:flex-row gap-3 pt-2 sm:pt-1">
                   <Button
                     type="button"
                     variant="outline"
@@ -761,7 +948,7 @@ export default function LeadsPage() {
                   <Button
                     type="submit"
                     disabled={isLoading}
-                    className="bg-gray-900 hover:bg-gray-800 text-white rounded-xl h-10 sm:h-9 flex-1 text-sm sm:text-xs"
+                    className="bg-gray-900 hover:bg-gray-800 text-white rounded-xl h-10 sm:h-9 flex-1 text-sm sm:text-xs mt-2 sm:mt-0"
                   >
                     {isLoading ? (
                       <ArrowPathIcon className="h-4 w-4 sm:h-3 sm:w-3 animate-spin" />
@@ -777,67 +964,67 @@ export default function LeadsPage() {
 
         {/* Modal de edição */}
         <Dialog open={showEditModal} onOpenChange={setShowEditModal}>
-          <DialogContent className="bg-white/90 border-0 shadow-[0_8px_30px_rgba(0,0,0,0.12)] rounded-3xl p-6">
-            <CardHeader className="p-0 mb-6">
-              <CardTitle className="text-xl font-bold text-gray-900 tracking-[-0.03em] font-inter">Editar Lead</CardTitle>
-              <CardDescription className="text-sm text-gray-600 tracking-[-0.03em] font-inter">
+          <DialogContent className="bg-white/90 border-0 shadow-[0_8px_30px_rgba(0,0,0,0.12)] rounded-3xl p-6 sm:p-4 w-[95vw] max-w-md mx-auto overflow-y-auto max-h-[90vh]">
+            <CardHeader className="p-0 mb-6 sm:mb-4">
+              <CardTitle className="text-xl sm:text-lg font-bold text-gray-900 tracking-[-0.03em] font-inter">Editar Lead</CardTitle>
+              <CardDescription className="text-sm sm:text-xs text-gray-600 tracking-[-0.03em] font-inter">
                 Edite as informações do lead
               </CardDescription>
             </CardHeader>
             <CardContent className="p-0">
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="space-y-2">
-                  <Label htmlFor="name" className="text-sm font-medium text-gray-700 tracking-[-0.03em] font-inter">Nome</Label>
+              <form onSubmit={handleSubmit} className="space-y-6 sm:space-y-4">
+                <div className="space-y-2 sm:space-y-1">
+                  <Label htmlFor="name" className="text-sm sm:text-xs font-medium text-gray-700 tracking-[-0.03em] font-inter">Nome</Label>
                   <Input
                     id="name"
                     value={formData.name}
                     onChange={handleInputChange}
                     placeholder="Nome completo"
-                    className="bg-white/50 border-gray-200 focus:border-gray-300 text-gray-900 placeholder:text-gray-400 rounded-xl h-11"
+                    className="bg-white/50 border-gray-200 focus:border-gray-300 text-gray-900 placeholder:text-gray-400 rounded-xl h-11 sm:h-9 text-base sm:text-sm"
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="email" className="text-sm font-medium text-gray-700 tracking-[-0.03em] font-inter">E-mail</Label>
+                <div className="space-y-2 sm:space-y-1">
+                  <Label htmlFor="email" className="text-sm sm:text-xs font-medium text-gray-700 tracking-[-0.03em] font-inter">E-mail</Label>
                   <Input
                     id="email"
                     type="email"
                     value={formData.email}
                     onChange={handleInputChange}
                     placeholder="E-mail do lead"
-                    className="bg-white/50 border-gray-200 focus:border-gray-300 text-gray-900 placeholder:text-gray-400 rounded-xl h-11"
+                    className="bg-white/50 border-gray-200 focus:border-gray-300 text-gray-900 placeholder:text-gray-400 rounded-xl h-11 sm:h-9 text-base sm:text-sm"
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="phone" className="text-sm font-medium text-gray-700 tracking-[-0.03em] font-inter">Telefone</Label>
+                <div className="space-y-2 sm:space-y-1">
+                  <Label htmlFor="phone" className="text-sm sm:text-xs font-medium text-gray-700 tracking-[-0.03em] font-inter">Telefone</Label>
                   <Input
                     id="phone"
                     value={formData.phone}
                     onChange={handleInputChange}
                     placeholder="Telefone do lead"
-                    className="bg-white/50 border-gray-200 focus:border-gray-300 text-gray-900 placeholder:text-gray-400 rounded-xl h-11"
+                    className="bg-white/50 border-gray-200 focus:border-gray-300 text-gray-900 placeholder:text-gray-400 rounded-xl h-11 sm:h-9 text-base sm:text-sm"
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="interest" className="text-sm font-medium text-gray-700 tracking-[-0.03em] font-inter">Interesse</Label>
+                <div className="space-y-2 sm:space-y-1">
+                  <Label htmlFor="interest" className="text-sm sm:text-xs font-medium text-gray-700 tracking-[-0.03em] font-inter">Interesse</Label>
                   <Input
                     id="interest"
                     value={formData.interest}
                     onChange={handleInputChange}
                     placeholder="Interesse do lead"
-                    className="bg-white/50 border-gray-200 focus:border-gray-300 text-gray-900 placeholder:text-gray-400 rounded-xl h-11"
+                    className="bg-white/50 border-gray-200 focus:border-gray-300 text-gray-900 placeholder:text-gray-400 rounded-xl h-11 sm:h-9 text-base sm:text-sm"
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="status" className="text-sm font-medium text-gray-700 tracking-[-0.03em] font-inter">Status</Label>
+                <div className="space-y-2 sm:space-y-1">
+                  <Label htmlFor="status" className="text-sm sm:text-xs font-medium text-gray-700 tracking-[-0.03em] font-inter">Status</Label>
                   <Select
                     value={formData.status}
                     onValueChange={handleSelectChange.bind(null, 'status')}
                   >
-                    <SelectTrigger className="bg-white/50 border-gray-200 focus:border-gray-300 text-gray-900 rounded-xl h-11">
+                    <SelectTrigger className="bg-white/50 border-gray-200 focus:border-gray-300 text-gray-900 rounded-xl h-11 sm:h-9 text-base sm:text-sm">
                       <SelectValue placeholder="Selecione o status" />
                     </SelectTrigger>
                     <SelectContent>
@@ -851,57 +1038,57 @@ export default function LeadsPage() {
                   </Select>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="potentialValue" className="text-sm font-medium text-gray-700 tracking-[-0.03em] font-inter">Valor Potencial</Label>
+                <div className="space-y-2 sm:space-y-1">
+                  <Label htmlFor="potentialValue" className="text-sm sm:text-xs font-medium text-gray-700 tracking-[-0.03em] font-inter">Valor Potencial</Label>
                   <Input
                     id="potentialValue"
                     type="number"
                     value={formData.potentialValue}
                     onChange={handleInputChange}
                     placeholder="Valor potencial do lead"
-                    className="bg-white/50 border-gray-200 focus:border-gray-300 text-gray-900 placeholder:text-gray-400 rounded-xl h-11"
+                    className="bg-white/50 border-gray-200 focus:border-gray-300 text-gray-900 placeholder:text-gray-400 rounded-xl h-11 sm:h-9 text-base sm:text-sm"
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="appointmentDate" className="text-sm font-medium text-gray-700 tracking-[-0.03em] font-inter">Data da Consulta</Label>
+                <div className="space-y-2 sm:space-y-1">
+                  <Label htmlFor="appointmentDate" className="text-sm sm:text-xs font-medium text-gray-700 tracking-[-0.03em] font-inter">Data da Consulta</Label>
                   <Input
                     id="appointmentDate"
-                    type="datetime-local"
+                    type="date"
                     value={formData.appointmentDate}
                     onChange={handleInputChange}
-                    className="bg-white/50 border-gray-200 focus:border-gray-300 text-gray-900 placeholder:text-gray-400 rounded-xl h-11"
+                    className="bg-white/50 border-gray-200 focus:border-gray-300 text-gray-900 placeholder:text-gray-400 rounded-xl h-11 sm:h-9 text-base sm:text-sm"
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="appointmentTime" className="text-sm font-medium text-gray-700 tracking-[-0.03em] font-inter">Horário da Consulta</Label>
+                <div className="space-y-2 sm:space-y-1">
+                  <Label htmlFor="appointmentTime" className="text-sm sm:text-xs font-medium text-gray-700 tracking-[-0.03em] font-inter">Horário da Consulta</Label>
                   <Input
                     id="appointmentTime"
                     type="time"
                     value={formData.appointmentTime}
                     onChange={handleInputChange}
-                    className="bg-white/50 border-gray-200 focus:border-gray-300 text-gray-900 placeholder:text-gray-400 rounded-xl h-11"
+                    className="bg-white/50 border-gray-200 focus:border-gray-300 text-gray-900 placeholder:text-gray-400 rounded-xl h-11 sm:h-9 text-base sm:text-sm"
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="medicalNotes" className="text-sm font-medium text-gray-700 tracking-[-0.03em] font-inter">Observações</Label>
+                <div className="space-y-2 sm:space-y-1">
+                  <Label htmlFor="medicalNotes" className="text-sm sm:text-xs font-medium text-gray-700 tracking-[-0.03em] font-inter">Observações</Label>
                   <Textarea
                     id="medicalNotes"
                     value={formData.medicalNotes}
                     onChange={handleInputChange}
                     placeholder="Observações sobre o lead"
-                    className="bg-white/50 border-gray-200 focus:border-gray-300 text-gray-900 placeholder:text-gray-400 rounded-xl h-24"
+                    className="bg-white/50 border-gray-200 focus:border-gray-300 text-gray-900 placeholder:text-gray-400 rounded-xl h-24 sm:h-20 text-base sm:text-sm"
                   />
                 </div>
 
-                <div className="flex gap-4 pt-2">
+                <div className="flex flex-col sm:flex-row gap-4 sm:gap-3 pt-2">
                   <Button
                     type="button"
                     variant="outline"
                     onClick={closeEditModal}
-                    className="bg-white/50 border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300 rounded-xl h-11 flex-1"
+                    className="bg-white/50 border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300 rounded-xl h-11 sm:h-9 flex-1 text-base sm:text-sm"
                   >
                     Cancelar
                   </Button>
@@ -909,7 +1096,7 @@ export default function LeadsPage() {
                   <Button
                     type="submit"
                     disabled={isSubmitting}
-                    className="bg-gray-900 hover:bg-gray-800 text-white rounded-xl h-11 flex-1"
+                    className="bg-gray-900 hover:bg-gray-800 text-white rounded-xl h-11 sm:h-9 flex-1 text-base sm:text-sm mt-2 sm:mt-0"
                   >
                     {isSubmitting ? (
                       <ArrowPathIcon className="h-4 w-4 animate-spin" />
@@ -925,56 +1112,60 @@ export default function LeadsPage() {
 
         {/* Modal de Visualização */}
         <Dialog open={isViewModalOpen} onOpenChange={setIsViewModalOpen}>
-          <DialogContent className="sm:max-w-[425px]">
+          <DialogContent className="bg-white/90 border-0 shadow-[0_8px_30px_rgba(0,0,0,0.12)] rounded-3xl p-5 sm:p-4 w-[95vw] max-w-md mx-auto">
             <DialogHeader>
-              <DialogTitle>Detalhes do Lead</DialogTitle>
+              <DialogTitle className="text-lg sm:text-base font-bold text-gray-900 tracking-[-0.03em] font-inter">Detalhes do Lead</DialogTitle>
             </DialogHeader>
             {viewingLead && (
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label className="text-right">Nome</Label>
-                  <div className="col-span-3">{viewingLead.name}</div>
+              <div className="grid gap-4 sm:gap-3 py-4 sm:py-3">
+                <div className="grid grid-cols-3 items-center gap-4 sm:gap-2">
+                  <Label className="text-right text-sm sm:text-xs font-medium text-gray-700">Nome</Label>
+                  <div className="col-span-2 text-base sm:text-sm text-gray-900">{viewingLead.name}</div>
                 </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label className="text-right">Email</Label>
-                  <div className="col-span-3">{viewingLead.email || 'Não informado'}</div>
+                <div className="grid grid-cols-3 items-center gap-4 sm:gap-2">
+                  <Label className="text-right text-sm sm:text-xs font-medium text-gray-700">Email</Label>
+                  <div className="col-span-2 text-base sm:text-sm text-gray-900">{viewingLead.email || 'Não informado'}</div>
                 </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label className="text-right">Telefone</Label>
-                  <div className="col-span-3">{viewingLead.phone}</div>
+                <div className="grid grid-cols-3 items-center gap-4 sm:gap-2">
+                  <Label className="text-right text-sm sm:text-xs font-medium text-gray-700">Telefone</Label>
+                  <div className="col-span-2 text-base sm:text-sm text-gray-900">{viewingLead.phone}</div>
                 </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label className="text-right">Origem</Label>
-                  <div className="col-span-3">{viewingLead.source || 'Não informado'}</div>
+                <div className="grid grid-cols-3 items-center gap-4 sm:gap-2">
+                  <Label className="text-right text-sm sm:text-xs font-medium text-gray-700">Origem</Label>
+                  <div className="col-span-2 text-base sm:text-sm text-gray-900">{viewingLead.source || 'Não informado'}</div>
                 </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label className="text-right">Status</Label>
-                  <div className="col-span-3">{viewingLead.status || 'Novo'}</div>
+                <div className="grid grid-cols-3 items-center gap-4 sm:gap-2">
+                  <Label className="text-right text-sm sm:text-xs font-medium text-gray-700">Status</Label>
+                  <div className="col-span-2 text-base sm:text-sm text-gray-900">{viewingLead.status || 'Novo'}</div>
                 </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label className="text-right">Data</Label>
-                  <div className="col-span-3">
+                <div className="grid grid-cols-3 items-center gap-4 sm:gap-2">
+                  <Label className="text-right text-sm sm:text-xs font-medium text-gray-700">Data</Label>
+                  <div className="col-span-2 text-base sm:text-sm text-gray-900">
                     {new Date(viewingLead.createdAt).toLocaleDateString('pt-BR')}
                   </div>
                 </div>
                 {viewingLead.appointmentDate && (
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label className="text-right">Consulta</Label>
-                    <div className="col-span-3">
+                  <div className="grid grid-cols-3 items-center gap-4 sm:gap-2">
+                    <Label className="text-right text-sm sm:text-xs font-medium text-gray-700">Consulta</Label>
+                    <div className="col-span-2 text-base sm:text-sm text-gray-900">
                       {new Date(viewingLead.appointmentDate).toLocaleDateString('pt-BR')}
                     </div>
                   </div>
                 )}
                 {viewingLead.medicalNotes && (
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label className="text-right">Observações</Label>
-                    <div className="col-span-3">{viewingLead.medicalNotes}</div>
+                  <div className="grid grid-cols-3 items-center gap-4 sm:gap-2">
+                    <Label className="text-right text-sm sm:text-xs font-medium text-gray-700">Observações</Label>
+                    <div className="col-span-2 text-base sm:text-sm text-gray-900">{viewingLead.medicalNotes}</div>
                   </div>
                 )}
               </div>
             )}
             <DialogFooter>
-              <Button variant="secondary" onClick={() => setIsViewModalOpen(false)}>
+              <Button 
+                variant="secondary" 
+                onClick={() => setIsViewModalOpen(false)}
+                className="w-full sm:w-auto text-sm sm:text-xs"
+              >
                 Fechar
               </Button>
             </DialogFooter>

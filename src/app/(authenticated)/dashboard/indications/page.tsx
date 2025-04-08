@@ -306,8 +306,8 @@ export default function IndicationsPage() {
   }
   
   return (
-    <div className="min-h-[100dvh] bg-gray-100 pt-20 pb-24 md:pt-12 md:pb-16 px-4">
-      <div className="container mx-auto pl-4 md:pl-8 lg:pl-16 max-w-[95%] md:max-w-[90%] lg:max-w-[85%]">
+    <div className="min-h-[100dvh] bg-gray-100 pt-20 pb-24 md:pt-12 md:pb-16 px-2 sm:px-4">
+      <div className="container mx-auto px-0 sm:pl-4 md:pl-8 lg:pl-16 max-w-full sm:max-w-[95%] md:max-w-[90%] lg:max-w-[85%]">
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6">
           <div>
             <h1 className="text-lg md:text-xl font-bold text-gray-900 tracking-[-0.03em] font-inter">Indicações</h1>
@@ -315,7 +315,7 @@ export default function IndicationsPage() {
           </div>
           <Button 
             onClick={() => setShowCreateModal(true)}
-            className="mt-2 md:mt-0 bg-gray-800/5 border-0 shadow-[0_4px_12px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.1)] transition-all duration-300 rounded-2xl text-gray-700 hover:bg-gray-800/10 text-xs"
+            className="w-full md:w-auto mt-2 md:mt-0 bg-gray-800/5 border-0 shadow-[0_4px_12px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.1)] transition-all duration-300 rounded-2xl text-gray-700 hover:bg-gray-800/10 text-xs"
           >
             <PlusIcon className="h-4 w-4 mr-2" />
             Nova Indicação
@@ -330,8 +330,65 @@ export default function IndicationsPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="pb-3 px-4">
-            <div className="overflow-x-auto">
-              <table className="w-full">
+            <div className="overflow-x-auto -mx-4 px-4">
+              {/* Mobile view for small screens */}
+              <div className="md:hidden space-y-4">
+                {indications.map((indication) => (
+                  <div key={indication.id} className="bg-white p-3 rounded-xl shadow-sm">
+                    <div className="font-medium text-sm text-gray-900 mb-1">{indication.name}</div>
+                    <div className="text-gray-600 text-xs mb-2 truncate">
+                      {`${baseUrl}/${userSlug}/${indication.slug}`}
+                    </div>
+                    
+                    <div className="grid grid-cols-3 gap-2 mb-3">
+                      <div className="text-center">
+                        <div className="text-xs text-gray-500">Cliques</div>
+                        <div className="text-gray-900 font-medium text-sm">
+                          {indication._count?.events || 0}
+                        </div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-xs text-gray-500">Leads</div>
+                        <div className="text-gray-900 font-medium text-sm">
+                          {indication._count?.leads || 0}
+                        </div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-xs text-gray-500">Conversão</div>
+                        <div className="text-gray-900 font-medium text-sm">
+                          {indication._count?.events 
+                            ? `${Math.round((indication._count.converted / indication._count.events) * 100)}%`
+                            : '0%'}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="flex justify-between gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="bg-white border-sky-300 text-sky-700 hover:bg-sky-50 hover:border-sky-400 hover:text-sky-800 transition-colors text-xs h-7 px-2 flex-1"
+                        onClick={() => copyToClipboard(`${baseUrl}/${userSlug}/${indication.slug}`)}
+                      >
+                        <ClipboardIcon className="h-3 w-3 mr-1" />
+                        Copiar
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="bg-white border-sky-300 text-sky-700 hover:bg-sky-50 hover:border-sky-400 hover:text-sky-800 transition-colors text-xs h-7 px-2 flex-1"
+                        onClick={() => shareOnWhatsApp(`${baseUrl}/${userSlug}/${indication.slug}`)}
+                      >
+                        <ShareIcon className="h-3 w-3 mr-1" />
+                        Compartilhar
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              
+              {/* Desktop table view */}
+              <table className="w-full hidden md:table">
                 <thead>
                   <tr className="border-b border-gray-200">
                     <th className="py-2 px-3 text-left text-xs font-medium text-gray-500">Nome</th>
@@ -407,7 +464,7 @@ export default function IndicationsPage() {
         </Card>
 
         <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
-          <DialogContent className="bg-white/90 border-0 shadow-[0_8px_30px_rgba(0,0,0,0.12)] rounded-3xl p-4">
+          <DialogContent className="bg-white/90 border-0 shadow-[0_8px_30px_rgba(0,0,0,0.12)] rounded-3xl p-4 w-[95vw] max-w-md mx-auto">
             <CardHeader className="p-0 mb-4">
               <CardTitle className="text-sm md:text-base font-bold text-gray-900 tracking-[-0.03em] font-inter">Criar Novo Link</CardTitle>
               <CardDescription className="text-xs text-gray-600 tracking-[-0.03em] font-inter">
@@ -461,7 +518,7 @@ export default function IndicationsPage() {
                   />
                 </div>
 
-                <div className="flex gap-3 pt-1">
+                <div className="flex flex-col sm:flex-row gap-3 pt-1">
                   <Button
                     type="button"
                     variant="outline"
@@ -479,7 +536,7 @@ export default function IndicationsPage() {
                   <Button
                     type="submit"
                     disabled={isLoading}
-                    className="bg-gray-900 hover:bg-gray-800 text-white rounded-xl h-9 flex-1 text-xs"
+                    className="bg-gray-900 hover:bg-gray-800 text-white rounded-xl h-9 flex-1 text-xs mt-2 sm:mt-0"
                   >
                     {isLoading ? (
                       <ArrowPathIcon className="h-3 w-3 animate-spin" />
@@ -494,7 +551,7 @@ export default function IndicationsPage() {
         </Dialog>
 
         <Dialog open={showEditModal} onOpenChange={setShowEditModal}>
-          <DialogContent className="bg-gray-800/5 border-0 shadow-[0_8px_30px_rgba(0,0,0,0.12)] rounded-2xl p-4">
+          <DialogContent className="bg-gray-800/5 border-0 shadow-[0_8px_30px_rgba(0,0,0,0.12)] rounded-2xl p-4 w-[95vw] max-w-md mx-auto">
             {/* Modal de edição */}
           </DialogContent>
         </Dialog>
