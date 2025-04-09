@@ -278,26 +278,26 @@ export default function PipelinePage() {
         <div className="container mx-auto pl-1 sm:pl-4 md:pl-8 lg:pl-16 max-w-[98%] sm:max-w-[95%] md:max-w-[90%] lg:max-w-[85%]">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6">
             <div>
-              <h1 className="text-2xl sm:text-xl md:text-xl font-bold text-gray-900 tracking-[-0.03em] font-inter">Pipeline de Vendas</h1>
-              <p className="text-base sm:text-sm md:text-sm text-gray-600 tracking-[-0.03em] font-inter">Acompanhe a evolução dos seus leads</p>
+              <h1 className="text-xl font-bold text-gray-900 tracking-[-0.03em] font-inter">Pipeline</h1>
+              <p className="text-xs text-gray-600 tracking-[-0.01em] font-inter">Seus leads e vendas</p>
             </div>
             <Button
               onClick={() => fetchLeads()}
-              className="mt-4 md:mt-0 h-12 sm:h-10 md:h-8 bg-gray-800/5 border-0 shadow-[0_4px_12px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.1)] transition-all duration-300 rounded-2xl text-gray-700 hover:bg-gray-800/10 text-base sm:text-sm md:text-xs"
+              className="mt-3 md:mt-0 h-9 bg-gray-800/5 border-0 shadow-sm hover:shadow-md transition-all duration-300 rounded-xl text-gray-700 hover:bg-gray-800/10 text-xs"
             >
-              <ArrowPathIcon className="h-5 w-5 sm:h-4 sm:w-4 mr-2 sm:mr-1.5" />
+              <ArrowPathIcon className="h-4 w-4 mr-1.5" />
               Atualizar
             </Button>
           </div>
 
           <div className="px-1">
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4 md:gap-3 w-full">
+            <div className="flex overflow-x-auto pb-4 w-full md:grid md:grid-cols-5 gap-4 md:gap-3">
               {columns.map((column) => (
-                <div key={column.id} className="min-h-[300px] flex flex-col">
-                  <div className="bg-gray-800/5 rounded-lg p-4 sm:p-3 shadow-[0_2px_8px_rgba(0,0,0,0.05)] mb-3">
-                    <h2 className="text-base sm:text-sm font-semibold text-gray-800 flex items-center">
-                      {column.title}
-                      <span className="ml-2 bg-gray-200 text-gray-700 px-2 py-1 sm:py-0.5 rounded text-sm sm:text-xs font-semibold">
+                <div key={column.id} className="min-w-[250px] md:min-w-0 flex-shrink-0 md:flex-shrink-1 min-h-[300px] flex flex-col">
+                  <div className="bg-gray-800/5 rounded-lg p-2 shadow-[0_2px_8px_rgba(0,0,0,0.05)] mb-2">
+                    <h2 className="text-sm font-semibold text-gray-800 flex items-center">
+                      <span className="mr-auto">{column.title}</span>
+                      <span className="ml-1.5 bg-gray-200 text-gray-700 px-1.5 py-0.5 rounded text-xs font-medium">
                         {getColumnLeads(column.id).length}
                       </span>
                     </h2>
@@ -309,7 +309,7 @@ export default function PipelinePage() {
                         <div
                           {...provided.droppableProps}
                           ref={provided.innerRef}
-                          className="p-3 sm:p-2 h-full min-h-[50vh] lg:min-h-[60vh] overflow-y-auto"
+                          className="p-2 h-full min-h-[50vh] lg:min-h-[60vh] overflow-y-auto"
                         >
                           {getColumnLeads(column.id).map((lead, index) => (
                             <DraggableLib key={lead.id} draggableId={lead.id} index={index}>
@@ -318,80 +318,39 @@ export default function PipelinePage() {
                                   ref={provided.innerRef}
                                   {...provided.draggableProps}
                                   {...provided.dragHandleProps}
-                                  className="bg-white rounded-xl mb-3 sm:mb-2 shadow-[0_2px_6px_rgba(0,0,0,0.05)] p-4 sm:p-3 cursor-pointer hover:shadow-[0_4px_12px_rgba(0,0,0,0.1)] transition-shadow duration-300"
+                                  className="bg-white rounded-lg mb-2 shadow-sm p-2.5 cursor-pointer hover:shadow-md transition-shadow duration-300"
                                   onClick={() => {
                                     setEditingLead(lead);
                                     setIsEditModalOpen(true);
                                   }}
                                 >
-                                  <div className="space-y-3 sm:space-y-1.5">
+                                  <div className="space-y-1.5">
                                     <div>
-                                      <h4 className="font-medium text-gray-800 text-base sm:text-sm mb-1 sm:mb-0.5 truncate" title={lead.name}>{lead.name}</h4>
-                                      <div className="flex items-center gap-2 sm:gap-1 text-base sm:text-sm text-gray-600">
-                                        <PhoneIcon className="flex-shrink-0 h-4 w-4 sm:h-3.5 sm:w-3.5" />
-                                        <span className="truncate text-base sm:text-sm">{lead.phone}</span>
+                                      <h4 className="font-medium text-gray-900 text-sm leading-snug truncate" title={lead.name}>{lead.name}</h4>
+                                      <div className="flex items-center gap-1 text-xs text-gray-500">
+                                        <PhoneIcon className="flex-shrink-0 h-3 w-3" />
+                                        <span className="truncate">{lead.phone}</span>
                                       </div>
                                     </div>
 
-                                    {/* Adicionar um indicador de origem/indicação na parte superior do card */}
-                                    {(lead.indication?.name || lead.source) && (
-                                      <div className="flex items-center gap-2 sm:gap-1 bg-blue-50 px-3 sm:px-2 py-1.5 sm:py-1 rounded border border-blue-100">
-                                        <LinkIcon className="h-4 w-4 sm:h-3.5 sm:w-3.5 text-blue-500" />
-                                        <span className="text-sm sm:text-xs font-medium text-blue-700 truncate">
-                                          {lead.indication?.name || (lead.source?.includes('/') 
-                                            ? lead.source.split('/').filter(Boolean)[1] 
-                                            : lead.source)}
-                                        </span>
+                                    {lead.interest && (
+                                      <div className="flex items-center text-xs">
+                                        <span className="text-gray-500 mr-1">Interesse:</span>
+                                        <span className="text-gray-700 font-medium truncate">{lead.interest}</span>
                                       </div>
                                     )}
 
-                                    <div className="pt-2 sm:pt-1 border-t border-gray-200">
-                                      <div className="grid grid-cols-2 gap-3 sm:gap-2 text-base sm:text-sm">
-                                        {lead.interest && (
-                                          <div>
-                                            <p className="text-sm sm:text-xs font-medium text-gray-500 mb-0.5">Interesse</p>
-                                            <p className="text-gray-900 truncate text-base sm:text-sm" title={lead.interest}>{lead.interest}</p>
-                                          </div>
-                                        )}
-                                        {lead.appointmentDate && (
-                                          <div>
-                                            <p className="text-sm sm:text-xs font-medium text-gray-500 mb-0.5">Agendamento</p>
-                                            <p className="text-gray-900 truncate text-base sm:text-sm">
-                                              {new Date(lead.appointmentDate).toLocaleDateString('pt-BR', {
-                                                day: '2-digit',
-                                                month: '2-digit',
-                                                hour: '2-digit',
-                                                minute: '2-digit'
-                                              })}
-                                            </p>
-                                          </div>
-                                        )}
-                                        {(lead as any).potentialValue && (
-                                          <div>
-                                            <p className="text-sm sm:text-xs font-medium text-gray-500 mb-0.5">Valor</p>
-                                            <p className="text-gray-900 truncate font-medium text-base sm:text-sm">
-                                              {new Intl.NumberFormat('pt-BR', { 
-                                                style: 'currency', 
-                                                currency: 'BRL',
-                                                minimumFractionDigits: 0,
-                                                maximumFractionDigits: 0
-                                              }).format((lead as any).potentialValue)}
-                                            </p>
-                                          </div>
-                                        )}
-                                        {lead.createdAt && (
-                                          <div>
-                                            <p className="text-sm sm:text-xs font-medium text-gray-500 mb-0.5">Criado em</p>
-                                            <p className="text-gray-900 truncate text-base sm:text-sm">
-                                              {new Date(lead.createdAt).toLocaleDateString('pt-BR', {
-                                                day: '2-digit',
-                                                month: '2-digit'
-                                              })}
-                                            </p>
-                                          </div>
-                                        )}
+                                    {lead.appointmentDate && (
+                                      <div className="flex items-center text-xs">
+                                        <CalendarIcon className="h-3 w-3 text-gray-500 mr-1" />
+                                        <span className="text-gray-600 truncate">
+                                          {new Date(lead.appointmentDate).toLocaleDateString('pt-BR', {
+                                            day: '2-digit',
+                                            month: '2-digit'
+                                          })}
+                                        </span>
                                       </div>
-                                    </div>
+                                    )}
                                   </div>
                                 </div>
                               )}
