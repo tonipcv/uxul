@@ -41,6 +41,7 @@ export default function Navigation() {
     '/dashboard/indications',
     '/dashboard/leads',
     '/dashboard/pipeline',
+    '/agenda',
     '/profile',
     '/settings'
   ];
@@ -78,6 +79,12 @@ export default function Navigation() {
           label: 'Pipeline',
           icon: CalendarDaysIcon,
           description: 'Gestão de status'
+        },
+        {
+          href: '/agenda',
+          label: 'Agenda',
+          icon: CalendarDaysIcon,
+          description: 'Google Calendar'
         }
       ]
     },
@@ -182,8 +189,8 @@ export default function Navigation() {
 
         {/* Mobile Navigation Bar */}
         <nav className="fixed bottom-0 left-0 right-0 border-t border-blue-700 bg-blue-900 shadow-md z-50 rounded-tl-xl rounded-tr-xl">
-          <div className="py-3 px-4">
-            <div className="flex items-center justify-around gap-2">
+          <div className="py-2 px-3">
+            <div className="flex items-center justify-around gap-1">
               {navSections
                 .filter(section => section.title !== "Configurações") // Filter out the "Configurações" section for mobile
                 .flatMap(section => section.items)
@@ -192,14 +199,13 @@ export default function Navigation() {
                   <Button
                     variant="outline"
                     className={cn(
-                      "w-full h-14 flex flex-col items-center justify-center bg-transparent transition-colors border-transparent rounded-xl gap-1",
+                      "w-full h-10 flex items-center justify-center bg-transparent transition-colors border-transparent rounded-xl",
                       pathname === item.href 
                         ? "bg-blue-700 text-blue-100 border-blue-600 hover:bg-blue-600" 
                         : "text-blue-200 hover:text-blue-100 hover:bg-blue-800"
                     )}
                   >
                     <item.icon className="h-5 w-5 stroke-current" />
-                    <span className="text-xs">{item.label}</span>
                   </Button>
                 </Link>
               ))}

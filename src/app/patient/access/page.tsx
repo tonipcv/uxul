@@ -10,11 +10,13 @@ import { Mail, ArrowRight } from 'lucide-react';
 export default function PatientAccessPage() {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setError('');
 
     try {
       const response = await fetch('/api/patient/access', {
@@ -28,7 +30,13 @@ export default function PatientAccessPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Erro ao solicitar acesso');
+        if (response.status === 404) {
+          const errorMsg = 'E-mail não encontrado no sistema. Por favor, verifique o e-mail informado.';
+          setError(errorMsg);
+          throw new Error(errorMsg);
+        } else {
+          throw new Error(data.error || 'Erro ao solicitar acesso');
+        }
       }
 
       toast.success('Link de acesso enviado para seu email!');
@@ -66,12 +74,20 @@ export default function PatientAccessPage() {
                     id="email"
                     type="email"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      if (error) setError('');
+                    }}
                     placeholder="seu@email.com"
                     required
-                    className="pl-10 bg-zinc-900 border-zinc-700 text-white placeholder-zinc-500 focus:border-blue-500 focus:ring-blue-500"
+                    className={`pl-10 bg-zinc-900 border-zinc-700 text-white placeholder-zinc-500 focus:border-blue-500 focus:ring-blue-500 ${
+                      error ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''
+                    }`}
                   />
                 </div>
+                {error && (
+                  <p className="mt-2 text-sm text-red-500">{error}</p>
+                )}
               </div>
 
               <Button

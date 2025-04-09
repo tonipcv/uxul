@@ -148,7 +148,10 @@ export async function GET(req: NextRequest) {
       topIndications: convertBigIntToNumber(topIndications),
       topSources: convertBigIntToNumber(topSourcesRaw),
       totalRevenue: Number(totalRevenue),
-      potentialRevenue: Number(potentialRevenue)
+      potentialRevenue: Number(potentialRevenue),
+      revenue: Number(totalRevenue),
+      totalPatients: await prisma.patient.count({ where: { userId } }),
+      clickToLeadRate: totalLeads > 0 ? Math.min(Math.round((totalClicks / totalLeads)), 100) : 0
     };
 
     return NextResponse.json(responseData);

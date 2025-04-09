@@ -29,7 +29,7 @@ export async function POST(request: Request) {
 
     if (!patient) {
       return NextResponse.json(
-        { error: 'Paciente não encontrado' },
+        { error: 'E-mail não encontrado no sistema. Por favor, verifique o e-mail informado ou entre em contato com seu médico.' },
         { status: 404 }
       );
     }
