@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32" fill="none">
+  <!-- Background circle -->
+  <circle cx="16" cy="16" r="16" fill="#1E40AF"/>
+  
+  <!-- M1 text -->
+  <path d="M7 23V11H10.2L13.4 17.5L16.6 11H19.8V23H16.8V16.5L14.2 21H12.6L10 16.5V23H7Z" fill="white"/>
+  
+  <!-- Number 1 -->
+  <path d="M25 23V15H22V12H28V23H25Z" fill="white"/>
+</svg> 

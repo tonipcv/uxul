@@ -10,13 +10,18 @@ import { cn } from '@/lib/utils'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'MED1 | Unlock Your Potential',
-  description: 'Track your sales and unlock your full potential with MED1.',
+  title: {
+    template: '%s | MED1',
+    default: 'MED1',
+  },
+  description: 'Plataforma para médicos gerenciarem seus consultórios',
   manifest: '/manifest.json',
   icons: {
     icon: [
-      { url: '/icon.png', type: 'image/png', sizes: '32x32' },
-      { url: '/icon-512.png', type: 'image/png', sizes: '512x512' },
+      {
+        url: '/favicon.svg',
+        type: 'image/svg+xml',
+      }
     ],
     apple: [
       { url: '/apple-icon.png', sizes: '180x180', type: 'image/png' },
