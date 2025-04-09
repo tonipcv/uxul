@@ -218,6 +218,16 @@ export default function PacientesPage() {
   const handleUpdatePatient = async () => {
     if (!editingPatient) return;
 
+    // Validar dados obrigatórios
+    if (!editFormData.name || !editFormData.email || !editFormData.phone) {
+      toast({
+        title: "Erro",
+        description: "Por favor, preencha todos os campos obrigatórios.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       const response = await fetch(`/api/patients/${editingPatient.id}`, {
         method: 'PUT',
@@ -225,9 +235,9 @@ export default function PacientesPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          name: editFormData.name,
-          email: editFormData.email,
-          phone: editFormData.phone,
+          name: editFormData.name.trim(),
+          email: editFormData.email.trim(),
+          phone: editFormData.phone.trim(),
           lead: {
             status: editFormData.status,
             appointmentDate: editFormData.appointmentDate || null,
@@ -236,42 +246,30 @@ export default function PacientesPage() {
         }),
       });
 
+      const data = await response.json();
+
       if (response.ok) {
         // Atualiza o paciente na lista local
         setPatients(prevPatients => 
           prevPatients.map(p => 
-            p.id === editingPatient.id 
-              ? {
-                  ...p,
-                  name: editFormData.name,
-                  email: editFormData.email,
-                  phone: editFormData.phone,
-                  lead: {
-                    ...p.lead,
-                    status: editFormData.status,
-                    appointmentDate: editFormData.appointmentDate || null,
-                    medicalNotes: editFormData.medicalNotes || null
-                  }
-                }
-              : p
+            p.id === editingPatient.id ? data : p
           )
         );
         
         toast({
-          title: "Paciente atualizado",
+          title: "Sucesso",
           description: "As informações do paciente foram atualizadas com sucesso.",
         });
         
         setIsEditModalOpen(false);
       } else {
-        const error = await response.json();
-        throw new Error(error.message || 'Erro ao atualizar paciente');
+        throw new Error(data.error || 'Erro ao atualizar paciente');
       }
     } catch (error) {
       console.error('Erro ao atualizar paciente:', error);
       toast({
         title: "Erro",
-        description: "Não foi possível atualizar o paciente. Tente novamente.",
+        description: error instanceof Error ? error.message : "Não foi possível atualizar o paciente. Tente novamente.",
         variant: "destructive",
       });
     }
@@ -586,140 +584,143 @@ export default function PacientesPage() {
 
         {/* Modal de visualização do paciente */}
         <Dialog open={isViewModalOpen} onOpenChange={setIsViewModalOpen}>
-          <DialogContent className="max-w-4xl p-0 overflow-hidden bg-white border-0 shadow-[0_8px_30px_rgba(0,0,0,0.12)] rounded-3xl">
-            <DialogHeader className="px-6 py-4 border-b border-gray-200">
-              <DialogTitle className="text-xl font-semibold text-gray-900">Detalhes do Paciente</DialogTitle>
-            </DialogHeader>
+          <DialogContent className="bg-white/90 border-0 shadow-[0_8px_30px_rgba(0,0,0,0.12)] rounded-3xl p-4 w-[95vw] max-w-4xl mx-auto">
+            <CardHeader className="p-0 mb-4">
+              <CardTitle className="text-sm md:text-base font-bold text-gray-900 tracking-[-0.03em] font-inter">Detalhes do Paciente</CardTitle>
+              <CardDescription className="text-xs text-gray-600 tracking-[-0.03em] font-inter">
+                Informações detalhadas do paciente
+              </CardDescription>
+            </CardHeader>
             
             {viewingPatient && (
-              <div className="p-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <Card className="border border-gray-200 shadow-sm bg-white">
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-lg font-medium text-gray-900">Informações Pessoais</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-5 pt-0">
+              <CardContent className="p-0">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="bg-gray-50/50 rounded-2xl p-4 space-y-4">
+                    <div>
+                      <p className="text-xs font-medium text-gray-500 tracking-[-0.03em] font-inter mb-1">Nome completo</p>
+                      <p className="text-sm font-medium text-gray-900">{viewingPatient.name}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-gray-500 tracking-[-0.03em] font-inter mb-1">Email</p>
+                      <p className="text-sm font-medium text-gray-900">{viewingPatient.email}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-gray-500 tracking-[-0.03em] font-inter mb-1">Telefone</p>
+                      <p className="text-sm font-medium text-gray-900">{viewingPatient.phone}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-gray-500 tracking-[-0.03em] font-inter mb-1">Data de cadastro</p>
+                      <p className="text-sm font-medium text-gray-900">
+                        {format(new Date(viewingPatient.createdAt), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-gray-50/50 rounded-2xl p-4 space-y-4">
+                    <div>
+                      <p className="text-xs font-medium text-gray-500 tracking-[-0.03em] font-inter mb-1">Status</p>
+                      <div>{getStatusBadge(viewingPatient.lead?.status || 'novo')}</div>
+                    </div>
+                    {viewingPatient.lead?.appointmentDate && (
                       <div>
-                        <p className="text-xs text-gray-500 mb-1">Nome completo</p>
-                        <p className="font-medium text-gray-900">{viewingPatient.name}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-gray-500 mb-1">Email</p>
-                        <p className="font-medium text-gray-900">{viewingPatient.email}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-gray-500 mb-1">Telefone</p>
-                        <p className="font-medium text-gray-900">{viewingPatient.phone}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-gray-500 mb-1">Data de cadastro</p>
-                        <p className="font-medium text-gray-900">
-                          {format(new Date(viewingPatient.createdAt), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+                        <p className="text-xs font-medium text-gray-500 tracking-[-0.03em] font-inter mb-1">Próxima consulta</p>
+                        <p className="text-sm font-medium text-gray-900">
+                          {format(new Date(viewingPatient.lead.appointmentDate), "dd 'de' MMMM 'de' yyyy 'às' HH:mm", { locale: ptBR })}
                         </p>
                       </div>
-                    </CardContent>
-                  </Card>
-                  
-                  <Card className="border border-gray-200 shadow-sm bg-white">
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-lg font-medium text-gray-900">Dados Clínicos</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-5 pt-0">
+                    )}
+                    {viewingPatient.lead?.medicalNotes && (
                       <div>
-                        <p className="text-xs text-gray-500 mb-1">Status</p>
-                        <div className="mt-1">{getStatusBadge(viewingPatient.lead?.status || 'novo')}</div>
+                        <p className="text-xs font-medium text-gray-500 tracking-[-0.03em] font-inter mb-1">Prontuário médico</p>
+                        <div className="bg-white rounded-xl p-3 border border-gray-100">
+                          <p className="text-sm text-gray-700 whitespace-pre-wrap">{viewingPatient.lead.medicalNotes}</p>
+                        </div>
                       </div>
-                      {viewingPatient.lead?.appointmentDate && (
-                        <div>
-                          <p className="text-xs text-gray-500 mb-1">Próxima consulta</p>
-                          <p className="font-medium text-gray-900">
-                            {format(new Date(viewingPatient.lead.appointmentDate), "dd 'de' MMMM 'de' yyyy 'às' HH:mm", { locale: ptBR })}
-                          </p>
-                        </div>
-                      )}
-                      {viewingPatient.lead?.medicalNotes && (
-                        <div>
-                          <p className="text-xs text-gray-500 mb-1">Prontuário médico</p>
-                          <div className="mt-1 p-4 bg-gray-50 rounded-lg border border-gray-200 text-sm">
-                            <p className="whitespace-pre-wrap text-gray-800">{viewingPatient.lead.medicalNotes}</p>
-                          </div>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
+                    )}
+                  </div>
                 </div>
-              </div>
+              </CardContent>
             )}
             
-            <DialogFooter className="px-6 py-4 border-t border-gray-200">
-              <Button variant="outline" onClick={() => setIsViewModalOpen(false)} className="h-10 bg-white">
+            <div className="flex justify-end gap-2 mt-6">
+              <Button 
+                variant="outline" 
+                onClick={() => setIsViewModalOpen(false)} 
+                className="bg-white border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300 rounded-xl h-9 text-xs px-4"
+              >
                 Fechar
               </Button>
               {viewingPatient && (
-                <Button className="bg-gray-900 hover:bg-gray-800 text-white h-10" onClick={() => {
-                  setIsViewModalOpen(false);
-                  handleEditPatient(viewingPatient);
-                }}>
-                  <PencilIcon className="h-5 w-5 mr-2" />
+                <Button 
+                  className="bg-gray-900 hover:bg-gray-800 text-white rounded-xl h-9 text-xs px-4" 
+                  onClick={() => {
+                    setIsViewModalOpen(false);
+                    handleEditPatient(viewingPatient);
+                  }}
+                >
+                  <PencilIcon className="h-3 w-3 mr-2" />
                   Editar Paciente
                 </Button>
               )}
-            </DialogFooter>
+            </div>
           </DialogContent>
         </Dialog>
 
         {/* Modal de edição */}
         <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-          <DialogContent className="max-w-4xl p-0 overflow-hidden bg-white border-0 shadow-[0_8px_30px_rgba(0,0,0,0.12)] rounded-3xl">
-            <DialogHeader className="px-6 py-4 border-b border-gray-200">
-              <DialogTitle className="text-xl font-semibold text-gray-900">Editar Paciente</DialogTitle>
-            </DialogHeader>
+          <DialogContent className="bg-white/90 border-0 shadow-[0_8px_30px_rgba(0,0,0,0.12)] rounded-3xl p-4 w-[95vw] max-w-4xl mx-auto">
+            <CardHeader className="p-0 mb-4">
+              <CardTitle className="text-sm md:text-base font-bold text-gray-900 tracking-[-0.03em] font-inter">Editar Paciente</CardTitle>
+              <CardDescription className="text-xs text-gray-600 tracking-[-0.03em] font-inter">
+                Atualize as informações do paciente
+              </CardDescription>
+            </CardHeader>
             
             {editingPatient && (
-              <div className="p-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <div className="space-y-5">
+              <CardContent className="p-0">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="bg-gray-50/50 rounded-2xl p-4 space-y-4">
                     <div>
-                      <Label htmlFor="name" className="text-sm font-medium text-gray-700">Nome completo</Label>
+                      <Label htmlFor="name" className="text-xs font-medium text-gray-500 tracking-[-0.03em] font-inter">Nome completo</Label>
                       <Input 
                         id="name" 
                         name="name"
                         value={editFormData.name}
                         onChange={handleFormChange}
-                        className="mt-1 h-10 bg-white" 
+                        className="mt-1 h-9 bg-white border-gray-200 focus:border-gray-300 text-gray-900 text-sm rounded-xl" 
                       />
                     </div>
                     <div>
-                      <Label htmlFor="email" className="text-sm font-medium text-gray-700">Email</Label>
+                      <Label htmlFor="email" className="text-xs font-medium text-gray-500 tracking-[-0.03em] font-inter">Email</Label>
                       <Input 
                         id="email" 
                         name="email"
                         type="email" 
                         value={editFormData.email}
                         onChange={handleFormChange}
-                        className="mt-1 h-10 bg-white" 
+                        className="mt-1 h-9 bg-white border-gray-200 focus:border-gray-300 text-gray-900 text-sm rounded-xl" 
                       />
                     </div>
                     <div>
-                      <Label htmlFor="phone" className="text-sm font-medium text-gray-700">Telefone</Label>
+                      <Label htmlFor="phone" className="text-xs font-medium text-gray-500 tracking-[-0.03em] font-inter">Telefone</Label>
                       <Input 
                         id="phone" 
                         name="phone"
                         value={editFormData.phone}
                         onChange={handleFormChange}
-                        className="mt-1 h-10 bg-white" 
+                        className="mt-1 h-9 bg-white border-gray-200 focus:border-gray-300 text-gray-900 text-sm rounded-xl" 
                       />
                     </div>
                   </div>
                   
-                  <div className="space-y-5">
+                  <div className="bg-gray-50/50 rounded-2xl p-4 space-y-4">
                     <div>
-                      <Label htmlFor="status" className="text-sm font-medium text-gray-700">Status</Label>
+                      <Label htmlFor="status" className="text-xs font-medium text-gray-500 tracking-[-0.03em] font-inter">Status</Label>
                       <Select 
                         value={editFormData.status}
                         onValueChange={handleStatusChange}
                       >
-                        <SelectTrigger className="mt-1 h-10 bg-white">
+                        <SelectTrigger className="mt-1 h-9 bg-white border-gray-200 focus:border-gray-300 text-gray-900 text-sm rounded-xl">
                           <SelectValue placeholder="Selecione o status" />
                         </SelectTrigger>
                         <SelectContent>
@@ -731,42 +732,46 @@ export default function PacientesPage() {
                       </Select>
                     </div>
                     <div>
-                      <Label htmlFor="appointmentDate" className="text-sm font-medium text-gray-700">Data da consulta</Label>
+                      <Label htmlFor="appointmentDate" className="text-xs font-medium text-gray-500 tracking-[-0.03em] font-inter">Data da consulta</Label>
                       <Input
                         id="appointmentDate"
                         name="appointmentDate"
                         type="datetime-local"
                         value={editFormData.appointmentDate}
                         onChange={handleFormChange}
-                        className="mt-1 h-10 bg-white"
+                        className="mt-1 h-9 bg-white border-gray-200 focus:border-gray-300 text-gray-900 text-sm rounded-xl"
                       />
                     </div>
                     <div>
-                      <Label htmlFor="medicalNotes" className="text-sm font-medium text-gray-700">Prontuário médico</Label>
+                      <Label htmlFor="medicalNotes" className="text-xs font-medium text-gray-500 tracking-[-0.03em] font-inter">Prontuário médico</Label>
                       <Textarea 
                         id="medicalNotes" 
                         name="medicalNotes"
                         value={editFormData.medicalNotes}
                         onChange={handleFormChange}
-                        className="mt-1 min-h-32 bg-white" 
+                        className="mt-1 min-h-[120px] bg-white border-gray-200 focus:border-gray-300 text-gray-900 text-sm rounded-xl" 
                       />
                     </div>
                   </div>
                 </div>
-              </div>
+              </CardContent>
             )}
             
-            <DialogFooter className="px-6 py-4 border-t border-gray-200">
-              <Button variant="outline" onClick={() => setIsEditModalOpen(false)} className="h-10 bg-white">
+            <div className="flex justify-end gap-2 mt-6">
+              <Button 
+                variant="outline" 
+                onClick={() => setIsEditModalOpen(false)} 
+                className="bg-white border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300 rounded-xl h-9 text-xs px-4"
+              >
                 Cancelar
               </Button>
               <Button 
-                className="bg-gray-900 hover:bg-gray-800 text-white h-10" 
+                className="bg-gray-900 hover:bg-gray-800 text-white rounded-xl h-9 text-xs px-4" 
                 onClick={handleUpdatePatient}
               >
                 Salvar alterações
               </Button>
-            </DialogFooter>
+            </div>
           </DialogContent>
         </Dialog>
 
