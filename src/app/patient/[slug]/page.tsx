@@ -1,16 +1,20 @@
 'use client';
 
 import { useEffect, useState, Suspense } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useRouter, useSearchParams, useParams } from 'next/navigation';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
-import { Copy, Share2, Calendar, User, Phone, Mail, Link as LinkIcon, Loader2, LogOut } from 'lucide-react';
+import { 
+  Copy, Share2, Calendar, User, Phone, Mail, Link as LinkIcon, 
+  Loader2, LogOut, FileText, ChevronRight, Home, Bell,
+  FileCheck, ClipboardList, UserCircle, Settings, BarChart3, Target
+} from 'lucide-react';
 import { toast } from 'sonner';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import Link from 'next/link';
+import { cn } from '@/lib/utils';
 
 interface PatientData {
   name: string;
@@ -41,6 +45,29 @@ interface PatientData {
   };
 }
 
+function SidebarLink({ href, icon: Icon, children, active = false }: { 
+  href: string; 
+  icon: any; 
+  children: React.ReactNode;
+  active?: boolean;
+}) {
+  return (
+    <Link 
+      href={href} 
+      className={cn(
+        "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all",
+        active 
+          ? "bg-blue-600/10 text-blue-600" 
+          : "text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800/50"
+      )}
+    >
+      <Icon className="h-4 w-4" />
+      <span>{children}</span>
+      {active && <ChevronRight className="ml-auto h-4 w-4" />}
+    </Link>
+  );
+}
+
 function PatientPageContent() {
   const params = useParams<{ slug: string }>();
   const [patient, setPatient] = useState<PatientData | null>(null);
@@ -53,16 +80,29 @@ function PatientPageContent() {
   useEffect(() => {
     async function fetchPatientData() {
       try {
-        const response = await fetch(`/api/patients/${params.slug}?token=${token}`);
+        const url = token 
+          ? `/api/patient/${params.slug}?token=${token}`
+          : `/api/patient/${params.slug}`;
+        
+        const response = await fetch(url, {
+          credentials: 'include'
+        });
+        
         if (!response.ok) {
+          if (response.status === 401) {
+            document.cookie = 'patient_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+            router.replace('/patient/login');
+            return;
+          }
           throw new Error('Erro ao carregar dados do paciente');
         }
+        
         const data = await response.json();
         setPatient(data);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Erro ao carregar dados');
         if (!token) {
-          router.push('/patient/access');
+          router.replace('/patient/login');
         }
       } finally {
         setLoading(false);
@@ -89,12 +129,27 @@ function PatientPageContent() {
     }
   };
 
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/patient/logout', {
+        method: 'POST',
+      });
+      
+      router.push('/patient/login');
+    } catch (error) {
+      console.error('Erro ao fazer logout:', error);
+      toast.error('Erro ao fazer logout');
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-black text-white flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto text-white" />
-          <p className="mt-4 text-zinc-400">Carregando dados do paciente...</p>
+          <div className="inline-flex items-center justify-center rounded-full h-12 w-12 bg-blue-600/10 text-blue-600 mb-4">
+            <Loader2 className="h-6 w-6 animate-spin" />
+          </div>
+          <p className="text-zinc-400">Carregando seus dados...</p>
         </div>
       </div>
     );
@@ -103,15 +158,20 @@ function PatientPageContent() {
   if (error || !patient) {
     return (
       <div className="min-h-screen bg-black text-white flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-2xl font-semibold text-white mb-4">Erro ao carregar dados</h2>
-          <p className="text-zinc-400 mb-8">{error || 'Paciente não encontrado'}</p>
+        <div className="text-center max-w-md mx-auto">
+          <div className="inline-flex items-center justify-center rounded-full h-12 w-12 bg-red-600/10 text-red-500 mb-4">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          <h2 className="text-xl font-semibold text-white mb-2">Não foi possível carregar seus dados</h2>
+          <p className="text-zinc-400 mb-6">{error || 'Verifique sua conexão e tente novamente'}</p>
           <Button
             variant="outline"
-            className="bg-transparent border-zinc-700 text-white hover:bg-zinc-800"
-            onClick={() => router.push('/')}
+            className="border-zinc-700 text-white hover:bg-zinc-800"
+            onClick={() => router.push('/patient/login')}
           >
-            Voltar para o início
+            Voltar para login
           </Button>
         </div>
       </div>
@@ -119,256 +179,357 @@ function PatientPageContent() {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white">
-      <div className="container mx-auto px-4 py-8 pt-24">
-        {/* Header */}
-        <div className="flex justify-between items-center mb-8">
-          {/* Logo */}
-          <Link href="/" className="inline-block">
-            <h1 className="text-2xl font-montserrat font-light text-white tracking-wider">MED1</h1>
-          </Link>
-          {/* Logout Button */}
+    <div className="min-h-screen bg-gray-50 text-gray-900 flex">
+      {/* Sidebar */}
+      <div className="hidden md:flex flex-col w-64 p-4 border-r border-gray-200 h-screen fixed">
+        <div className="flex items-center gap-2 py-3 px-2 mb-6">
+          <h1 className="text-xl font-montserrat text-gray-900">MED1</h1>
+        </div>
+        
+        <div className="flex flex-col gap-1 mb-6">
+          <p className="text-xs uppercase text-gray-500 font-medium px-3 mb-1">Meu Painel</p>
+          <SidebarLink href={`/patient/${params.slug}`} icon={Home} active>Dashboard</SidebarLink>
+          <SidebarLink href="#" icon={FileCheck}>Prontuário</SidebarLink>
+          <SidebarLink href="#" icon={Calendar}>Consultas</SidebarLink>
+          <SidebarLink href="#" icon={ClipboardList}>Resultados</SidebarLink>
+        </div>
+        
+        <div className="flex flex-col gap-1">
+          <p className="text-xs uppercase text-gray-500 font-medium px-3 mb-1">Conta</p>
+          <SidebarLink href="#" icon={UserCircle}>Perfil</SidebarLink>
+          <SidebarLink href="#" icon={Bell}>Notificações</SidebarLink>
+          <SidebarLink href="#" icon={Settings}>Configurações</SidebarLink>
+        </div>
+        
+        <div className="mt-auto pt-6 border-t border-gray-200">
+          <button 
+            onClick={handleLogout}
+            className="flex w-full items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors"
+          >
+            <LogOut className="h-4 w-4" />
+            <span>Sair da conta</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="flex-1 md:ml-64">
+        {/* Mobile Header */}
+        <header className="md:hidden flex justify-between items-center p-4 border-b border-gray-200 bg-white/80 backdrop-blur-sm sticky top-0 z-10">
+          <div className="flex items-center gap-2">
+            <h1 className="text-lg font-montserrat text-gray-900">MED1</h1>
+          </div>
           <Button
             variant="ghost"
-            className="text-zinc-400 hover:text-white hover:bg-zinc-800"
-            onClick={() => router.push('/patient/access')}
+            size="icon"
+            className="text-gray-500 hover:text-gray-900 hover:bg-gray-100"
+            onClick={handleLogout}
           >
-            <LogOut className="h-4 w-4 mr-2" />
-            Sair
+            <LogOut className="h-5 w-5" />
           </Button>
-        </div>
+        </header>
 
-        <div className="max-w-4xl mx-auto">
-          {/* Dados do Paciente */}
-          <div className="bg-zinc-900/50 backdrop-blur-sm rounded-xl p-6 border border-zinc-800 mb-6">
-            <h2 className="text-xl font-semibold mb-4">Dados do Paciente</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="flex items-center space-x-4">
-                <User className="h-5 w-5 text-zinc-400" />
-                <div>
-                  <p className="text-zinc-400 text-sm">Nome</p>
-                  <p className="text-white">{patient.name}</p>
-                </div>
-              </div>
-              <div className="flex items-center space-x-4">
-                <Mail className="h-5 w-5 text-zinc-400" />
-                <div>
-                  <p className="text-zinc-400 text-sm">Email</p>
-                  <p className="text-white">{patient.email}</p>
-                </div>
-              </div>
-              <div className="flex items-center space-x-4">
-                <Phone className="h-5 w-5 text-zinc-400" />
-                <div>
-                  <p className="text-zinc-400 text-sm">Telefone</p>
-                  <p className="text-white">{patient.phone}</p>
-                </div>
-              </div>
-              {patient.lead?.appointmentDate && (
-                <div className="flex items-center space-x-4">
-                  <Calendar className="h-5 w-5 text-zinc-400" />
-                  <div>
-                    <p className="text-zinc-400 text-sm">Data da Consulta</p>
-                    <p className="text-white">
-                      {format(new Date(patient.lead.appointmentDate), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
+        <div className="p-4 md:p-8">
+          {/* Greeting and Overview */}
+          <div className="mb-8">
+            <h2 className="text-2xl font-semibold text-gray-900 mb-2">Olá, {patient.name.split(' ')[0]}</h2>
+            <p className="text-gray-500">Bem-vindo(a) ao seu painel de saúde. Acompanhe seus dados e consultas.</p>
           </div>
 
-          {/* Dados do Médico */}
-          <div className="bg-zinc-900/50 backdrop-blur-sm rounded-xl p-6 border border-zinc-800 mb-6">
-            <h2 className="text-xl font-semibold mb-4">Dados do Médico</h2>
-            <div className="flex items-center space-x-6">
-              {patient.user.image && (
-                <div className="relative h-20 w-20 rounded-full overflow-hidden">
-                  <Image
-                    src={patient.user.image}
-                    alt={patient.user.name}
-                    fill
-                    className="object-cover"
-                  />
+          {/* Status Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+            <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
+              <div className="flex justify-between items-start mb-3">
+                <div className="bg-blue-100 rounded-lg p-2">
+                  <Calendar className="h-5 w-5 text-blue-600" />
                 </div>
-              )}
-              <div className="space-y-2">
-                <h3 className="text-xl font-semibold">{patient.user.name}</h3>
-                <p className="text-zinc-400">{patient.user.specialty}</p>
-                <p className="text-zinc-400">{patient.user.phone}</p>
+                {patient.lead?.appointmentDate ? (
+                  <span className="text-xs font-medium px-2 py-1 rounded-full bg-blue-100 text-blue-700">
+                    Agendado
+                  </span>
+                ) : (
+                  <span className="text-xs font-medium px-2 py-1 rounded-full bg-gray-100 text-gray-600">
+                    Nenhuma
+                  </span>
+                )}
               </div>
-            </div>
-          </div>
-
-          {/* Prontuário */}
-          {patient.lead?.medicalNotes && (
-            <div className="bg-zinc-900/50 backdrop-blur-sm rounded-xl p-6 border border-zinc-800 mb-6">
-              <h2 className="text-xl font-semibold mb-4">Prontuário</h2>
-              <div className="prose prose-invert max-w-none">
-                <p className="text-white whitespace-pre-wrap">{patient.lead.medicalNotes}</p>
-              </div>
-            </div>
-          )}
-
-          {/* Link de Indicação */}
-          <div className="bg-zinc-900/50 backdrop-blur-sm rounded-xl p-6 border border-zinc-800">
-            <h2 className="text-xl font-semibold mb-4">Link de Indicação</h2>
-            <div className="space-y-6">
-              {patient.lead?.indication ? (
-                <>
-                  <div>
-                    <p className="text-zinc-400 text-sm mb-2">Nome do Link</p>
-                    <p className="text-white">{patient.lead.indication.name}</p>
-                  </div>
-                  <div>
-                    <p className="text-zinc-400 text-sm mb-2">Criado em</p>
-                    <p className="text-white">
-                      {format(new Date(patient.lead.indication.createdAt), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
-                    </p>
-                  </div>
-                  <div className="grid grid-cols-2 gap-6">
-                    <div>
-                      <p className="text-zinc-400 text-sm mb-2">Total de Cliques</p>
-                      <p className="text-white text-2xl font-semibold">{patient.lead.indication._count.events}</p>
-                    </div>
-                    <div>
-                      <p className="text-zinc-400 text-sm mb-2">Total de Leads</p>
-                      <p className="text-white text-2xl font-semibold">{patient.lead.indication._count.leads}</p>
-                    </div>
-                  </div>
-                  <div>
-                    <p className="text-zinc-400 text-sm mb-2">Link</p>
-                    <div className="flex items-center space-x-2">
-                      <LinkIcon className="h-4 w-4 text-zinc-400" />
-                      <p className="text-white break-all">{patient.lead.indication.fullLink}</p>
-                    </div>
-                  </div>
-                  <div className="flex gap-4">
-                    <Button
-                      variant="outline"
-                      className="flex-1 bg-transparent border-zinc-700 text-white hover:bg-zinc-800"
-                      onClick={handleCopyLink}
-                    >
-                      <Copy className="w-4 h-4 mr-2" />
-                      Copiar Link
-                    </Button>
-                    <Button
-                      variant="outline"
-                      className="flex-1 bg-transparent border-zinc-700 text-white hover:bg-zinc-800"
-                      onClick={handleShareLink}
-                    >
-                      <Share2 className="w-4 h-4 mr-2" />
-                      Compartilhar
-                    </Button>
-                  </div>
-
-                  {/* Gráficos */}
-                  <div className="mt-8 space-y-8">
-                    {/* Fontes de Tráfego */}
-                    <div>
-                      <h3 className="text-xl font-semibold mb-4">Fontes de Tráfego</h3>
-                      <div className="h-64">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <AreaChart
-                            data={[
-                              { name: 'Direct', value: 90 },
-                              { name: 'Clipboard', value: 10 }
-                            ]}
-                            margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
-                          >
-                            <defs>
-                              <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="#00f2fe" stopOpacity={0.8}/>
-                                <stop offset="95%" stopColor="#00f2fe" stopOpacity={0.1}/>
-                              </linearGradient>
-                            </defs>
-                            <CartesianGrid strokeDasharray="3 3" stroke="#333" />
-                            <XAxis 
-                              dataKey="name" 
-                              stroke="#666"
-                              tick={{ fill: '#fff' }}
-                            />
-                            <YAxis 
-                              stroke="#666"
-                              tick={{ fill: '#fff' }}
-                            />
-                            <Tooltip 
-                              contentStyle={{ 
-                                backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                                border: '1px solid #333',
-                                borderRadius: '8px'
-                              }}
-                              labelStyle={{ color: '#fff' }}
-                              itemStyle={{ color: '#00f2fe' }}
-                            />
-                            <Area
-                              type="monotone"
-                              dataKey="value"
-                              stroke="#00f2fe"
-                              fillOpacity={1}
-                              fill="url(#colorValue)"
-                            />
-                          </AreaChart>
-                        </ResponsiveContainer>
-                      </div>
-                    </div>
-
-                    {/* Top Indicações */}
-                    <div>
-                      <h3 className="text-xl font-semibold mb-4">Top Indicações</h3>
-                      <div className="h-64">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <AreaChart
-                            data={[
-                              { name: 'Vilma', value: 25 },
-                              { name: 'Carou', value: 20 },
-                              { name: 'Maria', value: 15 },
-                              { name: 'Carilene', value: 10 },
-                              { name: 'Consulta', value: 5 }
-                            ]}
-                            margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
-                          >
-                            <defs>
-                              <linearGradient id="colorValue2" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="#00f2fe" stopOpacity={0.8}/>
-                                <stop offset="95%" stopColor="#00f2fe" stopOpacity={0.1}/>
-                              </linearGradient>
-                            </defs>
-                            <CartesianGrid strokeDasharray="3 3" stroke="#333" />
-                            <XAxis 
-                              dataKey="name" 
-                              stroke="#666"
-                              tick={{ fill: '#fff' }}
-                            />
-                            <YAxis 
-                              stroke="#666"
-                              tick={{ fill: '#fff' }}
-                            />
-                            <Tooltip 
-                              contentStyle={{ 
-                                backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                                border: '1px solid #333',
-                                borderRadius: '8px'
-                              }}
-                              labelStyle={{ color: '#fff' }}
-                              itemStyle={{ color: '#00f2fe' }}
-                            />
-                            <Area
-                              type="monotone"
-                              dataKey="value"
-                              stroke="#00f2fe"
-                              fillOpacity={1}
-                              fill="url(#colorValue2)"
-                            />
-                          </AreaChart>
-                        </ResponsiveContainer>
-                      </div>
-                    </div>
-                  </div>
-                </>
+              <h3 className="text-sm font-medium text-gray-500 mb-1">Próxima consulta</h3>
+              {patient.lead?.appointmentDate ? (
+                <p className="text-lg font-semibold text-gray-900">
+                  {format(new Date(patient.lead.appointmentDate), "dd 'de' MMMM", { locale: ptBR })}
+                </p>
               ) : (
-                <div className="text-center py-8">
-                  <p className="text-zinc-400">Nenhum link de indicação disponível</p>
+                <p className="text-lg font-semibold text-gray-900">Não agendada</p>
+              )}
+            </div>
+
+            <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
+              <div className="flex justify-between items-start mb-3">
+                <div className="bg-emerald-100 rounded-lg p-2">
+                  <FileText className="h-5 w-5 text-emerald-600" />
+                </div>
+                <span className="text-xs font-medium px-2 py-1 rounded-full bg-emerald-100 text-emerald-700">
+                  Atualizado
+                </span>
+              </div>
+              <h3 className="text-sm font-medium text-gray-500 mb-1">Prontuário</h3>
+              <p className="text-lg font-semibold text-gray-900">{patient.lead?.medicalNotes ? 'Disponível' : 'Em branco'}</p>
+            </div>
+
+            <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
+              <div className="flex justify-between items-start mb-3">
+                <div className="bg-purple-100 rounded-lg p-2">
+                  <Target className="h-5 w-5 text-purple-600" />
+                </div>
+                <span className="text-xs font-medium px-2 py-1 rounded-full bg-purple-100 text-purple-700">
+                  Ativo
+                </span>
+              </div>
+              <h3 className="text-sm font-medium text-gray-500 mb-1">Link de indicação</h3>
+              <p className="text-lg font-semibold text-gray-900">
+                {patient.lead?.indication ? 
+                  `${patient.lead.indication._count.leads} leads` : 
+                  'Não disponível'}
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+            {/* Coluna 1 - Dados do paciente e médico */}
+            <div className="lg:col-span-1 space-y-6">
+              {/* Dados do Paciente */}
+              <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-semibold text-gray-900">Dados Pessoais</h2>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-gray-500 hover:text-gray-900 hover:bg-gray-100">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                    </svg>
+                  </Button>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3">
+                    <User className="h-4 w-4 text-gray-500" />
+                    <div>
+                      <p className="text-xs text-gray-500">Nome completo</p>
+                      <p className="text-sm text-gray-900">{patient.name}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Mail className="h-4 w-4 text-gray-500" />
+                    <div>
+                      <p className="text-xs text-gray-500">Email</p>
+                      <p className="text-sm text-gray-900">{patient.email}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Phone className="h-4 w-4 text-gray-500" />
+                    <div>
+                      <p className="text-xs text-gray-500">Telefone</p>
+                      <p className="text-sm text-gray-900">{patient.phone}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Dados do Médico */}
+              <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">Seu Médico</h2>
+                
+                <div className="flex items-center gap-4">
+                  {patient.user.image ? (
+                    <div className="relative h-12 w-12 rounded-full overflow-hidden border border-gray-200">
+                      <Image
+                        src={patient.user.image}
+                        alt={patient.user.name}
+                        fill
+                        className="object-cover"
+                      />
+                    </div>
+                  ) : (
+                    <div className="h-12 w-12 rounded-full bg-gray-100 flex items-center justify-center">
+                      <User className="h-6 w-6 text-gray-400" />
+                    </div>
+                  )}
+                  
+                  <div>
+                    <h3 className="text-base font-medium text-gray-900">{patient.user.name}</h3>
+                    <p className="text-sm text-gray-500">{patient.user.specialty}</p>
+                  </div>
+                </div>
+                
+                <div className="mt-4 pt-4 border-t border-gray-200">
+                  <Button 
+                    variant="outline" 
+                    className="w-full border-gray-300 text-white hover:bg-gray-50"
+                    onClick={() => {
+                      const phone = patient.user.phone.replace(/\D/g, '');
+                      window.open(`https://wa.me/55${phone}`, '_blank');
+                    }}
+                  >
+                    <Phone className="h-4 w-4 mr-2" />
+                    Entrar em contato
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            {/* Coluna 2 - Prontuário e Indicações */}
+            <div className="lg:col-span-2 space-y-6">
+              {/* Prontuário */}
+              {patient.lead?.medicalNotes && (
+                <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-lg font-semibold text-gray-900">Prontuário Médico</h2>
+                    <span className="text-xs font-medium px-2 py-1 rounded-full bg-emerald-100 text-emerald-700">
+                      Atualizado
+                    </span>
+                  </div>
+                  <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                    <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">
+                      {patient.lead.medicalNotes}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Link de Indicação */}
+              {patient.lead?.indication && (
+                <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
+                  <div className="flex justify-between items-center mb-4">
+                    <h2 className="text-lg font-semibold text-gray-900">Link de Indicação</h2>
+                    <span className="bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded-full font-medium">
+                      Ativo
+                    </span>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                      <p className="text-xs text-gray-500 mb-1">Nome do Link</p>
+                      <p className="text-sm text-gray-900 font-medium">{patient.lead.indication.name}</p>
+                      <div className="mt-3 pt-3 border-t border-gray-200 flex items-center justify-between">
+                        <p className="text-xs text-gray-500">Criado em</p>
+                        <p className="text-xs text-gray-500">
+                          {format(new Date(patient.lead.indication.createdAt), "dd/MM/yyyy", { locale: ptBR })}
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 flex flex-col">
+                      <div className="flex gap-8 mb-auto">
+                        <div>
+                          <p className="text-xs text-gray-500 mb-1">Cliques</p>
+                          <p className="text-xl font-semibold text-gray-900">{patient.lead.indication._count.events}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500 mb-1">Leads</p>
+                          <p className="text-xl font-semibold text-gray-900">{patient.lead.indication._count.leads}</p>
+                        </div>
+                      </div>
+                      
+                      <div className="mt-2 pt-2 border-t border-gray-200">
+                        <div className="text-xs text-gray-500 mb-1">Taxa de conversão</div>
+                        <div className="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
+                          <div 
+                            className="h-full bg-blue-600 rounded-full" 
+                            style={{ 
+                              width: `${
+                                patient.lead.indication._count.events > 0 
+                                  ? (patient.lead.indication._count.leads / patient.lead.indication._count.events * 100)
+                                  : 0
+                              }%` 
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 mb-4">
+                    <p className="text-xs text-gray-500 mb-1">URL do Link</p>
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm text-gray-700 truncate">
+                        {patient.lead.indication.fullLink}
+                      </p>
+                      <div className="flex gap-2">
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-7 w-7 text-gray-500 hover:text-gray-900 hover:bg-gray-100"
+                          onClick={handleCopyLink}
+                        >
+                          <Copy className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-7 w-7 text-gray-500 hover:text-gray-900 hover:bg-gray-100"
+                          onClick={handleShareLink}
+                        >
+                          <Share2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="text-sm font-medium text-gray-900">Desempenho do Link</h3>
+                      <Button variant="ghost" size="sm" className="h-7 text-xs text-gray-500 hover:text-gray-900">
+                        <BarChart3 className="h-3.5 w-3.5 mr-1" />
+                        Ver detalhes
+                      </Button>
+                    </div>
+                    <div className="bg-gray-50 rounded-lg border border-gray-200 p-3 h-60">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <AreaChart
+                          data={[
+                            { name: 'Jan', value: 20 },
+                            { name: 'Fev', value: 35 },
+                            { name: 'Mar', value: 25 },
+                            { name: 'Abr', value: 40 },
+                            { name: 'Mai', value: 30 },
+                            { name: 'Jun', value: 55 }
+                          ]}
+                          margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+                        >
+                          <defs>
+                            <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.8}/>
+                              <stop offset="95%" stopColor="#3B82F6" stopOpacity={0.1}/>
+                            </linearGradient>
+                          </defs>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                          <XAxis 
+                            dataKey="name" 
+                            stroke="#6B7280"
+                            tick={{ fill: '#6B7280', fontSize: 10 }}
+                          />
+                          <YAxis 
+                            stroke="#6B7280"
+                            tick={{ fill: '#6B7280', fontSize: 10 }}
+                          />
+                          <Tooltip 
+                            contentStyle={{ 
+                              backgroundColor: 'white',
+                              border: '1px solid #E5E7EB',
+                              borderRadius: '8px'
+                            }}
+                            labelStyle={{ color: '#111827' }}
+                            itemStyle={{ color: '#3B82F6' }}
+                          />
+                          <Area
+                            type="monotone"
+                            dataKey="value"
+                            stroke="#3B82F6"
+                            fillOpacity={1}
+                            fill="url(#colorValue)"
+                          />
+                        </AreaChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
@@ -384,8 +545,10 @@ export default function PatientPage() {
     <Suspense fallback={
       <div className="min-h-screen bg-black text-white flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto text-white" />
-          <p className="mt-4 text-zinc-400">Carregando dados do paciente...</p>
+          <div className="inline-flex items-center justify-center rounded-full h-12 w-12 bg-blue-600/10 text-blue-600 mb-4">
+            <Loader2 className="h-6 w-6 animate-spin" />
+          </div>
+          <p className="text-zinc-400">Carregando dados do paciente...</p>
         </div>
       </div>
     }>

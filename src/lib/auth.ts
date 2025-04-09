@@ -7,19 +7,31 @@ import { compare } from "bcryptjs";
 import { NextRequest } from 'next/server';
 import { getToken } from 'next-auth/jwt';
 import crypto from 'crypto';
+import { NextAuthOptions } from 'next-auth';
 
-declare module "next-auth" {
+declare module 'next-auth' {
+  interface User {
+    id: string;
+    email: string;
+    name: string;
+    type: 'user' | 'patient';
+    userSlug?: string;
+  }
+
   interface Session {
-    user: {
-      id: string;
-      name?: string | null;
-      email?: string | null;
-      image?: string | null;
-    }
+    user: User;
   }
 }
 
-export const authOptions: AuthOptions = {
+declare module 'next-auth/jwt' {
+  interface JWT {
+    id: string;
+    type: 'user' | 'patient';
+    userSlug?: string;
+  }
+}
+
+export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
   providers: [
     GoogleProvider({
@@ -27,57 +39,100 @@ export const authOptions: AuthOptions = {
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     }),
     CredentialsProvider({
-      name: "credentials",
+      name: 'credentials',
       credentials: {
-        email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" }
+        email: { label: 'Email', type: 'email' },
+        password: { label: 'Senha', type: 'password' },
+        type: { label: 'Tipo', type: 'text' }
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
-          throw new Error("Invalid credentials");
+          throw new Error('Email e senha são obrigatórios');
         }
 
-        const user = await prisma.user.findUnique({
-          where: {
-            email: credentials.email
+        // Verificar se é autenticação de paciente
+        if (credentials.type === 'patient') {
+          const patient = await prisma.patient.findFirst({
+            where: { email: credentials.email },
+            include: {
+              user: {
+                select: {
+                  slug: true
+                }
+              }
+            }
+          });
+
+          if (!patient) {
+            throw new Error('Email não encontrado');
           }
+
+          if (!patient.hasPassword || !patient.password) {
+            throw new Error('Conta sem senha definida');
+          }
+
+          const passwordValid = await compare(credentials.password, patient.password);
+          if (!passwordValid) {
+            throw new Error('Senha incorreta');
+          }
+
+          return {
+            id: patient.id,
+            email: patient.email,
+            name: patient.name,
+            type: 'patient' as const
+          };
+        }
+
+        // Autenticação de médico (código existente)
+        const user = await prisma.user.findUnique({
+          where: { email: credentials.email }
         });
 
-        if (!user || !user.password) {
-          throw new Error("Invalid credentials");
+        if (!user) {
+          throw new Error('Email não encontrado');
         }
 
-        const isPasswordValid = await compare(
-          credentials.password,
-          user.password
-        );
+        if (!user.password) {
+          throw new Error('Conta sem senha definida');
+        }
 
-        if (!isPasswordValid) {
-          throw new Error("Invalid credentials");
+        const passwordValid = await compare(credentials.password, user.password);
+        if (!passwordValid) {
+          throw new Error('Senha incorreta');
         }
 
         return {
           id: user.id,
           email: user.email,
           name: user.name,
-          image: user.image,
+          type: 'user' as const
         };
       }
     })
   ],
   pages: {
-    signIn: "/auth/signin",
+    signIn: '/auth/signin',
+    error: '/auth/error'
   },
   session: {
-    strategy: "jwt",
+    strategy: 'jwt'
   },
   callbacks: {
+    async jwt({ token, user }) {
+      if (user) {
+        token.id = user.id;
+        token.type = user.type;
+      }
+      return token;
+    },
     async session({ session, token }) {
-      if (session?.user) {
-        session.user.id = token.sub!;
+      if (token) {
+        session.user.id = token.id;
+        session.user.type = token.type;
       }
       return session;
-    },
+    }
   },
 };
 

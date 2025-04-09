@@ -99,10 +99,10 @@
 
 @layer base {
   * {
-    @apply border-border;
+    @apply border-[hsl(var(--border))];
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-[hsl(var(--background))] text-[hsl(var(--foreground))];
     color: rgb(var(--foreground-rgb));
     background: linear-gradient(
         to bottom,
@@ -122,6 +122,47 @@
   filter: drop-shadow(0 0 5px rgba(59, 130, 246, 0.5))
           drop-shadow(0 0 10px rgba(59, 130, 246, 0.3))
           drop-shadow(0 0 15px rgba(59, 130, 246, 0.2));
+}
+
+/* Adding utility classes for bg-background and other needed ones */
+.bg-background {
+  background-color: hsl(var(--background));
+}
+
+.text-foreground {
+  color: hsl(var(--foreground));
+}
+
+.bg-card {
+  background-color: hsl(var(--card));
+}
+
+.text-card-foreground {
+  color: hsl(var(--card-foreground));
+}
+
+.bg-primary {
+  background-color: hsl(var(--primary));
+}
+
+.text-primary-foreground {
+  color: hsl(var(--primary-foreground));
+}
+
+.bg-secondary {
+  background-color: hsl(var(--secondary));
+}
+
+.text-secondary-foreground {
+  color: hsl(var(--secondary-foreground));
+}
+
+.bg-muted {
+  background-color: hsl(var(--muted));
+}
+
+.text-muted-foreground {
+  color: hsl(var(--muted-foreground));
 }
 
 @layer utilities {

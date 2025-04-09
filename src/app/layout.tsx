@@ -1,9 +1,8 @@
 import './globals.css'
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
-import { ThemeProvider } from '@/components/theme-provider'
-import { NextAuthProvider } from '@/components/NextAuthProvider'
-import Toaster from '@/components/ui/use-toast'
+import { Providers } from '@/components/providers'
+import { Toaster } from 'react-hot-toast'
 import { satoshi } from '@/fonts/satoshi'
 import { cn } from '@/lib/utils'
 
@@ -32,12 +31,6 @@ export const metadata: Metadata = {
     statusBarStyle: 'default',
     title: 'MED1',
   },
-  viewport: {
-    width: 'device-width',
-    initialScale: 1,
-    maximumScale: 1,
-  },
-  themeColor: '#1e40af',
 }
 
 export default function RootLayout({
@@ -46,21 +39,14 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" suppressHydrationWarning className={cn(satoshi.variable)}>
+    <html lang="pt-BR" suppressHydrationWarning className={cn(satoshi.variable)}>
       <body className={cn(
         "min-h-screen bg-background font-sans antialiased tracking-tighter"
       )}>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="dark"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <NextAuthProvider>
-            {children}
-            <Toaster />
-          </NextAuthProvider>
-        </ThemeProvider>
+        <Providers>
+          {children}
+          <Toaster position="top-right" />
+        </Providers>
       </body>
     </html>
   )

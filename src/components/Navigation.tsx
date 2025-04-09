@@ -34,6 +34,8 @@ interface NavSection {
 export default function Navigation() {
   const pathname = usePathname();
   const { data: session } = useSession();
+  
+  console.log("Session data:", session);
 
   // Lista de rotas protegidas onde a navegação deve aparecer
   const protectedRoutes = [
@@ -73,6 +75,12 @@ export default function Navigation() {
           label: 'Leads',
           icon: UsersIcon,
           description: 'Lista de contatos'
+        },
+        {
+          href: '/dashboard/pacientes',
+          label: 'Pacientes',
+          icon: UserCircleIcon,
+          description: 'Gerenciar pacientes'
         },
         {
           href: '/dashboard/pipeline',
@@ -124,6 +132,8 @@ export default function Navigation() {
           src={session.user.image}
           alt="Profile"
           fill
+          sizes="100%"
+          priority
           className="object-cover"
         />
       </div>
@@ -158,7 +168,7 @@ export default function Navigation() {
           <div className="p-4 border-t border-blue-700">
             <Link href="/profile">
               <div className="flex items-center gap-2 cursor-pointer border border-blue-600 rounded-xl px-3 py-2 hover:border-blue-500 hover:bg-blue-800 transition-colors">
-                <div className="w-6 h-6 flex items-center justify-center rounded-full overflow-hidden flex-shrink-0">
+                <div className="w-8 h-8 flex items-center justify-center rounded-full overflow-hidden flex-shrink-0 bg-blue-800">
                   <UserAvatar />
                 </div>
                 <span className="text-xs text-blue-100">Perfil</span>
@@ -181,7 +191,9 @@ export default function Navigation() {
             </Link>
             <Link href="/profile">
               <div className="h-8 w-8 flex items-center justify-center cursor-pointer border border-blue-600 rounded-xl hover:border-blue-500 hover:bg-blue-800 transition-colors">
-                <UserAvatar />
+                <div className="w-7 h-7 rounded-full overflow-hidden">
+                  <UserAvatar />
+                </div>
               </div>
             </Link>
           </div>

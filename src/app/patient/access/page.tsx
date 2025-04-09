@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
-import { Mail, ArrowRight } from 'lucide-react';
+import { Mail, ArrowRight, LogIn } from 'lucide-react';
+import Link from 'next/link';
 
 export default function PatientAccessPage() {
   const [email, setEmail] = useState('');
@@ -58,9 +59,9 @@ export default function PatientAccessPage() {
           </div>
 
           <div className="bg-zinc-900/50 border border-zinc-800 rounded-lg p-6 sm:p-8">
-            <h2 className="text-xl font-medium text-white mb-6">Solicitar Acesso</h2>
+            <h2 className="text-xl font-medium text-white mb-6">Acesso Temporário</h2>
             <p className="text-zinc-400 mb-6">
-              Digite seu email para receber um link de acesso ao seu prontuário.
+              Digite seu email para receber um link de acesso ao seu prontuário. Este acesso é válido por 24 horas.
             </p>
 
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -101,23 +102,34 @@ export default function PatientAccessPage() {
                   </div>
                 ) : (
                   <>
-                    Solicitar Acesso
+                    Solicitar Link de Acesso
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </>
                 )}
               </Button>
             </form>
+
+            <div className="mt-8 pt-8 border-t border-zinc-800 text-center">
+              <p className="text-sm text-zinc-400 mb-4">
+                Prefere fazer login com email e senha?
+              </p>
+              <Button
+                variant="outline"
+                className="w-full border-zinc-700 text-white hover:bg-zinc-800"
+                onClick={() => router.push('/patient/login')}
+              >
+                <LogIn className="h-4 w-4 mr-2" />
+                Acessar com Email e Senha
+              </Button>
+            </div>
           </div>
 
           <div className="mt-8 text-center">
             <p className="text-sm text-zinc-400">
               Não tem uma conta?{' '}
-              <button
-                onClick={() => router.push('/register')}
-                className="text-blue-500 hover:text-blue-400 font-medium"
-              >
+              <Link href="/patient/register" className="text-blue-500 hover:text-blue-400 font-medium">
                 Cadastre-se
-              </button>
+              </Link>
             </p>
           </div>
         </div>
