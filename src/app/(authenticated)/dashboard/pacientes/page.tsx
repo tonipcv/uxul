@@ -76,6 +76,8 @@ export default function PacientesPage() {
     hasPortalAccess: false
   });
   const [selectedPatients, setSelectedPatients] = useState<string[]>([]);
+  const [sendingPortalConfig, setSendingPortalConfig] = useState<{ [key: string]: boolean }>({});
+  const [portalConfigSent, setPortalConfigSent] = useState<{ [key: string]: boolean }>({});
   const router = useRouter();
 
   // Buscar dados reais de pacientes da API
@@ -403,7 +405,12 @@ export default function PacientesPage() {
   };
 
   const handleSendPortalConfig = async (patient: Patient) => {
+    if (sendingPortalConfig[patient.id]) return;
+
     try {
+      setSendingPortalConfig(prev => ({ ...prev, [patient.id]: true }));
+      setPortalConfigSent(prev => ({ ...prev, [patient.id]: false }));
+
       const response = await fetch(`/api/patients/${patient.id}/send-portal-config`, {
         method: 'POST',
       });
@@ -413,6 +420,7 @@ export default function PacientesPage() {
           title: "E-mail enviado",
           description: "O e-mail de configuração do portal foi enviado com sucesso.",
         });
+        setPortalConfigSent(prev => ({ ...prev, [patient.id]: true }));
       } else {
         const error = await response.json();
         throw new Error(error.message || 'Erro ao enviar e-mail');
@@ -424,6 +432,14 @@ export default function PacientesPage() {
         description: "Não foi possível enviar o e-mail de configuração. Tente novamente.",
         variant: "destructive",
       });
+      setPortalConfigSent(prev => ({ ...prev, [patient.id]: false }));
+    } finally {
+      setSendingPortalConfig(prev => ({ ...prev, [patient.id]: false }));
+
+      // Reset o status de enviado após 3 segundos
+      setTimeout(() => {
+        setPortalConfigSent(prev => ({ ...prev, [patient.id]: false }));
+      }, 3000);
     }
   };
 
@@ -503,6 +519,30 @@ export default function PacientesPage() {
                         <PencilIcon className="h-3 w-3 mr-1" />
                         Editar
                       </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="bg-white border-sky-300 text-sky-700 hover:bg-sky-50 hover:border-sky-400 hover:text-sky-800 transition-colors text-xs h-7 px-2 flex-1"
+                        onClick={() => handleSendPortalConfig(patient)}
+                        disabled={sendingPortalConfig[patient.id]}
+                      >
+                        {sendingPortalConfig[patient.id] ? (
+                          <>
+                            <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-sky-700 mr-1" />
+                            Enviando...
+                          </>
+                        ) : portalConfigSent[patient.id] ? (
+                          <>
+                            <CheckCircleIcon className="h-3 w-3 mr-1 text-green-600" />
+                            Enviado
+                          </>
+                        ) : (
+                          <>
+                            <EnvelopeIcon className="h-3 w-3 mr-1" />
+                            Enviar
+                          </>
+                        )}
+                      </Button>
                     </div>
                   </div>
                 ))}
@@ -571,6 +611,30 @@ export default function PacientesPage() {
                           >
                             <PencilIcon className="h-3 w-3 mr-1" />
                             Editar
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="bg-white border-sky-300 text-sky-700 hover:bg-sky-50 hover:border-sky-400 hover:text-sky-800 transition-colors text-xs h-7 px-2"
+                            onClick={() => handleSendPortalConfig(patient)}
+                            disabled={sendingPortalConfig[patient.id]}
+                          >
+                            {sendingPortalConfig[patient.id] ? (
+                              <>
+                                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-sky-700 mr-1" />
+                                Enviando...
+                              </>
+                            ) : portalConfigSent[patient.id] ? (
+                              <>
+                                <CheckCircleIcon className="h-3 w-3 mr-1 text-green-600" />
+                                Enviado
+                              </>
+                            ) : (
+                              <>
+                                <EnvelopeIcon className="h-3 w-3 mr-1" />
+                                Enviar confirmação
+                              </>
+                            )}
                           </Button>
                         </div>
                       </td>
