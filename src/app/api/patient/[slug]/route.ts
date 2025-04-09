@@ -3,13 +3,13 @@ import { prisma } from '@/lib/prisma';
 import { generateToken } from '@/lib/auth-patient';
 
 export async function GET(
-  req: NextRequest,
-  { params }: { params: { slug: string } }
+  request: NextRequest,
+  context: any
 ) {
   try {
     // Aguardar params antes de acessá-lo no Next.js 15+
-    const { slug } = await params;
-    const searchParams = req.nextUrl.searchParams;
+    const { slug } = context.params;
+    const searchParams = request.nextUrl.searchParams;
     const token = searchParams.get('token');
 
     if (!slug) {

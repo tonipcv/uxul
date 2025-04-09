@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
@@ -6,11 +6,13 @@ import { prisma } from '@/lib/prisma';
 // Configuração para cache e revalidação
 export const revalidate = 300; // Revalidar a cada 5 minutos
 
-export async function GET(request: Request) {
+// Marcar rota como dinâmica
+export const dynamic = 'force-dynamic';
+
+export async function GET(request: NextRequest) {
   try {
     // Verificar se deve ignorar o cache
-    const url = new URL(request.url);
-    const noCache = url.searchParams.get('noCache') === 'true';
+    const noCache = request.nextUrl.searchParams.get('noCache') === 'true';
     
     // Obter sessão do usuário
     const session = await getServerSession(authOptions);

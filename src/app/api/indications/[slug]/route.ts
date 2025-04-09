@@ -23,11 +23,11 @@ import { authOptions } from '@/lib/auth';
  *         description: Não autorizado
  */
 export async function GET(
-  req: NextRequest,
-  { params }
+  request: NextRequest,
+  context: any
 ) {
   try {
-    const { slug } = params;
+    const { slug } = context.params;
 
     // Obter a sessão atual
     const session = await getServerSession(authOptions);
@@ -144,12 +144,12 @@ export async function GET(
  *         description: Não autorizado
  */
 export async function PUT(
-  req: NextRequest,
-  { params }
+  request: NextRequest,
+  context: any
 ) {
   try {
-    const { slug } = params;
-    const { name } = await req.json();
+    const { slug } = context.params;
+    const { name } = await request.json();
 
     // Obter a sessão atual
     const session = await getServerSession(authOptions);

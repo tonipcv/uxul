@@ -1,11 +1,11 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { db } from '@/lib/db';
 
 export async function PUT(
-  req: Request,
-  context: { params: { id: string } }
+  request: NextRequest,
+  context: any
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -27,7 +27,7 @@ export async function PUT(
     // Log para debug
     console.log('ID do paciente:', id);
     
-    const data = await req.json();
+    const data = await request.json();
     
     // Log para debug
     console.log('Dados recebidos:', JSON.stringify(data, null, 2));
@@ -181,8 +181,8 @@ export async function PUT(
 }
 
 export async function DELETE(
-  req: Request,
-  context: { params: { id: string } }
+  request: NextRequest,
+  context: any
 ) {
   try {
     const session = await getServerSession(authOptions);

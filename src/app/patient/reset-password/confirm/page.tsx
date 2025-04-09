@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,7 +9,20 @@ import { toast } from 'sonner';
 import Link from 'next/link';
 import { Loader2, ArrowLeft } from 'lucide-react';
 
-export default function ResetPasswordConfirmPage() {
+function LoadingState() {
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-blue-900 flex items-center justify-center p-4">
+      <div className="w-full max-w-md">
+        <div className="text-center mb-8">
+          <h1 className="text-2xl font-montserrat text-white mb-2">MED1</h1>
+          <p className="text-blue-100">Carregando...</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ResetPasswordForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
@@ -158,5 +171,13 @@ export default function ResetPasswordConfirmPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ResetPasswordConfirmPage() {
+  return (
+    <Suspense fallback={<LoadingState />}>
+      <ResetPasswordForm />
+    </Suspense>
   );
 } 

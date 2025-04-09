@@ -6,11 +6,13 @@ import { authOptions } from '@/lib/auth';
 // Configuração para cache e revalidação
 export const revalidate = 60; // Revalidar a cada 60 segundos
 
+// Marcar rota como dinâmica
+export const dynamic = 'force-dynamic';
+
 export async function GET(req: NextRequest) {
   try {
-    const { searchParams } = new URL(req.url);
-    const userId = searchParams.get('userId');
-    const noCache = searchParams.get('noCache') === 'true';
+    const userId = req.nextUrl.searchParams.get('userId');
+    const noCache = req.nextUrl.searchParams.get('noCache') === 'true';
 
     // Obter a sessão atual
     const session = await getServerSession(authOptions);

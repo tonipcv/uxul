@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { db } from '@/lib/db';
@@ -6,8 +6,8 @@ import nodemailer from 'nodemailer';
 import { randomBytes } from 'crypto';
 
 export async function POST(
-  req: Request,
-  { params }: { params: { id: string } }
+  request: NextRequest,
+  context: any
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -19,7 +19,7 @@ export async function POST(
       );
     }
 
-    const { id } = params;
+    const { id } = context.params;
 
     // Buscar o paciente
     const patient = await db.patient.findFirst({
