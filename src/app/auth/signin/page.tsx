@@ -35,11 +35,7 @@ export default function SignIn() {
         router.push("/dashboard");
         router.refresh();
       }
-    } catch (
-      /* eslint-disable @typescript-eslint/no-unused-vars */
-      _err
-      /* eslint-enable @typescript-eslint/no-unused-vars */
-    ) {
+    } catch (error) {
       setError("Ocorreu um erro ao fazer login");
     } finally {
       setIsLoading(false);
@@ -47,7 +43,7 @@ export default function SignIn() {
   };
 
   return (
-    <div className="min-h-[100dvh] bg-gradient-to-br from-blue-800 via-blue-700 to-blue-900 flex flex-col items-center justify-center px-4">
+    <div className="min-h-[100dvh] bg-gradient-primary flex flex-col items-center justify-center px-4">
       <div className="w-full max-w-[400px] mx-auto">
         <div className="flex justify-center mb-8">
           <Logo className="scale-150" variant="light" />
@@ -58,7 +54,7 @@ export default function SignIn() {
           <p className="text-blue-100/80 font-light">Entre para continuar na sua conta</p>
         </div>
 
-        <div className="bg-white/10 backdrop-blur-sm border-2 border-white/30 rounded-xl p-8">
+        <div className="bg-glass rounded-xl p-8">
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
               <Label htmlFor="email" className="text-white font-light">Email</Label>
@@ -69,7 +65,7 @@ export default function SignIn() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="bg-white/10 backdrop-blur-sm border-2 border-white/30 text-blue-900 placeholder:text-white/60 focus:ring-2 focus:ring-white/50 focus:border-transparent appearance-none"
+                className="input-glass"
               />
             </div>
             <div className="space-y-2">
@@ -80,7 +76,7 @@ export default function SignIn() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="bg-white/10 backdrop-blur-sm border-2 border-white/30 text-blue-900 placeholder:text-white/60 focus:ring-2 focus:ring-white/50 focus:border-transparent appearance-none"
+                className="input-glass"
               />
             </div>
             {error && (
@@ -96,6 +92,12 @@ export default function SignIn() {
           </form>
 
           <div className="mt-6 text-center">
+            <Link 
+              href="/auth/forgot-password" 
+              className="text-white/80 hover:text-white transition-colors text-sm block mb-2"
+            >
+              Esqueceu sua senha?
+            </Link>
             <Link 
               href="/auth/register" 
               className="text-white/80 hover:text-white transition-colors text-sm"

@@ -6,7 +6,11 @@ const config = {
     "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
+    "./src/lib/**/*.{js,ts,jsx,tsx,mdx}",
   ],
+  future: {
+    hoverOnlyWhenSupported: true,
+  },
   prefix: "",
   theme: {
   	container: {
@@ -20,6 +24,7 @@ const config = {
   		fontFamily: {
   			helvetica: ['Helvetica Neue', 'Helvetica', 'Arial', 'sans-serif'],
   			sans: ['var(--font-satoshi)'],
+  			montserrat: ['Montserrat', 'sans-serif'],
   		},
   		fontWeight: {
   			thin: '100',
@@ -106,7 +111,10 @@ const config = {
   		},
   	}
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [
+    require("tailwindcss-animate"),
+    require('autoprefixer'),
+  ],
 } satisfies Config;
 
 export default config;
