@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils"
 interface PopoverContextValue {
   open: boolean
   setOpen: React.Dispatch<React.SetStateAction<boolean>>
-  anchor: React.RefObject<HTMLButtonElement | null>
+  anchor: React.MutableRefObject<HTMLButtonElement | null>
   onOpenChange?: (open: boolean) => void
 }
 
@@ -122,14 +122,8 @@ interface PopoverContentProps extends React.HTMLAttributes<HTMLDivElement> {
   sideOffset?: number
 }
 
-const PopoverContent = React.forwardRef<
-  HTMLDivElement,
-  PopoverContentProps
->(
-  (
-    { className, align = "center", sideOffset = 4, children, ...props },
-    ref
-  ) => {
+const PopoverContent = React.forwardRef<HTMLDivElement, PopoverContentProps>(
+  ({ className, align = "center", sideOffset = 4, children, ...props }, ref) => {
     const { open, setOpen, anchor } = usePopoverContext()
     const contentRef = React.useRef<HTMLDivElement | null>(null)
     const [position, setPosition] = React.useState({ top: 0, left: 0 })
@@ -144,7 +138,6 @@ const PopoverContent = React.forwardRef<
         const anchorRect = anchor.current.getBoundingClientRect()
         const contentRect = contentRef.current.getBoundingClientRect()
         
-        // Position based on alignment
         let top = anchorRect.bottom + sideOffset
         let left = anchorRect.left
         
@@ -154,7 +147,6 @@ const PopoverContent = React.forwardRef<
           left = anchorRect.right - contentRect.width
         }
 
-        // Ensure content stays within viewport
         if (isClient && typeof window !== 'undefined') {
           const viewportWidth = window.innerWidth
           if (left < 0) left = 0
@@ -190,39 +182,38 @@ const PopoverContent = React.forwardRef<
 
     if (!open) return null
 
-    const content = (
+    return createPortal(
       <div
         ref={(node) => {
           contentRef.current = node
           if (ref) {
             if (typeof ref === "function") {
               ref(node)
-            } else if (ref) {
+            } else {
               ref.current = node
             }
           }
         }}
-        className={cn(
-          "z-50 w-72 rounded-md border bg-popover p-4 text-popover-foreground shadow-md outline-none animate-in fade-in-0 zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
-          className
-        )}
         style={{
           position: 'fixed',
           top: `${position.top}px`,
           left: `${position.left}px`,
+          zIndex: 50,
         }}
+        className={cn(
+          "min-w-[8rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
+          className
+        )}
         {...props}
       >
         {children}
-      </div>
+      </div>,
+      document.body
     )
-
-    return createPortal(content, document.body)
   }
 )
 PopoverContent.displayName = "PopoverContent"
 
-// We don't need to implement PopoverAnchor for this simplified version
 const PopoverAnchor = ({ children }: { children: React.ReactNode }) => children
 
 export { Popover, PopoverTrigger, PopoverContent, PopoverAnchor }
