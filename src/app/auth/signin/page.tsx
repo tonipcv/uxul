@@ -65,7 +65,7 @@ export default function SignIn() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="input-glass"
+                className="bg-white text-black placeholder:text-gray-500"
               />
             </div>
             <div className="space-y-2">
@@ -76,7 +76,7 @@ export default function SignIn() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="input-glass"
+                className="bg-white text-black"
               />
             </div>
             {error && (

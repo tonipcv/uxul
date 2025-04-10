@@ -67,48 +67,52 @@ export default function ForgotPassword() {
   }
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-background font-['Helvetica'] font-light px-4">
-      <div className="w-full max-w-[350px] mx-auto">
-        <Card className="border-none shadow-none">
-          <CardHeader className="space-y-1 pb-4">
-            <Logo className="flex justify-center h-8 w-8 mx-auto" />
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="m@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
-              </div>
-              {error && (
-                <div className="text-sm text-red-500 text-center">
-                  {error}
-                </div>
-              )}
-              <Button 
-                type="submit" 
-                className="w-full border-white border bg-transparent hover:bg-white/10 text-white hover:text-white" 
-                disabled={isLoading}
-              >
-                {isLoading ? "Enviando link..." : "Recuperar senha"}
-              </Button>
-            </form>
-          </CardContent>
-          <CardFooter>
+    <div className="min-h-[100dvh] bg-gradient-primary flex flex-col items-center justify-center px-4">
+      <div className="w-full max-w-[400px] mx-auto">
+        <div className="flex justify-center mb-8">
+          <Logo className="scale-150" variant="light" />
+        </div>
+        
+        <div className="space-y-2 text-center mb-8">
+          <h2 className="text-2xl font-light text-white">Recuperar senha</h2>
+          <p className="text-blue-100/80 font-light">Digite seu email para receber o link de recuperação</p>
+        </div>
+
+        <div className="bg-glass rounded-xl p-8">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="space-y-2">
+              <Label htmlFor="email" className="text-white font-light">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="m@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="bg-white text-black placeholder:text-gray-500"
+              />
+            </div>
+            {error && (
+              <div className="text-red-300 text-sm font-light">{error}</div>
+            )}
+            <Button 
+              type="submit" 
+              className="w-full bg-white text-blue-700 hover:bg-white/90 transition-all border-none shadow-lg"
+              disabled={isLoading}
+            >
+              {isLoading ? "Enviando link..." : "Recuperar senha"}
+            </Button>
+          </form>
+
+          <div className="mt-6 text-center">
             <Link 
               href="/auth/signin" 
-              className="text-sm text-white/70 hover:text-white transition-colors w-full text-center"
+              className="text-white/80 hover:text-white transition-colors text-sm"
             >
               Voltar para login
             </Link>
-          </CardFooter>
-        </Card>
+          </div>
+        </div>
       </div>
     </div>
   );
