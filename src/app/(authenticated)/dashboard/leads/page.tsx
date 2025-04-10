@@ -67,7 +67,7 @@ export default function LeadsPage() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [editingLead, setEditingLead] = useState<Lead | null>(null);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [viewingLead, setViewingLead] = useState<Lead | null>(null);
   const [formData, setFormData] = useState({
@@ -99,7 +99,6 @@ export default function LeadsPage() {
     interest: ""
   });
   const [isLoading, setIsLoading] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState("");
   const [selectedSource, setSelectedSource] = useState("");
   const [selectedIndication, setSelectedIndication] = useState("");
@@ -186,11 +185,11 @@ export default function LeadsPage() {
 
   const openEditModal = (lead: Lead) => {
     setEditingLead(lead);
-    setIsEditModalOpen(true);
+    setShowEditModal(true);
   };
 
   const closeEditModal = () => {
-    setIsEditModalOpen(false);
+    setShowEditModal(false);
     setEditingLead(null);
   };
 
@@ -244,7 +243,7 @@ export default function LeadsPage() {
           title: "Lead atualizado",
           description: "As informações foram salvas com sucesso",
         });
-        fetchLeads(); // Recarregar a lista
+        await fetchLeads(); // Recarregar a lista
         closeEditModal();
       } else {
         const error = await response.json();
