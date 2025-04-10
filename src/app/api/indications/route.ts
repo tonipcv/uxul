@@ -183,10 +183,6 @@ export async function POST(req: NextRequest) {
         type: "INDICATION_CREATED",
         userId: token.sub as string,
         indicationId: indication.id,
-        metadata: {
-          patientName: patient.name,
-          patientId: patient.id,
-        },
       },
     });
 

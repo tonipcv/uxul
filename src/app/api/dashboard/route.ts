@@ -28,6 +28,8 @@ function convertBigIntToNumber(data: any): any {
   return data;
 }
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(req: NextRequest) {
   try {
     // Obter a sessão atual

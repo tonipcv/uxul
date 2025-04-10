@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+import { getToken } from "next-auth/jwt";
 
 /**
  * @swagger
@@ -273,4 +274,32 @@ export async function DELETE(
       { status: 500 }
     );
   }
+}
+
+export async function POST(
+  req: NextRequest,
+  { params }: { params: { slug: string } }
+) {
+  const token = await getToken({ req });
+  if (!token) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const indication = await prisma.indication.findFirst({
+    where: { slug: params.slug },
+  });
+
+  if (!indication) {
+    return NextResponse.json({ error: "Indication not found" }, { status: 404 });
+  }
+
+  await prisma.event.create({
+    data: {
+      type: "INDICATION_SHARED",
+      userId: token.sub as string,
+      indicationId: indication.id,
+    },
+  });
+
+  return NextResponse.json({ success: true });
 } 
