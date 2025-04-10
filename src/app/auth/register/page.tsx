@@ -99,11 +99,11 @@ export default function Register() {
               </p>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="specialty" className="text-white font-light">Especialidade Médica</Label>
+              <Label htmlFor="specialty" className="text-white font-light">Área de atuação</Label>
               <Input
                 id="specialty"
                 type="text"
-                placeholder="Cardiologista"
+                placeholder="Digita aqui"
                 value={specialty}
                 onChange={(e) => setSpecialty(e.target.value)}
                 className="bg-white/10 backdrop-blur-sm border-2 border-white/30 text-blue-900 placeholder:text-white/60 focus:ring-2 focus:ring-white/50 focus:border-transparent appearance-none"

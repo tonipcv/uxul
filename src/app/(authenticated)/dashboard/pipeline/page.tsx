@@ -388,6 +388,10 @@ export default function PipelinePage() {
                                   {...provided.draggableProps}
                                   {...provided.dragHandleProps}
                                   className="bg-white rounded-lg mb-2 shadow-sm p-2.5 cursor-pointer hover:shadow-md transition-shadow duration-300"
+                                  onDoubleClick={() => {
+                                    setEditingLead(lead);
+                                    setIsEditModalOpen(true);
+                                  }}
                                 >
                                   <div className="space-y-1.5">
                                     <div className="flex justify-between items-start">
@@ -397,20 +401,6 @@ export default function PipelinePage() {
                                           <PhoneIcon className="flex-shrink-0 h-3 w-3" />
                                           <span className="truncate">{lead.phone}</span>
                                         </div>
-                                      </div>
-                                      <div className="flex gap-1 ml-2">
-                                        <Button
-                                          variant="ghost"
-                                          size="icon"
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            setEditingLead(lead);
-                                            setIsEditModalOpen(true);
-                                          }}
-                                          className="h-6 w-6 p-1 text-gray-400 hover:text-gray-600"
-                                        >
-                                          <PencilIcon className="h-4 w-4" />
-                                        </Button>
                                       </div>
                                     </div>
 
