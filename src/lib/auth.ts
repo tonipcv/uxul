@@ -15,6 +15,7 @@ declare module 'next-auth' {
     name: string;
     type: 'user' | 'patient';
     userSlug?: string;
+    image?: string | null;
   }
 
   interface Session {
@@ -81,7 +82,15 @@ export const authOptions: AuthOptions = {
         }
 
         const user = await prisma.user.findUnique({
-          where: { email: credentials.email }
+          where: { email: credentials.email },
+          select: {
+            id: true,
+            email: true,
+            name: true,
+            password: true,
+            slug: true,
+            image: true
+          }
         });
 
         if (!user) {
@@ -102,7 +111,8 @@ export const authOptions: AuthOptions = {
           email: user.email,
           name: user.name,
           type: 'user' as const,
-          userSlug: user.slug
+          userSlug: user.slug,
+          image: user.image
         };
       }
     })
@@ -113,6 +123,7 @@ export const authOptions: AuthOptions = {
         token.id = user.id;
         token.type = user.type;
         token.userSlug = user.userSlug;
+        token.image = user.image;
       }
       return token;
     },
@@ -123,7 +134,8 @@ export const authOptions: AuthOptions = {
           ...session.user,
           id: token.id,
           type: token.type as 'user' | 'patient',
-          userSlug: token.userSlug as string | undefined
+          userSlug: token.userSlug as string | undefined,
+          image: token.image as string | null | undefined
         }
       };
     }

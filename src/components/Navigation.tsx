@@ -127,10 +127,10 @@ export default function Navigation() {
 
   const UserAvatar = () => (
     session?.user?.image ? (
-      <div className="relative w-full h-full rounded-full overflow-hidden">
+      <div className="relative w-full h-full rounded-full overflow-hidden bg-blue-800">
         <Image
           src={session.user.image}
-          alt="Profile"
+          alt={session.user.name || 'Profile'}
           fill
           sizes="100%"
           priority
@@ -138,7 +138,9 @@ export default function Navigation() {
         />
       </div>
     ) : (
-      <UserCircleIcon className="h-4 w-4 text-blue-200" />
+      <div className="w-full h-full flex items-center justify-center">
+        <UserCircleIcon className="h-5 w-5 text-blue-200" />
+      </div>
     )
   );
 
