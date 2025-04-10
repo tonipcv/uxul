@@ -275,4 +275,80 @@ export async function PATCH(req: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+/**
+ * @swagger
+ * /api/leads:
+ *   delete:
+ *     summary: Exclui um lead específico
+ *     parameters:
+ *       - in: query
+ *         name: leadId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID do lead a ser excluído
+ *     responses:
+ *       200:
+ *         description: Lead excluído com sucesso
+ *       401:
+ *         description: Não autorizado
+ *       404:
+ *         description: Lead não encontrado
+ */
+export async function DELETE(req: NextRequest) {
+  try {
+    // Obter a sessão atual
+    const session = await getServerSession(authOptions);
+
+    if (!session?.user?.id) {
+      return NextResponse.json(
+        { error: 'Usuário não autenticado' },
+        { status: 401 }
+      );
+    }
+
+    // Obter o ID do lead da URL
+    const { searchParams } = new URL(req.url);
+    const leadId = searchParams.get('leadId');
+
+    if (!leadId) {
+      return NextResponse.json(
+        { error: 'ID do lead não fornecido' },
+        { status: 400 }
+      );
+    }
+
+    // Verificar se o lead existe e pertence ao usuário
+    const lead = await prisma.lead.findFirst({
+      where: {
+        id: leadId,
+        userId: session.user.id
+      }
+    });
+
+    if (!lead) {
+      return NextResponse.json(
+        { error: 'Lead não encontrado' },
+        { status: 404 }
+      );
+    }
+
+    // Excluir o lead
+    await prisma.lead.delete({
+      where: { id: leadId }
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: 'Lead excluído com sucesso'
+    });
+  } catch (error) {
+    console.error('Erro ao excluir lead:', error);
+    return NextResponse.json(
+      { error: 'Erro ao excluir lead' },
+      { status: 500 }
+    );
+  }
 } 

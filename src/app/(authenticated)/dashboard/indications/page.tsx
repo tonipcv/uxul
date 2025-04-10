@@ -430,13 +430,7 @@ export default function IndicationsPage() {
                       {`${baseUrl}/${userSlug}/${indication.slug}`}
                     </div>
                     
-                    <div className="grid grid-cols-3 gap-2 mb-3">
-                      <div className="text-center">
-                        <div className="text-xs text-gray-500">Cliques</div>
-                        <div className="text-gray-900 font-medium text-sm">
-                          {indication._count?.events || 0}
-                        </div>
-                      </div>
+                    <div className="grid grid-cols-2 gap-2 mb-3">
                       <div className="text-center">
                         <div className="text-xs text-gray-500">Leads</div>
                         <div className="text-gray-900 font-medium text-sm">
@@ -491,7 +485,6 @@ export default function IndicationsPage() {
                   <tr className="border-b border-gray-200">
                     <th className="py-2 px-3 text-left text-xs font-medium text-gray-500">Nome</th>
                     <th className="py-2 px-3 text-left text-xs font-medium text-gray-500">Link</th>
-                    <th className="py-2 px-3 text-left text-xs font-medium text-gray-500">Cliques</th>
                     <th className="py-2 px-3 text-left text-xs font-medium text-gray-500">Leads</th>
                     <th className="py-2 px-3 text-left text-xs font-medium text-gray-500">Pacientes</th>
                     <th className="py-2 px-3 text-left text-xs font-medium text-gray-500">Conversão</th>
@@ -507,11 +500,6 @@ export default function IndicationsPage() {
                       <td className="py-2 px-3">
                         <div className="text-gray-600 text-xs">
                           {`${baseUrl}/${userSlug}/${indication.slug}`}
-                        </div>
-                      </td>
-                      <td className="py-2 px-3">
-                        <div className="text-gray-900 font-medium text-sm">
-                          {indication._count?.events || 0}
                         </div>
                       </td>
                       <td className="py-2 px-3">

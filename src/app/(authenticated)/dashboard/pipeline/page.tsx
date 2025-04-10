@@ -20,23 +20,17 @@ import { Textarea } from "@/components/ui/textarea";
 
 // Importação dinâmica para resolver problema de renderização no servidor
 const DragDropContextLib = dynamic(
-  () => import('@hello-pangea/dnd').then(mod => ({
-    default: mod.DragDropContext,
-  })),
+  () => import('@hello-pangea/dnd').then(mod => mod.DragDropContext),
   { ssr: false }
 );
 
 const DroppableLib = dynamic(
-  () => import('@hello-pangea/dnd').then(mod => ({
-    default: mod.Droppable,
-  })),
+  () => import('@hello-pangea/dnd').then(mod => mod.Droppable),
   { ssr: false }
 );
 
 const DraggableLib = dynamic(
-  () => import('@hello-pangea/dnd').then(mod => ({
-    default: mod.Draggable,
-  })),
+  () => import('@hello-pangea/dnd').then(mod => mod.Draggable),
   { ssr: false }
 );
 

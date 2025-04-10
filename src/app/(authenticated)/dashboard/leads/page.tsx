@@ -344,6 +344,45 @@ export default function LeadsPage() {
     setIsViewModalOpen(true);
   };
 
+  const handleDeleteLead = async (lead: Lead) => {
+    if (!confirm('Tem certeza que deseja excluir este lead?')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/leads?leadId=${lead.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        // Remove o lead da lista local
+        setLeads(prev => prev.filter(l => l.id !== lead.id));
+        setDisplayedLeads(prev => prev.filter(l => l.id !== lead.id));
+        
+        toast({
+          title: "Sucesso",
+          description: "Lead excluído com sucesso",
+        });
+
+        // Atualiza os dados do dashboard
+        fetchDashboardData();
+      } else {
+        const error = await response.json();
+        throw new Error(error.message || 'Erro ao excluir lead');
+      }
+    } catch (error) {
+      console.error('Erro ao excluir lead:', error);
+      toast({
+        title: "Erro",
+        description: error instanceof Error ? error.message : "Não foi possível excluir o lead",
+        variant: "destructive"
+      });
+    }
+  };
+
   // Função para renderizar o status com cores diferentes
   const renderStatus = (lead: Lead) => {
     const getStatusBadge = () => {
@@ -743,24 +782,30 @@ export default function LeadsPage() {
                         </div>
                       </div>
                       
-                      <div className="flex gap-2 pt-1">
+                      <div className="flex items-center gap-2">
                         <Button
-                          variant="outline"
+                          variant="ghost"
                           size="sm"
-                          className="bg-white border-gray-200 text-gray-700 hover:bg-gray-50 hover:text-gray-800 transition-colors text-xs h-8 px-2 flex-1 rounded-lg"
-                          onClick={() => openEditModal(lead)}
+                          onClick={() => handleViewLead(lead)}
+                          className="text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors text-xs h-7 w-7 p-0"
                         >
-                          <PencilIcon className="h-3 w-3 mr-1.5" />
-                          Editar
+                          <EyeIcon className="h-3 w-3" />
                         </Button>
                         <Button
-                          variant="outline"
+                          variant="ghost"
                           size="sm"
-                          className="bg-white border-gray-200 text-gray-700 hover:bg-gray-50 hover:text-gray-800 transition-colors text-xs h-8 px-2 flex-1 rounded-lg"
-                          onClick={() => handleViewLead(lead)}
+                          onClick={() => openEditModal(lead)}
+                          className="text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors text-xs h-7 w-7 p-0"
                         >
-                          <EyeIcon className="h-3 w-3 mr-1.5" />
-                          Ver
+                          <PencilIcon className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDeleteLead(lead)}
+                          className="text-gray-500 hover:text-red-600 hover:bg-red-50 transition-colors text-xs h-7 w-7 p-0"
+                        >
+                          <TrashIcon className="h-3 w-3" />
                         </Button>
                       </div>
                     </div>
@@ -853,6 +898,14 @@ export default function LeadsPage() {
                           >
                             <EyeIcon className="h-4 w-4 sm:h-3 sm:w-3 mr-2 sm:mr-1" />
                             Ver
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteLead(lead)}
+                            className="text-gray-500 hover:text-red-600 hover:bg-red-50 transition-colors text-xs h-7 w-7 p-0"
+                          >
+                            <TrashIcon className="h-3 w-3" />
                           </Button>
                         </div>
                       </td>
