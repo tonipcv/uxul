@@ -29,7 +29,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel, SelectSeparator } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/components/ui/use-toast";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -99,11 +99,6 @@ export default function LeadsPage() {
     interest: ""
   });
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedStatus, setSelectedStatus] = useState("");
-  const [selectedSource, setSelectedSource] = useState("");
-  const [selectedIndication, setSelectedIndication] = useState("");
-  const [selectedInterest, setSelectedInterest] = useState("");
-  const [searchText, setSearchText] = useState("");
   const [totalLeads, setTotalLeads] = useState(0);
   const [displayedLeads, setDisplayedLeads] = useState<Lead[]>([]);
 
@@ -481,12 +476,29 @@ export default function LeadsPage() {
     fechados: Array.isArray(leads) ? leads.filter(lead => lead.status === 'Fechado').length : 0,
   };
 
-  // Filtra leads por status e termo de busca
+  // Add function to get lead type counts
+  const getLeadTypeCounts = () => {
+    if (!Array.isArray(leads)) return { leads: 0, patients: 0, vips: 0 };
+    
+    return leads.reduce((acc, lead) => {
+      if (lead.status === 'Fechado') {
+        acc.patients++;
+      } else if (lead.indication?.name) {
+        acc.vips++;
+      } else {
+        acc.leads++;
+      }
+      return acc;
+    }, { leads: 0, patients: 0, vips: 0 });
+  };
+
+  // Modify getFilteredLeads to include type filtering
   const getFilteredLeads = () => {
     if (!Array.isArray(leads)) return [];
     
-    let filteredByStatus = leads;
+    let filtered = leads;
     
+    // Filtrar por status
     if (activeTab !== 'all') {
       const statusMap: {[key: string]: string} = {
         'novos': 'Novo',
@@ -496,21 +508,44 @@ export default function LeadsPage() {
         'naoVieram': 'Não veio',
         'fechados': 'Fechado'
       };
-      
-      filteredByStatus = leads.filter(lead => 
-        lead.status === statusMap[activeTab] || 
-        (!lead.status && activeTab === 'novos')
+
+      // Filtrar por tipo
+      if (activeTab === 'leads') {
+        filtered = leads.filter(lead => 
+          !lead.indication?.name && lead.status !== 'Fechado'
+        );
+      } else if (activeTab === 'patients') {
+        filtered = leads.filter(lead => 
+          lead.status === 'Fechado'
+        );
+      } else if (activeTab === 'vips') {
+        filtered = leads.filter(lead => 
+          !!lead.indication?.name
+        );
+      } else if (statusMap[activeTab]) {
+        filtered = leads.filter(lead => 
+          lead.status === statusMap[activeTab] || 
+          (!lead.status && activeTab === 'novos')
+        );
+      }
+    }
+    
+    // Filtrar por termo de busca
+    if (searchTerm) {
+      filtered = filtered.filter(lead => 
+        lead.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        lead.phone.includes(searchTerm) ||
+        (lead.interest?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
+        (lead.source?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
+        (lead.indication?.name?.toLowerCase() || "").includes(searchTerm.toLowerCase())
       );
     }
     
-    return filteredByStatus.filter(lead => 
-      lead.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      lead.phone.includes(searchTerm) ||
-      (lead.interest?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
-      (lead.source?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
-      (lead.indication?.name?.toLowerCase() || "").includes(searchTerm.toLowerCase())
-    );
+    return filtered;
   };
+
+  // Get lead type counts
+  const typeCounts = getLeadTypeCounts();
 
   const filteredLeads = Array.isArray(leads) ? getFilteredLeads() : [];
 
@@ -648,9 +683,36 @@ export default function LeadsPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="pb-4 sm:pb-3 px-6 sm:px-4">
-            {/* Mobile Search and Filter */}
-            <div className="md:hidden mb-3">
-              <div className="relative mb-3">
+            {/* Desktop Search and Filter */}
+            <div className="hidden md:flex items-center justify-end gap-4 mb-6">
+              <Select
+                value={activeTab}
+                onValueChange={setActiveTab}
+              >
+                <SelectTrigger className="w-[180px] bg-white border-gray-200 focus:border-gray-300 text-gray-900 rounded-xl h-10">
+                  <SelectValue placeholder="Filtrar por status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectLabel>Status</SelectLabel>
+                    <SelectItem value="all">Todos</SelectItem>
+                    <SelectItem value="novos">Novos</SelectItem>
+                    <SelectItem value="agendados">Agendados</SelectItem>
+                    <SelectItem value="compareceram">Compareceram</SelectItem>
+                    <SelectItem value="fechados">Fechados</SelectItem>
+                    <SelectItem value="naoVieram">Não vieram</SelectItem>
+                  </SelectGroup>
+                  <SelectSeparator />
+                  <SelectGroup>
+                    <SelectLabel>Tipo</SelectLabel>
+                    <SelectItem value="leads">Leads</SelectItem>
+                    <SelectItem value="patients">Pacientes</SelectItem>
+                    <SelectItem value="vips">VIPs</SelectItem>
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+              
+              <div className="relative w-[200px]">
                 <Input
                   type="text"
                   placeholder="Buscar leads..."
@@ -660,48 +722,48 @@ export default function LeadsPage() {
                 />
                 <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               </div>
-              
-              <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1 -mx-1 px-1">
-                <Badge
-                  onClick={() => setActiveTab("all")}
-                  className={`cursor-pointer whitespace-nowrap py-1 ${
-                    activeTab === "all" 
-                      ? "bg-gray-800/5 text-gray-800 border-gray-300" 
-                      : "bg-white text-gray-500 border-gray-200 hover:bg-gray-50"
-                  }`}
+            </div>
+
+            {/* Mobile Search and Filter */}
+            <div className="md:hidden mb-3">
+              <div className="flex gap-3 mb-3">
+                <Select
+                  value={activeTab}
+                  onValueChange={setActiveTab}
                 >
-                  Todos ({leads.length})
-                </Badge>
-                <Badge
-                  onClick={() => setActiveTab("novos")}
-                  className={`cursor-pointer whitespace-nowrap py-1 ${
-                    activeTab === "novos" 
-                      ? "bg-blue-50 text-blue-600 border-blue-200" 
-                      : "bg-white text-gray-500 border-gray-200 hover:bg-gray-50"
-                  }`}
-                >
-                  Novos ({leadStats.novos})
-                </Badge>
-                <Badge
-                  onClick={() => setActiveTab("agendados")}
-                  className={`cursor-pointer whitespace-nowrap py-1 ${
-                    activeTab === "agendados" 
-                      ? "bg-emerald-50 text-emerald-600 border-emerald-200" 
-                      : "bg-white text-gray-500 border-gray-200 hover:bg-gray-50"
-                  }`}
-                >
-                  Agendados ({leadStats.agendados})
-                </Badge>
-                <Badge
-                  onClick={() => setActiveTab("fechados")}
-                  className={`cursor-pointer whitespace-nowrap py-1 ${
-                    activeTab === "fechados" 
-                      ? "bg-purple-50 text-purple-600 border-purple-200" 
-                      : "bg-white text-gray-500 border-gray-200 hover:bg-gray-50"
-                  }`}
-                >
-                  Fechados ({leadStats.fechados})
-                </Badge>
+                  <SelectTrigger className="flex-1 bg-white border-gray-200 focus:border-gray-300 text-gray-900 rounded-xl h-10">
+                    <SelectValue placeholder="Filtrar" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      <SelectLabel>Status</SelectLabel>
+                      <SelectItem value="all">Todos</SelectItem>
+                      <SelectItem value="novos">Novos</SelectItem>
+                      <SelectItem value="agendados">Agendados</SelectItem>
+                      <SelectItem value="compareceram">Compareceram</SelectItem>
+                      <SelectItem value="fechados">Fechados</SelectItem>
+                      <SelectItem value="naoVieram">Não vieram</SelectItem>
+                    </SelectGroup>
+                    <SelectSeparator />
+                    <SelectGroup>
+                      <SelectLabel>Tipo</SelectLabel>
+                      <SelectItem value="leads">Leads</SelectItem>
+                      <SelectItem value="patients">Pacientes</SelectItem>
+                      <SelectItem value="vips">VIPs</SelectItem>
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+
+                <div className="relative w-[140px]">
+                  <Input
+                    type="text"
+                    placeholder="Buscar..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-9 bg-white text-sm border-gray-200 rounded-xl"
+                  />
+                  <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                </div>
               </div>
             </div>
             
@@ -831,6 +893,7 @@ export default function LeadsPage() {
                     <th className="py-3 sm:py-2 px-4 sm:px-3 text-left text-sm sm:text-xs font-medium text-gray-500">Email</th>
                     <th className="py-3 sm:py-2 px-4 sm:px-3 text-left text-sm sm:text-xs font-medium text-gray-500">Telefone</th>
                     <th className="py-3 sm:py-2 px-4 sm:px-3 text-left text-sm sm:text-xs font-medium text-gray-500">Origem</th>
+                    <th className="py-3 sm:py-2 px-4 sm:px-3 text-left text-sm sm:text-xs font-medium text-gray-500">Tipo</th>
                     <th className="py-3 sm:py-2 px-4 sm:px-3 text-left text-sm sm:text-xs font-medium text-gray-500">Status</th>
                     <th className="py-3 sm:py-2 px-4 sm:px-3 text-left text-sm sm:text-xs font-medium text-gray-500">Data</th>
                     <th className="py-3 sm:py-2 px-4 sm:px-3 text-right text-sm sm:text-xs font-medium text-gray-500">Ações</th>
@@ -850,6 +913,15 @@ export default function LeadsPage() {
                       </td>
                       <td className="py-3 sm:py-2 px-4 sm:px-3">
                         <div className="text-gray-600 text-sm sm:text-xs">{lead.source || 'Não informado'}</div>
+                      </td>
+                      <td className="py-3 sm:py-2 px-4 sm:px-3">
+                        {lead.status === 'Fechado' ? (
+                          <Badge className="bg-emerald-50 text-emerald-600 border-emerald-200 text-xs">Paciente</Badge>
+                        ) : lead.indication?.name ? (
+                          <Badge className="bg-purple-50 text-purple-600 border-purple-200 text-xs">VIP</Badge>
+                        ) : (
+                          <Badge className="bg-blue-50 text-blue-600 border-blue-200 text-xs">Lead</Badge>
+                        )}
                       </td>
                       <td className="py-3 sm:py-2 px-4 sm:px-3">
                         {(() => {
@@ -923,307 +995,307 @@ export default function LeadsPage() {
             </div>
           </CardContent>
         </Card>
-
-        {/* Modal de criação */}
-        <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
-          <DialogContent className="bg-white/90 border-0 shadow-[0_8px_30px_rgba(0,0,0,0.12)] rounded-3xl p-5 sm:p-4 w-[95vw] max-w-md mx-auto">
-            <CardHeader className="p-0 mb-5 sm:mb-4">
-              <CardTitle className="text-lg sm:text-base font-bold text-gray-900 tracking-[-0.03em] font-inter">Novo Lead</CardTitle>
-              <CardDescription className="text-sm sm:text-xs text-gray-600 tracking-[-0.03em] font-inter">
-                Adicione um novo lead ao sistema
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-0">
-              <form onSubmit={handleCreateLead} className="space-y-5 sm:space-y-4">
-                <div className="space-y-2 sm:space-y-1">
-                  <Label htmlFor="name" className="text-sm sm:text-xs font-medium text-gray-700 tracking-[-0.03em] font-inter">Nome</Label>
-                  <Input
-                    id="name"
-                    value={newLead.name}
-                    onChange={(e) => setNewLead({ ...newLead, name: e.target.value })}
-                    placeholder="Nome completo"
-                    className="bg-white/50 border-gray-200 focus:border-gray-300 text-gray-900 placeholder:text-gray-400 rounded-xl h-10 sm:h-9 text-base sm:text-sm"
-                  />
-                </div>
-
-                <div className="space-y-2 sm:space-y-1">
-                  <Label htmlFor="email" className="text-sm sm:text-xs font-medium text-gray-700 tracking-[-0.03em] font-inter">E-mail</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={newLead.email}
-                    onChange={(e) => setNewLead({ ...newLead, email: e.target.value })}
-                    placeholder="E-mail do lead"
-                    className="bg-white/50 border-gray-200 focus:border-gray-300 text-gray-900 placeholder:text-gray-400 rounded-xl h-10 sm:h-9 text-base sm:text-sm"
-                  />
-                </div>
-
-                <div className="space-y-2 sm:space-y-1">
-                  <Label htmlFor="phone" className="text-sm sm:text-xs font-medium text-gray-700 tracking-[-0.03em] font-inter">Telefone</Label>
-                  <Input
-                    id="phone"
-                    value={newLead.phone}
-                    onChange={(e) => setNewLead({ ...newLead, phone: e.target.value })}
-                    placeholder="Telefone do lead"
-                    className="bg-white/50 border-gray-200 focus:border-gray-300 text-gray-900 placeholder:text-gray-400 rounded-xl h-10 sm:h-9 text-base sm:text-sm"
-                  />
-                </div>
-
-                <div className="space-y-2 sm:space-y-1">
-                  <Label htmlFor="source" className="text-sm sm:text-xs font-medium text-gray-700 tracking-[-0.03em] font-inter">Origem</Label>
-                  <Select
-                    value={newLead.source}
-                    onValueChange={(value) => setNewLead({ ...newLead, source: value })}
-                  >
-                    <SelectTrigger className="bg-white/50 border-gray-200 focus:border-gray-300 text-gray-900 rounded-xl h-10 sm:h-9 text-base sm:text-sm">
-                      <SelectValue placeholder="Selecione a origem" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="website">Website</SelectItem>
-                      <SelectItem value="social">Redes Sociais</SelectItem>
-                      <SelectItem value="referral">Indicação</SelectItem>
-                      <SelectItem value="other">Outro</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="flex flex-col sm:flex-row gap-3 pt-2 sm:pt-1">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setShowCreateModal(false)}
-                    className="bg-white/50 border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300 rounded-xl h-10 sm:h-9 flex-1 text-sm sm:text-xs"
-                  >
-                    Cancelar
-                  </Button>
-
-                  <Button
-                    type="submit"
-                    disabled={isLoading}
-                    className="bg-gray-900 hover:bg-gray-800 text-white rounded-xl h-10 sm:h-9 flex-1 text-sm sm:text-xs mt-2 sm:mt-0"
-                  >
-                    {isLoading ? (
-                      <ArrowPathIcon className="h-4 w-4 sm:h-3 sm:w-3 animate-spin" />
-                    ) : (
-                      "Criar Lead"
-                    )}
-                  </Button>
-                </div>
-              </form>
-            </CardContent>
-          </DialogContent>
-        </Dialog>
-
-        {/* Modal de edição */}
-        <Dialog open={showEditModal} onOpenChange={setShowEditModal}>
-          <DialogContent className="bg-white/90 border-0 shadow-[0_8px_30px_rgba(0,0,0,0.12)] rounded-3xl p-6 sm:p-4 w-[95vw] max-w-md mx-auto overflow-y-auto max-h-[90vh]">
-            <CardHeader className="p-0 mb-6 sm:mb-4">
-              <CardTitle className="text-xl sm:text-lg font-bold text-gray-900 tracking-[-0.03em] font-inter">Editar Lead</CardTitle>
-              <CardDescription className="text-sm sm:text-xs text-gray-600 tracking-[-0.03em] font-inter">
-                Edite as informações do lead
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-0">
-              <form onSubmit={handleSubmit} className="space-y-6 sm:space-y-4">
-                <div className="space-y-2 sm:space-y-1">
-                  <Label htmlFor="name" className="text-sm sm:text-xs font-medium text-gray-700 tracking-[-0.03em] font-inter">Nome</Label>
-                  <Input
-                    id="name"
-                    value={formData.name}
-                    onChange={handleInputChange}
-                    placeholder="Nome completo"
-                    className="bg-white/50 border-gray-200 focus:border-gray-300 text-gray-900 placeholder:text-gray-400 rounded-xl h-11 sm:h-9 text-base sm:text-sm"
-                  />
-                </div>
-
-                <div className="space-y-2 sm:space-y-1">
-                  <Label htmlFor="email" className="text-sm sm:text-xs font-medium text-gray-700 tracking-[-0.03em] font-inter">E-mail</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    placeholder="E-mail do lead"
-                    className="bg-white/50 border-gray-200 focus:border-gray-300 text-gray-900 placeholder:text-gray-400 rounded-xl h-11 sm:h-9 text-base sm:text-sm"
-                  />
-                </div>
-
-                <div className="space-y-2 sm:space-y-1">
-                  <Label htmlFor="phone" className="text-sm sm:text-xs font-medium text-gray-700 tracking-[-0.03em] font-inter">Telefone</Label>
-                  <Input
-                    id="phone"
-                    value={formData.phone}
-                    onChange={handleInputChange}
-                    placeholder="Telefone do lead"
-                    className="bg-white/50 border-gray-200 focus:border-gray-300 text-gray-900 placeholder:text-gray-400 rounded-xl h-11 sm:h-9 text-base sm:text-sm"
-                  />
-                </div>
-
-                <div className="space-y-2 sm:space-y-1">
-                  <Label htmlFor="interest" className="text-sm sm:text-xs font-medium text-gray-700 tracking-[-0.03em] font-inter">Interesse</Label>
-                  <Input
-                    id="interest"
-                    value={formData.interest}
-                    onChange={handleInputChange}
-                    placeholder="Interesse do lead"
-                    className="bg-white/50 border-gray-200 focus:border-gray-300 text-gray-900 placeholder:text-gray-400 rounded-xl h-11 sm:h-9 text-base sm:text-sm"
-                  />
-                </div>
-
-                <div className="space-y-2 sm:space-y-1">
-                  <Label htmlFor="status" className="text-sm sm:text-xs font-medium text-gray-700 tracking-[-0.03em] font-inter">Status</Label>
-                  <Select
-                    value={formData.status}
-                    onValueChange={handleSelectChange.bind(null, 'status')}
-                  >
-                    <SelectTrigger className="bg-white/50 border-gray-200 focus:border-gray-300 text-gray-900 rounded-xl h-11 sm:h-9 text-base sm:text-sm">
-                      <SelectValue placeholder="Selecione o status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Novo">Novo</SelectItem>
-                      <SelectItem value="Agendado">Agendado</SelectItem>
-                      <SelectItem value="Compareceu">Compareceu</SelectItem>
-                      <SelectItem value="Fechado">Fechado</SelectItem>
-                      <SelectItem value="Não veio">Não veio</SelectItem>
-                      <SelectItem value="Cancelado">Cancelado</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2 sm:space-y-1">
-                  <Label htmlFor="potentialValue" className="text-sm sm:text-xs font-medium text-gray-700 tracking-[-0.03em] font-inter">Valor Potencial</Label>
-                  <Input
-                    id="potentialValue"
-                    type="number"
-                    value={formData.potentialValue}
-                    onChange={handleInputChange}
-                    placeholder="Valor potencial do lead"
-                    className="bg-white/50 border-gray-200 focus:border-gray-300 text-gray-900 placeholder:text-gray-400 rounded-xl h-11 sm:h-9 text-base sm:text-sm"
-                  />
-                </div>
-
-                <div className="space-y-2 sm:space-y-1">
-                  <Label htmlFor="appointmentDate" className="text-sm sm:text-xs font-medium text-gray-700 tracking-[-0.03em] font-inter">Data da Consulta</Label>
-                  <Input
-                    id="appointmentDate"
-                    type="date"
-                    value={formData.appointmentDate}
-                    onChange={handleInputChange}
-                    className="bg-white/50 border-gray-200 focus:border-gray-300 text-gray-900 placeholder:text-gray-400 rounded-xl h-11 sm:h-9 text-base sm:text-sm"
-                  />
-                </div>
-
-                <div className="space-y-2 sm:space-y-1">
-                  <Label htmlFor="appointmentTime" className="text-sm sm:text-xs font-medium text-gray-700 tracking-[-0.03em] font-inter">Horário da Consulta</Label>
-                  <Input
-                    id="appointmentTime"
-                    type="time"
-                    value={formData.appointmentTime}
-                    onChange={handleInputChange}
-                    className="bg-white/50 border-gray-200 focus:border-gray-300 text-gray-900 placeholder:text-gray-400 rounded-xl h-11 sm:h-9 text-base sm:text-sm"
-                  />
-                </div>
-
-                <div className="space-y-2 sm:space-y-1">
-                  <Label htmlFor="medicalNotes" className="text-sm sm:text-xs font-medium text-gray-700 tracking-[-0.03em] font-inter">Observações</Label>
-                  <Textarea
-                    id="medicalNotes"
-                    value={formData.medicalNotes}
-                    onChange={handleInputChange}
-                    placeholder="Observações sobre o lead"
-                    className="bg-white/50 border-gray-200 focus:border-gray-300 text-gray-900 placeholder:text-gray-400 rounded-xl h-24 sm:h-20 text-base sm:text-sm"
-                  />
-                </div>
-
-                <div className="flex flex-col sm:flex-row gap-4 sm:gap-3 pt-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={closeEditModal}
-                    className="bg-white/50 border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300 rounded-xl h-11 sm:h-9 flex-1 text-base sm:text-sm"
-                  >
-                    Cancelar
-                  </Button>
-
-                  <Button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="bg-gray-900 hover:bg-gray-800 text-white rounded-xl h-11 sm:h-9 flex-1 text-base sm:text-sm mt-2 sm:mt-0"
-                  >
-                    {isSubmitting ? (
-                      <ArrowPathIcon className="h-4 w-4 animate-spin" />
-                    ) : (
-                      "Salvar"
-                    )}
-                  </Button>
-                </div>
-              </form>
-            </CardContent>
-          </DialogContent>
-        </Dialog>
-
-        {/* Modal de Visualização */}
-        <Dialog open={isViewModalOpen} onOpenChange={setIsViewModalOpen}>
-          <DialogContent className="bg-white/90 border-0 shadow-[0_8px_30px_rgba(0,0,0,0.12)] rounded-3xl p-5 sm:p-4 w-[95vw] max-w-md mx-auto">
-            <DialogHeader>
-              <DialogTitle className="text-lg sm:text-base font-bold text-gray-900 tracking-[-0.03em] font-inter">Detalhes do Lead</DialogTitle>
-            </DialogHeader>
-            {viewingLead && (
-              <div className="grid gap-4 sm:gap-3 py-4 sm:py-3">
-                <div className="grid grid-cols-3 items-center gap-4 sm:gap-2">
-                  <Label className="text-right text-sm sm:text-xs font-medium text-gray-700">Nome</Label>
-                  <div className="col-span-2 text-base sm:text-sm text-gray-900">{viewingLead.name}</div>
-                </div>
-                <div className="grid grid-cols-3 items-center gap-4 sm:gap-2">
-                  <Label className="text-right text-sm sm:text-xs font-medium text-gray-700">Email</Label>
-                  <div className="col-span-2 text-base sm:text-sm text-gray-900">{viewingLead.email || 'Não informado'}</div>
-                </div>
-                <div className="grid grid-cols-3 items-center gap-4 sm:gap-2">
-                  <Label className="text-right text-sm sm:text-xs font-medium text-gray-700">Telefone</Label>
-                  <div className="col-span-2 text-base sm:text-sm text-gray-900">{viewingLead.phone}</div>
-                </div>
-                <div className="grid grid-cols-3 items-center gap-4 sm:gap-2">
-                  <Label className="text-right text-sm sm:text-xs font-medium text-gray-700">Origem</Label>
-                  <div className="col-span-2 text-base sm:text-sm text-gray-900">{viewingLead.source || 'Não informado'}</div>
-                </div>
-                <div className="grid grid-cols-3 items-center gap-4 sm:gap-2">
-                  <Label className="text-right text-sm sm:text-xs font-medium text-gray-700">Status</Label>
-                  <div className="col-span-2 text-base sm:text-sm text-gray-900">{viewingLead.status || 'Novo'}</div>
-                </div>
-                <div className="grid grid-cols-3 items-center gap-4 sm:gap-2">
-                  <Label className="text-right text-sm sm:text-xs font-medium text-gray-700">Data</Label>
-                  <div className="col-span-2 text-base sm:text-sm text-gray-900">
-                    {new Date(viewingLead.createdAt).toLocaleDateString('pt-BR')}
-                  </div>
-                </div>
-                {viewingLead.appointmentDate && (
-                  <div className="grid grid-cols-3 items-center gap-4 sm:gap-2">
-                    <Label className="text-right text-sm sm:text-xs font-medium text-gray-700">Consulta</Label>
-                    <div className="col-span-2 text-base sm:text-sm text-gray-900">
-                      {new Date(viewingLead.appointmentDate).toLocaleDateString('pt-BR')}
-                    </div>
-                  </div>
-                )}
-                {viewingLead.medicalNotes && (
-                  <div className="grid grid-cols-3 items-center gap-4 sm:gap-2">
-                    <Label className="text-right text-sm sm:text-xs font-medium text-gray-700">Observações</Label>
-                    <div className="col-span-2 text-base sm:text-sm text-gray-900">{viewingLead.medicalNotes}</div>
-                  </div>
-                )}
-              </div>
-            )}
-            <DialogFooter>
-              <Button 
-                variant="secondary" 
-                onClick={() => setIsViewModalOpen(false)}
-                className="w-full sm:w-auto text-sm sm:text-xs"
-              >
-                Fechar
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
       </div>
+
+      {/* Modal de criação */}
+      <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
+        <DialogContent className="bg-white/90 border-0 shadow-[0_8px_30px_rgba(0,0,0,0.12)] rounded-3xl p-5 sm:p-4 w-[95vw] max-w-md mx-auto">
+          <CardHeader className="p-0 mb-5 sm:mb-4">
+            <CardTitle className="text-lg sm:text-base font-bold text-gray-900 tracking-[-0.03em] font-inter">Novo Lead</CardTitle>
+            <CardDescription className="text-sm sm:text-xs text-gray-600 tracking-[-0.03em] font-inter">
+              Adicione um novo lead ao sistema
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="p-0">
+            <form onSubmit={handleCreateLead} className="space-y-5 sm:space-y-4">
+              <div className="space-y-2 sm:space-y-1">
+                <Label htmlFor="name" className="text-sm sm:text-xs font-medium text-gray-700 tracking-[-0.03em] font-inter">Nome</Label>
+                <Input
+                  id="name"
+                  value={newLead.name}
+                  onChange={(e) => setNewLead({ ...newLead, name: e.target.value })}
+                  placeholder="Nome completo"
+                  className="bg-white/50 border-gray-200 focus:border-gray-300 text-gray-900 placeholder:text-gray-400 rounded-xl h-10 sm:h-9 text-base sm:text-sm"
+                />
+              </div>
+
+              <div className="space-y-2 sm:space-y-1">
+                <Label htmlFor="email" className="text-sm sm:text-xs font-medium text-gray-700 tracking-[-0.03em] font-inter">E-mail</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={newLead.email}
+                  onChange={(e) => setNewLead({ ...newLead, email: e.target.value })}
+                  placeholder="E-mail do lead"
+                  className="bg-white/50 border-gray-200 focus:border-gray-300 text-gray-900 placeholder:text-gray-400 rounded-xl h-10 sm:h-9 text-base sm:text-sm"
+                />
+              </div>
+
+              <div className="space-y-2 sm:space-y-1">
+                <Label htmlFor="phone" className="text-sm sm:text-xs font-medium text-gray-700 tracking-[-0.03em] font-inter">Telefone</Label>
+                <Input
+                  id="phone"
+                  value={newLead.phone}
+                  onChange={(e) => setNewLead({ ...newLead, phone: e.target.value })}
+                  placeholder="Telefone do lead"
+                  className="bg-white/50 border-gray-200 focus:border-gray-300 text-gray-900 placeholder:text-gray-400 rounded-xl h-10 sm:h-9 text-base sm:text-sm"
+                />
+              </div>
+
+              <div className="space-y-2 sm:space-y-1">
+                <Label htmlFor="source" className="text-sm sm:text-xs font-medium text-gray-700 tracking-[-0.03em] font-inter">Origem</Label>
+                <Select
+                  value={newLead.source}
+                  onValueChange={(value) => setNewLead({ ...newLead, source: value })}
+                >
+                  <SelectTrigger className="bg-white/50 border-gray-200 focus:border-gray-300 text-gray-900 rounded-xl h-10 sm:h-9 text-base sm:text-sm">
+                    <SelectValue placeholder="Selecione a origem" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="website">Website</SelectItem>
+                    <SelectItem value="social">Redes Sociais</SelectItem>
+                    <SelectItem value="referral">Indicação</SelectItem>
+                    <SelectItem value="other">Outro</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-3 pt-2 sm:pt-1">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowCreateModal(false)}
+                  className="bg-white/50 border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300 rounded-xl h-10 sm:h-9 flex-1 text-sm sm:text-xs"
+                >
+                  Cancelar
+                </Button>
+
+                <Button
+                  type="submit"
+                  disabled={isLoading}
+                  className="bg-gray-900 hover:bg-gray-800 text-white rounded-xl h-10 sm:h-9 flex-1 text-sm sm:text-xs mt-2 sm:mt-0"
+                >
+                  {isLoading ? (
+                    <ArrowPathIcon className="h-4 w-4 sm:h-3 sm:w-3 animate-spin" />
+                  ) : (
+                    "Criar Lead"
+                  )}
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de edição */}
+      <Dialog open={showEditModal} onOpenChange={setShowEditModal}>
+        <DialogContent className="bg-white/90 border-0 shadow-[0_8px_30px_rgba(0,0,0,0.12)] rounded-3xl p-6 sm:p-4 w-[95vw] max-w-md mx-auto overflow-y-auto max-h-[90vh]">
+          <CardHeader className="p-0 mb-6 sm:mb-4">
+            <CardTitle className="text-xl sm:text-lg font-bold text-gray-900 tracking-[-0.03em] font-inter">Editar Lead</CardTitle>
+            <CardDescription className="text-sm sm:text-xs text-gray-600 tracking-[-0.03em] font-inter">
+              Edite as informações do lead
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="p-0">
+            <form onSubmit={handleSubmit} className="space-y-6 sm:space-y-4">
+              <div className="space-y-2 sm:space-y-1">
+                <Label htmlFor="name" className="text-sm sm:text-xs font-medium text-gray-700 tracking-[-0.03em] font-inter">Nome</Label>
+                <Input
+                  id="name"
+                  value={formData.name}
+                  onChange={handleInputChange}
+                  placeholder="Nome completo"
+                  className="bg-white/50 border-gray-200 focus:border-gray-300 text-gray-900 placeholder:text-gray-400 rounded-xl h-11 sm:h-9 text-base sm:text-sm"
+                />
+              </div>
+
+              <div className="space-y-2 sm:space-y-1">
+                <Label htmlFor="email" className="text-sm sm:text-xs font-medium text-gray-700 tracking-[-0.03em] font-inter">E-mail</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  placeholder="E-mail do lead"
+                  className="bg-white/50 border-gray-200 focus:border-gray-300 text-gray-900 placeholder:text-gray-400 rounded-xl h-11 sm:h-9 text-base sm:text-sm"
+                />
+              </div>
+
+              <div className="space-y-2 sm:space-y-1">
+                <Label htmlFor="phone" className="text-sm sm:text-xs font-medium text-gray-700 tracking-[-0.03em] font-inter">Telefone</Label>
+                <Input
+                  id="phone"
+                  value={formData.phone}
+                  onChange={handleInputChange}
+                  placeholder="Telefone do lead"
+                  className="bg-white/50 border-gray-200 focus:border-gray-300 text-gray-900 placeholder:text-gray-400 rounded-xl h-11 sm:h-9 text-base sm:text-sm"
+                />
+              </div>
+
+              <div className="space-y-2 sm:space-y-1">
+                <Label htmlFor="interest" className="text-sm sm:text-xs font-medium text-gray-700 tracking-[-0.03em] font-inter">Interesse</Label>
+                <Input
+                  id="interest"
+                  value={formData.interest}
+                  onChange={handleInputChange}
+                  placeholder="Interesse do lead"
+                  className="bg-white/50 border-gray-200 focus:border-gray-300 text-gray-900 placeholder:text-gray-400 rounded-xl h-11 sm:h-9 text-base sm:text-sm"
+                />
+              </div>
+
+              <div className="space-y-2 sm:space-y-1">
+                <Label htmlFor="status" className="text-sm sm:text-xs font-medium text-gray-700 tracking-[-0.03em] font-inter">Status</Label>
+                <Select
+                  value={formData.status}
+                  onValueChange={handleSelectChange.bind(null, 'status')}
+                >
+                  <SelectTrigger className="bg-white/50 border-gray-200 focus:border-gray-300 text-gray-900 rounded-xl h-11 sm:h-9 text-base sm:text-sm">
+                    <SelectValue placeholder="Selecione o status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Novo">Novo</SelectItem>
+                    <SelectItem value="Agendado">Agendado</SelectItem>
+                    <SelectItem value="Compareceu">Compareceu</SelectItem>
+                    <SelectItem value="Fechado">Fechado</SelectItem>
+                    <SelectItem value="Não veio">Não veio</SelectItem>
+                    <SelectItem value="Cancelado">Cancelado</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2 sm:space-y-1">
+                <Label htmlFor="potentialValue" className="text-sm sm:text-xs font-medium text-gray-700 tracking-[-0.03em] font-inter">Valor Potencial</Label>
+                <Input
+                  id="potentialValue"
+                  type="number"
+                  value={formData.potentialValue}
+                  onChange={handleInputChange}
+                  placeholder="Valor potencial do lead"
+                  className="bg-white/50 border-gray-200 focus:border-gray-300 text-gray-900 placeholder:text-gray-400 rounded-xl h-11 sm:h-9 text-base sm:text-sm"
+                />
+              </div>
+
+              <div className="space-y-2 sm:space-y-1">
+                <Label htmlFor="appointmentDate" className="text-sm sm:text-xs font-medium text-gray-700 tracking-[-0.03em] font-inter">Data da Consulta</Label>
+                <Input
+                  id="appointmentDate"
+                  type="date"
+                  value={formData.appointmentDate}
+                  onChange={handleInputChange}
+                  className="bg-white/50 border-gray-200 focus:border-gray-300 text-gray-900 placeholder:text-gray-400 rounded-xl h-11 sm:h-9 text-base sm:text-sm"
+                />
+              </div>
+
+              <div className="space-y-2 sm:space-y-1">
+                <Label htmlFor="appointmentTime" className="text-sm sm:text-xs font-medium text-gray-700 tracking-[-0.03em] font-inter">Horário da Consulta</Label>
+                <Input
+                  id="appointmentTime"
+                  type="time"
+                  value={formData.appointmentTime}
+                  onChange={handleInputChange}
+                  className="bg-white/50 border-gray-200 focus:border-gray-300 text-gray-900 placeholder:text-gray-400 rounded-xl h-11 sm:h-9 text-base sm:text-sm"
+                />
+              </div>
+
+              <div className="space-y-2 sm:space-y-1">
+                <Label htmlFor="medicalNotes" className="text-sm sm:text-xs font-medium text-gray-700 tracking-[-0.03em] font-inter">Observações</Label>
+                <Textarea
+                  id="medicalNotes"
+                  value={formData.medicalNotes}
+                  onChange={handleInputChange}
+                  placeholder="Observações sobre o lead"
+                  className="bg-white/50 border-gray-200 focus:border-gray-300 text-gray-900 placeholder:text-gray-400 rounded-xl h-24 sm:h-20 text-base sm:text-sm"
+                />
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-4 sm:gap-3 pt-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={closeEditModal}
+                  className="bg-white/50 border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300 rounded-xl h-11 sm:h-9 flex-1 text-base sm:text-sm"
+                >
+                  Cancelar
+                </Button>
+
+                <Button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="bg-gray-900 hover:bg-gray-800 text-white rounded-xl h-11 sm:h-9 flex-1 text-base sm:text-sm mt-2 sm:mt-0"
+                >
+                  {isSubmitting ? (
+                    <ArrowPathIcon className="h-4 w-4 animate-spin" />
+                  ) : (
+                    "Salvar"
+                  )}
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Visualização */}
+      <Dialog open={isViewModalOpen} onOpenChange={setIsViewModalOpen}>
+        <DialogContent className="bg-white/90 border-0 shadow-[0_8px_30px_rgba(0,0,0,0.12)] rounded-3xl p-5 sm:p-4 w-[95vw] max-w-md mx-auto">
+          <DialogHeader>
+            <DialogTitle className="text-lg sm:text-base font-bold text-gray-900 tracking-[-0.03em] font-inter">Detalhes do Lead</DialogTitle>
+          </DialogHeader>
+          {viewingLead && (
+            <div className="grid gap-4 sm:gap-3 py-4 sm:py-3">
+              <div className="grid grid-cols-3 items-center gap-4 sm:gap-2">
+                <Label className="text-right text-sm sm:text-xs font-medium text-gray-700">Nome</Label>
+                <div className="col-span-2 text-base sm:text-sm text-gray-900">{viewingLead.name}</div>
+              </div>
+              <div className="grid grid-cols-3 items-center gap-4 sm:gap-2">
+                <Label className="text-right text-sm sm:text-xs font-medium text-gray-700">Email</Label>
+                <div className="col-span-2 text-base sm:text-sm text-gray-900">{viewingLead.email || 'Não informado'}</div>
+              </div>
+              <div className="grid grid-cols-3 items-center gap-4 sm:gap-2">
+                <Label className="text-right text-sm sm:text-xs font-medium text-gray-700">Telefone</Label>
+                <div className="col-span-2 text-base sm:text-sm text-gray-900">{viewingLead.phone}</div>
+              </div>
+              <div className="grid grid-cols-3 items-center gap-4 sm:gap-2">
+                <Label className="text-right text-sm sm:text-xs font-medium text-gray-700">Origem</Label>
+                <div className="col-span-2 text-base sm:text-sm text-gray-900">{viewingLead.source || 'Não informado'}</div>
+              </div>
+              <div className="grid grid-cols-3 items-center gap-4 sm:gap-2">
+                <Label className="text-right text-sm sm:text-xs font-medium text-gray-700">Status</Label>
+                <div className="col-span-2 text-base sm:text-sm text-gray-900">{viewingLead.status || 'Novo'}</div>
+              </div>
+              <div className="grid grid-cols-3 items-center gap-4 sm:gap-2">
+                <Label className="text-right text-sm sm:text-xs font-medium text-gray-700">Data</Label>
+                <div className="col-span-2 text-base sm:text-sm text-gray-900">
+                  {new Date(viewingLead.createdAt).toLocaleDateString('pt-BR')}
+                </div>
+              </div>
+              {viewingLead.appointmentDate && (
+                <div className="grid grid-cols-3 items-center gap-4 sm:gap-2">
+                  <Label className="text-right text-sm sm:text-xs font-medium text-gray-700">Consulta</Label>
+                  <div className="col-span-2 text-base sm:text-sm text-gray-900">
+                    {new Date(viewingLead.appointmentDate).toLocaleDateString('pt-BR')}
+                  </div>
+                </div>
+              )}
+              {viewingLead.medicalNotes && (
+                <div className="grid grid-cols-3 items-center gap-4 sm:gap-2">
+                  <Label className="text-right text-sm sm:text-xs font-medium text-gray-700">Observações</Label>
+                  <div className="col-span-2 text-base sm:text-sm text-gray-900">{viewingLead.medicalNotes}</div>
+                </div>
+              )}
+            </div>
+          )}
+          <DialogFooter>
+            <Button 
+              variant="secondary" 
+              onClick={() => setIsViewModalOpen(false)}
+              className="w-full sm:w-auto text-sm sm:text-xs"
+            >
+              Fechar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 } 
