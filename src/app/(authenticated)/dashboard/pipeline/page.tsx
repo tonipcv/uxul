@@ -258,6 +258,81 @@ export default function PipelinePage() {
     }
   };
 
+  const handleDeleteLead = async (leadId: string) => {
+    try {
+      const response = await fetch(`/api/leads?leadId=${leadId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Erro ao excluir lead');
+      }
+
+      // Atualiza a lista local removendo o lead excluído
+      setLeads(leads.filter(lead => lead.id !== leadId));
+      
+      // Fecha o modal
+      setIsEditModalOpen(false);
+      setEditingLead(null);
+
+      // Notifica o usuário
+      toast({
+        title: "Lead excluído",
+        description: "Lead foi excluído com sucesso",
+      });
+
+      // Atualiza dados do dashboard
+      fetchDashboardData();
+    } catch (error) {
+      console.error('Erro ao excluir lead:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível excluir o lead",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleRemoveFromPipeline = async (leadId: string) => {
+    try {
+      const response = await fetch(`/api/leads?leadId=${leadId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status: 'Removido' })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        toast({
+          title: "Erro",
+          description: error.message || 'Erro ao remover lead da pipeline',
+          variant: "destructive"
+        });
+        return;
+      }
+
+      toast({
+        title: "Sucesso",
+        description: "Lead removido da pipeline com sucesso"
+      });
+      
+      // Atualiza a lista de leads removendo o lead da pipeline
+      setLeads(prevLeads => prevLeads.filter(lead => lead.id !== leadId));
+      
+      // Fecha o modal se estiver aberto
+      setIsEditModalOpen(false);
+    } catch (error) {
+      console.error('Erro ao remover lead da pipeline:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao remover lead da pipeline",
+        variant: "destructive"
+      });
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen bg-blue-800">
@@ -313,17 +388,29 @@ export default function PipelinePage() {
                                   {...provided.draggableProps}
                                   {...provided.dragHandleProps}
                                   className="bg-white rounded-lg mb-2 shadow-sm p-2.5 cursor-pointer hover:shadow-md transition-shadow duration-300"
-                                  onClick={() => {
-                                    setEditingLead(lead);
-                                    setIsEditModalOpen(true);
-                                  }}
                                 >
                                   <div className="space-y-1.5">
-                                    <div>
-                                      <h4 className="font-medium text-gray-900 text-sm leading-snug truncate" title={lead.name}>{lead.name}</h4>
-                                      <div className="flex items-center gap-1 text-xs text-gray-500">
-                                        <PhoneIcon className="flex-shrink-0 h-3 w-3" />
-                                        <span className="truncate">{lead.phone}</span>
+                                    <div className="flex justify-between items-start">
+                                      <div>
+                                        <h4 className="font-medium text-gray-900 text-sm leading-snug truncate" title={lead.name}>{lead.name}</h4>
+                                        <div className="flex items-center gap-1 text-xs text-gray-500">
+                                          <PhoneIcon className="flex-shrink-0 h-3 w-3" />
+                                          <span className="truncate">{lead.phone}</span>
+                                        </div>
+                                      </div>
+                                      <div className="flex gap-1 ml-2">
+                                        <Button
+                                          variant="ghost"
+                                          size="icon"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setEditingLead(lead);
+                                            setIsEditModalOpen(true);
+                                          }}
+                                          className="h-6 w-6 p-1 text-gray-400 hover:text-gray-600"
+                                        >
+                                          <PencilIcon className="h-4 w-4" />
+                                        </Button>
                                       </div>
                                     </div>
 
@@ -390,8 +477,9 @@ export default function PipelinePage() {
                     className="text-gray-400 hover:text-red-600 hover:bg-transparent p-1 h-8 w-8 sm:h-7 sm:w-7"
                     onClick={() => {
                       if (confirm('Tem certeza que deseja excluir este lead?')) {
-                        console.log('Excluindo lead:', editingLead?.id);
-                        setIsEditModalOpen(false);
+                        if (editingLead?.id) {
+                          handleDeleteLead(editingLead.id);
+                        }
                       }
                     }}
                     title="Excluir lead"
@@ -556,6 +644,19 @@ export default function PipelinePage() {
                           className="bg-white/50 border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300 rounded-xl h-10 sm:h-8 font-medium text-sm sm:text-xs"
                         >
                           Cancelar
+                        </Button>
+                        <Button 
+                          variant="outline"
+                          onClick={() => {
+                            if (confirm('Tem certeza que deseja remover este lead da pipeline?')) {
+                              handleRemoveFromPipeline(editingLead.id);
+                              setIsEditModalOpen(false);
+                            }
+                          }}
+                          className="bg-white/50 border-gray-200 text-red-600 hover:bg-red-50 hover:border-red-200 rounded-xl h-10 sm:h-8 font-medium text-sm sm:text-xs"
+                        >
+                          <X className="h-4 w-4 mr-2" />
+                          Remover da pipeline
                         </Button>
                         <Button 
                           onClick={(e) => {
