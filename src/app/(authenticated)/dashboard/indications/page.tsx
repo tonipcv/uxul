@@ -16,10 +16,15 @@ import {
   ChevronRightIcon,
   ArrowTrendingUpIcon,
   UserIcon,
-  ArrowPathIcon
+  ArrowPathIcon,
+  TrashIcon
 } from "@heroicons/react/24/outline";
 import { toast } from "@/components/ui/use-toast";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Check, ChevronsUpDown } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface IndicationCount {
   events: number;
@@ -52,6 +57,13 @@ interface Indication {
   }>;
 }
 
+interface Patient {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+}
+
 export default function IndicationsPage() {
   const { data: session } = useSession();
   const [newIndication, setNewIndication] = useState('');
@@ -74,6 +86,14 @@ export default function IndicationsPage() {
   } | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deletingLinkId, setDeletingLinkId] = useState<string | null>(null);
+  const [patients, setPatients] = useState<Patient[]>([]);
+  const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
+  const [openCombobox, setOpenCombobox] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filteredPatients, setFilteredPatients] = useState<Patient[]>([]);
+  const [currentIndication, setCurrentIndication] = useState<Indication | null>(null);
 
   useEffect(() => {
     // Marcador de renderização client-side para evitar problemas de hidratação
@@ -89,6 +109,7 @@ export default function IndicationsPage() {
       fetchIndications();
       fetchUserProfile();
       fetchDashboardData();
+      fetchPatients();
     }
   }, [session, isClient]);
 
@@ -146,6 +167,25 @@ export default function IndicationsPage() {
     }
   };
 
+  const fetchPatients = async () => {
+    if (!session?.user?.id) return;
+    
+    try {
+      const response = await fetch('/api/patients');
+      if (response.ok) {
+        const { data } = await response.json();
+        setPatients(data);
+      }
+    } catch (error) {
+      console.error('Erro ao buscar pacientes:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível carregar a lista de pacientes",
+        variant: "destructive"
+      });
+    }
+  };
+
   const handleGenerateSlug = async () => {
     if (!newIndication.trim() || !session?.user?.id) return;
     
@@ -179,11 +219,10 @@ export default function IndicationsPage() {
 
   const handleCreateIndication = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newIndication.trim() || !session?.user?.id) return;
-    if (!patientName.trim() || !patientEmail.trim() || !patientPhone.trim()) {
+    if (!newIndication.trim() || !session?.user?.id || !selectedPatient) {
       toast({
         title: "Erro",
-        description: "Preencha todos os dados do paciente",
+        description: "Selecione um paciente e defina um nome para a indicação",
         variant: "destructive"
       });
       return;
@@ -191,62 +230,34 @@ export default function IndicationsPage() {
     
     setIsLoading(true);
     try {
-      // Se não gerou slug ainda, precisamos gerar
-      let slug = generatedSlug;
-      if (!slug) {
-        const response = await fetch('/api/slugify', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            userId: session.user.id,
-            name: newIndication
-          })
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          slug = data.slug;
-        } else {
-          throw new Error('Não foi possível gerar o slug');
-        }
-      }
-      
-      // Criar a indicação com os dados do paciente
-      const response = await fetch('/api/indications', {
+      // Criar a indicação vinculada ao paciente selecionado
+      const indicationResponse = await fetch('/api/indications', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: newIndication,
-          patientName,
-          patientEmail,
-          patientPhone
+          patientId: selectedPatient.id
         })
       });
       
-      if (response.ok) {
+      if (indicationResponse.ok) {
         toast({
           title: "Sucesso",
           description: "Link de indicação criado com sucesso",
         });
         setNewIndication('');
-        setPatientName('');
-        setPatientEmail('');
-        setPatientPhone('');
-        setGeneratedSlug('');
+        setSelectedPatient(null);
+        setShowCreateModal(false);
         fetchIndications();
       } else {
-        const errorData = await response.json();
-        toast({
-          title: "Erro",
-          description: errorData.error || "Não foi possível criar a indicação",
-          variant: "destructive"
-        });
+        const errorData = await indicationResponse.json();
+        throw new Error(errorData.error || "Não foi possível criar a indicação");
       }
     } catch (error) {
       console.error('Erro ao criar indicação:', error);
       toast({
         title: "Erro",
-        description: "Ocorreu um erro ao criar a indicação",
+        description: error instanceof Error ? error.message : "Ocorreu um erro ao criar a indicação",
         variant: "destructive"
       });
     } finally {
@@ -300,11 +311,90 @@ export default function IndicationsPage() {
     return () => clearInterval(interval);
   }, [session?.user?.id]);
 
+  // Adicionar useEffect para filtrar pacientes
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setFilteredPatients(patients);
+      return;
+    }
+
+    const query = searchQuery.toLowerCase();
+    const filtered = patients.filter(
+      patient => 
+        patient.name.toLowerCase().includes(query) ||
+        patient.email.toLowerCase().includes(query) ||
+        patient.phone.toLowerCase().includes(query)
+    );
+    setFilteredPatients(filtered);
+  }, [searchQuery, patients]);
+
   // Não renderizar nada no servidor para evitar erros de hidratação
   if (!isClient) {
     return null;
   }
   
+  const handleDeleteLink = async (indication: Indication) => {
+    if (!indication.slug) {
+      console.error('Slug da indicação não fornecido');
+      return;
+    }
+
+    console.log('Iniciando exclusão da indicação:', indication.slug);
+    
+    try {
+      const url = `/api/indications/${indication.slug}`;
+      console.log('Enviando requisição DELETE para:', url);
+      
+      const response = await fetch(url, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include'
+      });
+
+      console.log('Status da resposta:', response.status);
+      
+      let responseData;
+      try {
+        responseData = await response.json();
+        console.log('Dados da resposta:', responseData);
+      } catch (e) {
+        console.error('Erro ao parsear resposta:', e);
+        responseData = null;
+      }
+
+      if (response.ok) {
+        console.log('Exclusão bem-sucedida, atualizando estado local');
+        setIndications(prev => prev.filter(ind => ind.id !== indication.id));
+        setShowDeleteModal(false);
+        setDeletingLinkId(null);
+        
+        toast({
+          title: "Sucesso",
+          description: "Link de indicação excluído com sucesso",
+        });
+      } else {
+        const errorMessage = responseData?.error || 'Erro ao excluir link';
+        console.error('Erro na resposta:', errorMessage);
+        throw new Error(errorMessage);
+      }
+    } catch (error) {
+      console.error('Erro detalhado ao excluir link:', error);
+      toast({
+        title: "Erro",
+        description: error instanceof Error ? error.message : "Não foi possível excluir o link. Tente novamente.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const openDeleteModal = (indication: Indication) => {
+    setDeletingLinkId(indication.id);
+    setCurrentIndication(indication);
+    setShowDeleteModal(true);
+  };
+
   return (
     <div className="min-h-[100dvh] bg-gray-100 pt-20 pb-24 md:pt-12 md:pb-16 px-2 sm:px-4">
       <div className="container mx-auto px-0 sm:pl-4 md:pl-8 lg:pl-16 max-w-full sm:max-w-[95%] md:max-w-[90%] lg:max-w-[85%]">
@@ -382,6 +472,14 @@ export default function IndicationsPage() {
                         <ShareIcon className="h-3 w-3 mr-1" />
                         Compartilhar
                       </Button>
+                      <Button
+                        onClick={() => openDeleteModal(indication)}
+                        variant="ghost"
+                        size="sm"
+                        className="text-gray-500 hover:text-red-600 hover:bg-red-50 transition-colors text-xs h-7 w-7 p-0"
+                      >
+                        <TrashIcon className="h-3 w-3" />
+                      </Button>
                     </div>
                   </div>
                 ))}
@@ -453,6 +551,14 @@ export default function IndicationsPage() {
                             <ShareIcon className="h-3 w-3 mr-1" />
                             Compartilhar
                           </Button>
+                          <Button
+                            onClick={() => openDeleteModal(indication)}
+                            variant="ghost"
+                            size="sm"
+                            className="text-gray-500 hover:text-red-600 hover:bg-red-50 transition-colors text-xs h-7 w-7 p-0"
+                          >
+                            <TrashIcon className="h-3 w-3" />
+                          </Button>
                         </div>
                       </td>
                     </tr>
@@ -464,7 +570,7 @@ export default function IndicationsPage() {
         </Card>
 
         <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
-          <DialogContent className="bg-white/90 border-0 shadow-[0_8px_30px_rgba(0,0,0,0.12)] rounded-3xl p-4 w-[95vw] max-w-md mx-auto">
+          <DialogContent className="bg-white border-0 shadow-[0_8px_30px_rgba(0,0,0,0.12)] backdrop-blur-none rounded-3xl p-4 w-[95vw] max-w-md mx-auto">
             <CardHeader className="p-0 mb-4">
               <CardTitle className="text-sm md:text-base font-bold text-gray-900 tracking-[-0.03em] font-inter">Criar Novo Link</CardTitle>
               <CardDescription className="text-xs text-gray-600 tracking-[-0.03em] font-inter">
@@ -485,37 +591,68 @@ export default function IndicationsPage() {
                 </div>
 
                 <div className="space-y-1">
-                  <Label htmlFor="patientName" className="text-xs font-medium text-gray-700 tracking-[-0.03em] font-inter">Nome do Paciente</Label>
-                  <Input
-                    id="patientName"
-                    value={patientName}
-                    onChange={(e) => setPatientName(e.target.value)}
-                    placeholder="Nome completo do paciente"
-                    className="bg-white/50 border-gray-200 focus:border-gray-300 text-gray-900 placeholder:text-gray-400 rounded-xl h-9 text-sm"
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <Label htmlFor="patientEmail" className="text-xs font-medium text-gray-700 tracking-[-0.03em] font-inter">E-mail do Paciente</Label>
-                  <Input
-                    id="patientEmail"
-                    type="email"
-                    value={patientEmail}
-                    onChange={(e) => setPatientEmail(e.target.value)}
-                    placeholder="E-mail do paciente"
-                    className="bg-white/50 border-gray-200 focus:border-gray-300 text-gray-900 placeholder:text-gray-400 rounded-xl h-9 text-sm"
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <Label htmlFor="patientPhone" className="text-xs font-medium text-gray-700 tracking-[-0.03em] font-inter">Telefone do Paciente</Label>
-                  <Input
-                    id="patientPhone"
-                    value={patientPhone}
-                    onChange={(e) => setPatientPhone(e.target.value)}
-                    placeholder="Telefone do paciente"
-                    className="bg-white/50 border-gray-200 focus:border-gray-300 text-gray-900 placeholder:text-gray-400 rounded-xl h-9 text-sm"
-                  />
+                  <Label className="text-xs font-medium text-gray-700 tracking-[-0.03em] font-inter">Selecionar Paciente</Label>
+                  <Popover open={openCombobox} onOpenChange={setOpenCombobox}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={openCombobox}
+                        className="w-full justify-between bg-white/50 border-gray-200 focus:border-gray-300 text-gray-900 placeholder:text-gray-400 rounded-xl h-9 text-sm"
+                      >
+                        {selectedPatient ? selectedPatient.name : "Selecione um paciente..."}
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent 
+                      className="w-[var(--radix-popover-trigger-width)] p-0 bg-white shadow-lg border border-gray-200 rounded-xl z-[9999]" 
+                      align="start" 
+                      sideOffset={4}
+                    >
+                      <Command>
+                        <CommandInput 
+                          placeholder="Buscar paciente..." 
+                          value={searchQuery}
+                          onValueChange={setSearchQuery}
+                          className="h-9 border-0 focus:ring-0"
+                        />
+                        <CommandEmpty className="p-2 text-sm text-gray-500">
+                          Nenhum paciente encontrado.
+                        </CommandEmpty>
+                        <CommandGroup className="max-h-[200px] overflow-auto">
+                          {filteredPatients.map((patient) => (
+                            <CommandItem
+                              key={patient.id}
+                              value={patient.name}
+                              className="cursor-pointer hover:bg-gray-50 py-2 px-2 flex items-center gap-2"
+                              onSelect={() => {
+                                setSelectedPatient(patient);
+                                setOpenCombobox(false);
+                                setSearchQuery("");
+                              }}
+                            >
+                              <Check
+                                className={cn(
+                                  "h-4 w-4 flex-shrink-0",
+                                  selectedPatient?.id === patient.id ? "opacity-100" : "opacity-0"
+                                )}
+                              />
+                              <div className="flex flex-col flex-1">
+                                <span className="font-medium">{patient.name}</span>
+                                <span className="text-xs text-gray-500">{patient.email}</span>
+                              </div>
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                  {selectedPatient && (
+                    <div className="mt-2 p-2 bg-gray-50 rounded-lg text-xs text-gray-600">
+                      <p><strong>Email:</strong> {selectedPatient.email}</p>
+                      <p><strong>Telefone:</strong> {selectedPatient.phone}</p>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex flex-col sm:flex-row gap-3 pt-1">
@@ -553,6 +690,46 @@ export default function IndicationsPage() {
         <Dialog open={showEditModal} onOpenChange={setShowEditModal}>
           <DialogContent className="bg-gray-800/5 border-0 shadow-[0_8px_30px_rgba(0,0,0,0.12)] rounded-2xl p-4 w-[95vw] max-w-md mx-auto">
             {/* Modal de edição */}
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={showDeleteModal} onOpenChange={setShowDeleteModal}>
+          <DialogContent className="bg-white border-0 shadow-[0_8px_30px_rgba(0,0,0,0.12)] backdrop-blur-none rounded-3xl p-4 w-[95vw] max-w-md mx-auto">
+            <CardHeader className="p-0 mb-4">
+              <CardTitle className="text-sm md:text-base font-bold text-gray-900 tracking-[-0.03em] font-inter">Confirmar Exclusão</CardTitle>
+              <CardDescription className="text-xs text-gray-600 tracking-[-0.03em] font-inter">
+                Tem certeza que deseja excluir este link de indicação?
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="flex flex-col sm:flex-row gap-3 pt-1">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setShowDeleteModal(false);
+                    setDeletingLinkId(null);
+                    setCurrentIndication(null);
+                  }}
+                  className="bg-white/50 border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300 rounded-xl h-9 flex-1 text-xs"
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  type="button"
+                  onClick={() => {
+                    if (currentIndication) {
+                      handleDeleteLink(currentIndication);
+                    } else {
+                      console.error('Indicação não encontrada');
+                    }
+                  }}
+                  className="bg-red-600 hover:bg-red-700 text-white rounded-xl h-9 flex-1 text-xs"
+                >
+                  Excluir
+                </Button>
+              </div>
+            </CardContent>
           </DialogContent>
         </Dialog>
       </div>

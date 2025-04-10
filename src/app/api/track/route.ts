@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 
 export async function POST(req: NextRequest) {
   try {
@@ -28,42 +29,44 @@ export async function POST(req: NextRequest) {
       where: { slug: userSlug }
     });
 
-    if (!user) {
-      return NextResponse.json(
-        { error: 'Médico não encontrado' },
-        { status: 404 }
-      );
+    // Obter IP e User-Agent
+    const ip = req.headers.get('x-forwarded-for') || 'unknown';
+    const userAgent = req.headers.get('user-agent') || 'unknown';
+
+    // Se não encontrar o usuário, ainda registramos o evento com informações limitadas
+    const eventData: Omit<Prisma.EventUncheckedCreateInput, 'userId'> & { userId?: string } = {
+      type,
+      ip: ip.toString(),
+      userAgent,
+      utmSource,
+      utmMedium,
+      utmCampaign,
+      utmTerm,
+      utmContent
+    };
+
+    // Adicionar userId se o usuário existir
+    if (user) {
+      eventData.userId = user.id;
     }
 
-    // Buscar a indicação (se existir)
-    let indication: { id: string; name: string | null; slug: string; createdAt: Date; userId: string; } | null = null;
-    if (indicationSlug) {
-      indication = await prisma.indication.findFirst({
+    // Se encontrou o usuário, buscar a indicação
+    if (user && indicationSlug) {
+      const indication = await prisma.indication.findFirst({
         where: {
           slug: indicationSlug,
           userId: user.id
         }
       });
+      
+      if (indication) {
+        eventData.indicationId = indication.id;
+      }
     }
-
-    // Obter IP e User-Agent
-    const ip = req.headers.get('x-forwarded-for') || 'unknown';
-    const userAgent = req.headers.get('user-agent') || 'unknown';
 
     // Registrar o evento
     await prisma.event.create({
-      data: {
-        type,
-        userId: user.id,
-        indicationId: indication?.id,
-        ip: ip.toString(),
-        userAgent,
-        utmSource,
-        utmMedium,
-        utmCampaign,
-        utmTerm,
-        utmContent
-      }
+      data: eventData as Prisma.EventUncheckedCreateInput
     });
 
     // Retornar 204 (sem conteúdo) para não atrasar o redirecionamento
@@ -99,39 +102,44 @@ export async function GET(req: NextRequest) {
       where: { slug: userSlug }
     });
 
-    if (!user) {
-      return new NextResponse(null, { status: 204 });
+    // Obter IP e User-Agent
+    const ip = req.headers.get('x-forwarded-for') || 'unknown';
+    const userAgent = req.headers.get('user-agent') || 'unknown';
+
+    // Se não encontrar o usuário, ainda registramos o evento com informações limitadas
+    const eventData: Omit<Prisma.EventUncheckedCreateInput, 'userId'> & { userId?: string } = {
+      type,
+      ip: ip.toString(),
+      userAgent,
+      utmSource,
+      utmMedium,
+      utmCampaign,
+      utmTerm,
+      utmContent
+    };
+
+    // Adicionar userId se o usuário existir
+    if (user) {
+      eventData.userId = user.id;
     }
 
-    // Buscar a indicação (se existir)
-    let indication: { id: string; name: string | null; slug: string; createdAt: Date; userId: string; } | null = null;
-    if (indicationSlug) {
-      indication = await prisma.indication.findFirst({
+    // Se encontrou o usuário, buscar a indicação
+    if (user && indicationSlug) {
+      const indication = await prisma.indication.findFirst({
         where: {
           slug: indicationSlug,
           userId: user.id
         }
       });
+      
+      if (indication) {
+        eventData.indicationId = indication.id;
+      }
     }
-
-    // Obter IP e User-Agent
-    const ip = req.headers.get('x-forwarded-for') || 'unknown';
-    const userAgent = req.headers.get('user-agent') || 'unknown';
 
     // Registrar o evento
     await prisma.event.create({
-      data: {
-        type,
-        userId: user.id,
-        indicationId: indication?.id,
-        ip: ip.toString(),
-        userAgent,
-        utmSource,
-        utmMedium,
-        utmCampaign,
-        utmTerm,
-        utmContent
-      }
+      data: eventData as Prisma.EventUncheckedCreateInput
     });
   } catch (error) {
     console.error('Erro ao registrar evento via GET:', error);
@@ -139,13 +147,13 @@ export async function GET(req: NextRequest) {
 
   // Retornar uma imagem transparente 1x1 para tracking pixel
   const transparent1x1 = Buffer.from('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7', 'base64');
+  
   return new NextResponse(transparent1x1, {
-    status: 200,
     headers: {
       'Content-Type': 'image/gif',
       'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
       'Pragma': 'no-cache',
-      'Expires': '0',
+      'Expires': '0'
     }
   });
 } 

@@ -194,4 +194,83 @@ export async function PUT(
       { status: 500 }
     );
   }
+}
+
+/**
+ * @swagger
+ * /api/indications/{slug}:
+ *   delete:
+ *     summary: Exclui uma indicação específica
+ *     parameters:
+ *       - in: path
+ *         name: slug
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Indicação excluída com sucesso
+ *       404:
+ *         description: Indicação não encontrada
+ *       401:
+ *         description: Não autorizado
+ */
+export async function DELETE(
+  request: NextRequest,
+  context: any
+) {
+  try {
+    const { slug } = context.params;
+
+    // Obter a sessão atual
+    const session = await getServerSession(authOptions);
+
+    if (!session?.user?.id) {
+      return NextResponse.json(
+        { error: 'Usuário não autenticado' },
+        { status: 401 }
+      );
+    }
+
+    // Verificar se a indicação existe e pertence ao usuário
+    const indication = await prisma.indication.findFirst({
+      where: {
+        slug,
+        userId: session.user.id
+      }
+    });
+
+    if (!indication) {
+      return NextResponse.json(
+        { error: 'Indicação não encontrada' },
+        { status: 404 }
+      );
+    }
+
+    // Excluir eventos relacionados primeiro
+    await prisma.event.deleteMany({
+      where: { indicationId: indication.id }
+    });
+
+    // Excluir leads relacionados
+    await prisma.lead.deleteMany({
+      where: { indicationId: indication.id }
+    });
+
+    // Excluir a indicação
+    await prisma.indication.delete({
+      where: { id: indication.id }
+    });
+
+    return NextResponse.json({ 
+      success: true,
+      message: 'Indicação excluída com sucesso'
+    });
+  } catch (error) {
+    console.error('Erro ao excluir indicação:', error);
+    return NextResponse.json(
+      { error: 'Erro ao excluir indicação' },
+      { status: 500 }
+    );
+  }
 } 

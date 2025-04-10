@@ -19,7 +19,8 @@ import {
   PlusIcon,
   TrashIcon,
   ArrowRightIcon,
-  EnvelopeIcon
+  EnvelopeIcon,
+  LinkIcon
 } from "@heroicons/react/24/outline";
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -457,147 +458,45 @@ export default function PacientesPage() {
   return (
     <div className="min-h-[100dvh] bg-gray-100 pt-20 pb-24 md:pt-12 md:pb-16 px-2 sm:px-4">
       <div className="container mx-auto px-0 sm:pl-4 md:pl-8 lg:pl-16 max-w-full sm:max-w-[95%] md:max-w-[90%] lg:max-w-[85%]">
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6">
-          <div>
-            <h1 className="text-lg md:text-xl font-bold text-gray-900 tracking-[-0.03em] font-inter">Pacientes</h1>
-            <p className="text-xs md:text-sm text-gray-600 tracking-[-0.03em] font-inter">Gerencie seus pacientes</p>
-          </div>
-          <div className="mt-4 md:mt-0 flex items-center gap-2">
-            <div className="relative">
-              <Input
-                type="text"
-                placeholder="Buscar pacientes..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 w-full md:w-[280px] rounded-full border-gray-300 bg-white"
-              />
-              <MagnifyingGlassIcon className="h-5 w-5 text-gray-500 absolute left-3 top-1/2 transform -translate-y-1/2" />
-            </div>
-            <Button 
-              className="bg-gray-800/5 border-0 shadow-[0_4px_12px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.1)] transition-all duration-300 rounded-2xl text-gray-700 hover:bg-gray-800/10 text-xs"
-              onClick={handleCreatePatient}
-            >
-              <PlusIcon className="h-4 w-4 mr-2" />
-              Novo Paciente
-            </Button>
-          </div>
-        </div>
-
-        <Card className="bg-gray-800/5 border-0 shadow-[0_8px_30px_rgba(0,0,0,0.12)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.16)] transition-all duration-300 rounded-2xl">
-          <CardHeader className="pb-1 pt-3 px-4">
-            <CardTitle className="text-sm md:text-base font-bold text-gray-900 tracking-[-0.03em] font-inter">Lista de Pacientes</CardTitle>
-            <CardDescription className="text-xs text-gray-500 tracking-[-0.03em] font-inter">
-              Gerencie seus pacientes
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="pb-3 px-4">
-            <div className="overflow-x-auto -mx-4 px-4">
-              {/* Mobile view for small screens */}
-              <div className="md:hidden space-y-4">
-                {filteredPatients.map((patient) => (
-                  <div key={patient.id} className="bg-white p-3 rounded-xl shadow-sm">
-                    <div className="font-medium text-sm text-gray-900 mb-1">{patient.name}</div>
-                    <div className="text-gray-600 text-xs mb-2">{patient.email}</div>
-                    <div className="text-gray-600 text-xs mb-2">{patient.phone}</div>
-                    <div className="mb-3">{getStatusBadge(patient.lead?.status || 'novo')}</div>
-                    <div className="flex justify-between gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="bg-white border-sky-300 text-sky-700 hover:bg-sky-50 hover:border-sky-400 hover:text-sky-800 transition-colors text-xs h-7 px-2 flex-1"
-                        onClick={() => handleViewPatient(patient)}
-                      >
-                        <EyeIcon className="h-3 w-3 mr-1" />
-                        Visualizar
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="bg-white border-sky-300 text-sky-700 hover:bg-sky-50 hover:border-sky-400 hover:text-sky-800 transition-colors text-xs h-7 px-2 flex-1"
-                        onClick={() => handleEditPatient(patient)}
-                      >
-                        <PencilIcon className="h-3 w-3 mr-1" />
-                        Editar
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="bg-white border-sky-300 text-sky-700 hover:bg-sky-50 hover:border-sky-400 hover:text-sky-800 transition-colors text-xs h-7 px-2 flex-1"
-                        onClick={() => handleSendPortalConfig(patient)}
-                        disabled={sendingPortalConfig[patient.id]}
-                      >
-                        {sendingPortalConfig[patient.id] ? (
-                          <>
-                            <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-sky-700 mr-1" />
-                            Enviando...
-                          </>
-                        ) : portalConfigSent[patient.id] ? (
-                          <>
-                            <CheckCircleIcon className="h-3 w-3 mr-1 text-green-600" />
-                            Enviado
-                          </>
-                        ) : (
-                          <>
-                            <EnvelopeIcon className="h-3 w-3 mr-1" />
-                            Enviar
-                          </>
-                        )}
-                      </Button>
-                    </div>
-                  </div>
-                ))}
+        <div className="flex flex-col lg:flex-row gap-6">
+          {/* Lista de Pacientes */}
+          <div className="flex-1">
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6">
+              <div>
+                <h1 className="text-lg md:text-xl font-bold text-gray-900 tracking-[-0.03em] font-inter">Pacientes</h1>
+                <p className="text-xs md:text-sm text-gray-600 tracking-[-0.03em] font-inter">Gerencie seus pacientes</p>
               </div>
-              
-              {/* Desktop table view */}
-              <table className="w-full hidden md:table">
-                <thead>
-                  <tr className="border-b border-gray-200">
-                    <th className="py-2 px-3 text-left text-xs font-medium text-gray-500">
-                      <Checkbox
-                        checked={selectedPatients.length === filteredPatients.length && filteredPatients.length > 0}
-                        onCheckedChange={handleSelectAll}
-                      />
-                    </th>
-                    <th className="py-2 px-3 text-left text-xs font-medium text-gray-500">Nome</th>
-                    <th className="py-2 px-3 text-left text-xs font-medium text-gray-500">Email</th>
-                    <th className="py-2 px-3 text-left text-xs font-medium text-gray-500">Telefone</th>
-                    <th className="py-2 px-3 text-left text-xs font-medium text-gray-500">Status</th>
-                    <th className="py-2 px-3 text-left text-xs font-medium text-gray-500">Data de Cadastro</th>
-                    <th className="py-2 px-3 text-right text-xs font-medium text-gray-500">Ações</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {filteredPatients.map((patient) => (
-                    <tr key={patient.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="py-2 px-3">
-                        <Checkbox
-                          checked={selectedPatients.includes(patient.id)}
-                          onCheckedChange={() => handleSelectPatient(patient.id)}
-                        />
-                      </td>
-                      <td className="py-2 px-3">
-                        <div className="font-medium text-sm text-gray-900">{patient.name}</div>
-                      </td>
-                      <td className="py-2 px-3">
-                        <div className="text-gray-600 text-xs">{patient.email}</div>
-                      </td>
-                      <td className="py-2 px-3">
-                        <div className="text-gray-600 text-xs">{patient.phone}</div>
-                      </td>
-                      <td className="py-2 px-3">
-                        {getStatusBadge(patient.lead?.status || 'novo')}
-                      </td>
-                      <td className="py-2 px-3">
-                        <div className="text-gray-600 text-xs">
-                          {format(new Date(patient.createdAt), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
-                        </div>
-                      </td>
-                      <td className="py-2 px-3">
-                        <div className="flex justify-end gap-2">
+              <Button 
+                onClick={() => setIsCreateModalOpen(true)}
+                className="w-full md:w-auto mt-2 md:mt-0 bg-gray-800/5 border-0 shadow-[0_4px_12px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.1)] transition-all duration-300 rounded-2xl text-gray-700 hover:bg-gray-800/10 text-xs"
+              >
+                <PlusIcon className="h-4 w-4 mr-2" />
+                Novo Paciente
+              </Button>
+            </div>
+
+            <Card className="bg-gray-800/5 border-0 shadow-[0_8px_30px_rgba(0,0,0,0.12)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.16)] transition-all duration-300 rounded-2xl">
+              <CardHeader className="pb-1 pt-3 px-4">
+                <CardTitle className="text-sm md:text-base font-bold text-gray-900 tracking-[-0.03em] font-inter">Lista de Pacientes</CardTitle>
+                <CardDescription className="text-xs text-gray-500 tracking-[-0.03em] font-inter">
+                  Gerencie seus pacientes
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pb-3 px-4">
+                <div className="overflow-x-auto -mx-4 px-4">
+                  {/* Mobile view for small screens */}
+                  <div className="md:hidden space-y-4">
+                    {filteredPatients.map((patient) => (
+                      <div key={patient.id} className="bg-white p-3 rounded-xl shadow-sm">
+                        <div className="font-medium text-sm text-gray-900 mb-1">{patient.name}</div>
+                        <div className="text-gray-600 text-xs mb-2">{patient.email}</div>
+                        <div className="text-gray-600 text-xs mb-2">{patient.phone}</div>
+                        <div className="mb-3">{getStatusBadge(patient.lead?.status || 'novo')}</div>
+                        <div className="flex justify-between gap-2">
                           <Button
                             variant="outline"
                             size="sm"
-                            className="bg-white border-sky-300 text-sky-700 hover:bg-sky-50 hover:border-sky-400 hover:text-sky-800 transition-colors text-xs h-7 px-2"
+                            className="bg-white border-sky-300 text-sky-700 hover:bg-sky-50 hover:border-sky-400 hover:text-sky-800 transition-colors text-xs h-7 px-2 flex-1"
                             onClick={() => handleViewPatient(patient)}
                           >
                             <EyeIcon className="h-3 w-3 mr-1" />
@@ -606,7 +505,7 @@ export default function PacientesPage() {
                           <Button
                             variant="outline"
                             size="sm"
-                            className="bg-white border-sky-300 text-sky-700 hover:bg-sky-50 hover:border-sky-400 hover:text-sky-800 transition-colors text-xs h-7 px-2"
+                            className="bg-white border-sky-300 text-sky-700 hover:bg-sky-50 hover:border-sky-400 hover:text-sky-800 transition-colors text-xs h-7 px-2 flex-1"
                             onClick={() => handleEditPatient(patient)}
                           >
                             <PencilIcon className="h-3 w-3 mr-1" />
@@ -615,7 +514,7 @@ export default function PacientesPage() {
                           <Button
                             variant="outline"
                             size="sm"
-                            className="bg-white border-sky-300 text-sky-700 hover:bg-sky-50 hover:border-sky-400 hover:text-sky-800 transition-colors text-xs h-7 px-2"
+                            className="bg-white border-sky-300 text-sky-700 hover:bg-sky-50 hover:border-sky-400 hover:text-sky-800 transition-colors text-xs h-7 px-2 flex-1"
                             onClick={() => handleSendPortalConfig(patient)}
                             disabled={sendingPortalConfig[patient.id]}
                           >
@@ -632,19 +531,153 @@ export default function PacientesPage() {
                             ) : (
                               <>
                                 <EnvelopeIcon className="h-3 w-3 mr-1" />
-                                Enviar confirmação
+                                Enviar
                               </>
                             )}
                           </Button>
                         </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  {/* Desktop table view */}
+                  <table className="w-full hidden md:table">
+                    <thead>
+                      <tr className="border-b border-gray-200">
+                        <th className="py-2 px-3 text-left text-xs font-medium text-gray-500">
+                          <Checkbox
+                            checked={selectedPatients.length === filteredPatients.length && filteredPatients.length > 0}
+                            onCheckedChange={handleSelectAll}
+                          />
+                        </th>
+                        <th className="py-2 px-3 text-left text-xs font-medium text-gray-500">Nome</th>
+                        <th className="py-2 px-3 text-left text-xs font-medium text-gray-500">Email</th>
+                        <th className="py-2 px-3 text-left text-xs font-medium text-gray-500">Telefone</th>
+                        <th className="py-2 px-3 text-left text-xs font-medium text-gray-500">Status</th>
+                        <th className="py-2 px-3 text-left text-xs font-medium text-gray-500">Data de Cadastro</th>
+                        <th className="py-2 px-3 text-right text-xs font-medium text-gray-500">Ações</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                      {filteredPatients.map((patient) => (
+                        <tr key={patient.id} className="hover:bg-gray-50 transition-colors">
+                          <td className="py-2 px-3">
+                            <Checkbox
+                              checked={selectedPatients.includes(patient.id)}
+                              onCheckedChange={() => handleSelectPatient(patient.id)}
+                            />
+                          </td>
+                          <td className="py-2 px-3">
+                            <div className="font-medium text-sm text-gray-900">{patient.name}</div>
+                          </td>
+                          <td className="py-2 px-3">
+                            <div className="text-gray-600 text-xs">{patient.email}</div>
+                          </td>
+                          <td className="py-2 px-3">
+                            <div className="text-gray-600 text-xs">{patient.phone}</div>
+                          </td>
+                          <td className="py-2 px-3">
+                            {getStatusBadge(patient.lead?.status || 'novo')}
+                          </td>
+                          <td className="py-2 px-3">
+                            <div className="text-gray-600 text-xs">
+                              {format(new Date(patient.createdAt), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+                            </div>
+                          </td>
+                          <td className="py-2 px-3">
+                            <div className="flex justify-end gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="bg-white border-sky-300 text-sky-700 hover:bg-sky-50 hover:border-sky-400 hover:text-sky-800 transition-colors text-xs h-7 px-2"
+                                onClick={() => handleViewPatient(patient)}
+                              >
+                                <EyeIcon className="h-3 w-3 mr-1" />
+                                Visualizar
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="bg-white border-sky-300 text-sky-700 hover:bg-sky-50 hover:border-sky-400 hover:text-sky-800 transition-colors text-xs h-7 px-2"
+                                onClick={() => handleEditPatient(patient)}
+                              >
+                                <PencilIcon className="h-3 w-3 mr-1" />
+                                Editar
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="bg-white border-sky-300 text-sky-700 hover:bg-sky-50 hover:border-sky-400 hover:text-sky-800 transition-colors text-xs h-7 px-2"
+                                onClick={() => handleSendPortalConfig(patient)}
+                                disabled={sendingPortalConfig[patient.id]}
+                              >
+                                {sendingPortalConfig[patient.id] ? (
+                                  <>
+                                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-sky-700 mr-1" />
+                                    Enviando...
+                                  </>
+                                ) : portalConfigSent[patient.id] ? (
+                                  <>
+                                    <CheckCircleIcon className="h-3 w-3 mr-1 text-green-600" />
+                                    Enviado
+                                  </>
+                                ) : (
+                                  <>
+                                    <EnvelopeIcon className="h-3 w-3 mr-1" />
+                                    Enviar confirmação
+                                  </>
+                                )}
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Seção Lateral - Criar Link de Indicação */}
+          <div className="w-full lg:w-80">
+            <Card className="bg-gray-800/5 border-0 shadow-[0_8px_30px_rgba(0,0,0,0.12)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.16)] transition-all duration-300 rounded-2xl sticky top-24">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-bold text-gray-900 tracking-[-0.03em] font-inter">Link de Indicação</CardTitle>
+                <CardDescription className="text-xs text-gray-600 tracking-[-0.03em] font-inter">
+                  Crie um link de indicação para o paciente selecionado
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {selectedPatients.length === 1 ? (
+                  <div className="space-y-4">
+                    <div className="p-3 bg-white/50 rounded-xl border border-gray-200">
+                      <p className="text-sm font-medium text-gray-900">{patients.find(p => p.id === selectedPatients[0])?.name}</p>
+                      <p className="text-xs text-gray-500">{patients.find(p => p.id === selectedPatients[0])?.email}</p>
+                    </div>
+                    <Button
+                      onClick={() => {
+                        const patient = patients.find(p => p.id === selectedPatients[0]);
+                        if (patient) {
+                          router.push(`/dashboard/indications?patient=${patient.id}`);
+                        }
+                      }}
+                      className="w-full bg-gray-900 hover:bg-gray-800 text-white rounded-xl h-9 text-xs"
+                    >
+                      <LinkIcon className="h-4 w-4 mr-2" />
+                      Criar Link de Indicação
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="text-center py-6">
+                    <UserIcon className="h-8 w-8 mx-auto text-gray-400 mb-2" />
+                    <p className="text-sm text-gray-600">Selecione um paciente para criar um link de indicação</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </div>
 
         {/* Modal de visualização do paciente */}
         <Dialog open={isViewModalOpen} onOpenChange={setIsViewModalOpen}>

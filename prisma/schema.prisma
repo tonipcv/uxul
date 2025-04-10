@@ -35,15 +35,17 @@ model User {
 }
 
 model Indication {
-  id        String   @id @default(cuid())
-  slug      String
-  name      String?
-  userId    String
-  createdAt DateTime @default(now())
-  fullLink  String?
-  events    Event[]
-  user      User     @relation(fields: [userId], references: [id])
-  leads     Lead[]
+  id            String   @id @default(cuid())
+  slug          String
+  name          String?
+  userId        String
+  patientId     String?
+  createdAt     DateTime @default(now())
+  fullLink      String?
+  events        Event[]
+  user          User     @relation(fields: [userId], references: [id])
+  leads         Lead[]
+  patient       Patient? @relation(fields: [patientId], references: [id])
 }
 
 model Lead {
@@ -168,23 +170,24 @@ model InterestOption {
 }
 
 model Patient {
-  id                String    @id @default(cuid())
+  id                String       @id @default(cuid())
   name              String
   email             String
   phone             String
   userId            String
-  leadId            String?   @unique
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  leadId            String?      @unique
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
   accessToken       String?
   accessTokenExpiry DateTime?
-  hasPassword       Boolean   @default(false)
+  hasPassword       Boolean      @default(false)
   password          String?
-  firstAccess       Boolean   @default(true)
-  hasPortalAccess   Boolean   @default(false)
-  welcomeEmailSent  Boolean   @default(false)
+  firstAccess       Boolean      @default(true)
+  hasPortalAccess   Boolean      @default(false)
+  welcomeEmailSent  Boolean      @default(false)
   resetToken        String?
   resetTokenExpiry  DateTime?
-  lead              Lead?     @relation(fields: [leadId], references: [id])
-  user              User      @relation(fields: [userId], references: [id])
+  lead              Lead?        @relation(fields: [leadId], references: [id])
+  user              User         @relation(fields: [userId], references: [id])
+  indications       Indication[]
 }

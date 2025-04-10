@@ -3,6 +3,8 @@ import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import slugify from 'slugify';
+import { getToken } from "next-auth/jwt";
+import { nanoid } from "nanoid";
 
 /**
  * @swagger
@@ -102,9 +104,9 @@ export async function GET(req: NextRequest) {
  *           schema:
  *             type: object
  *             properties:
- *               name:
+ *               patientId:
  *                 type: string
- *                 description: Nome da indicação
+ *                 description: ID do paciente
  *     responses:
  *       201:
  *         description: Indicação criada com sucesso
@@ -115,102 +117,84 @@ export async function GET(req: NextRequest) {
  */
 export async function POST(req: NextRequest) {
   try {
-    // Obter a sessão atual
-    const session = await getServerSession(authOptions);
-
-    if (!session?.user?.id) {
+    const token = await getToken({ req });
+    if (!token) {
       return NextResponse.json(
-        { error: 'Usuário não autenticado' },
+        { error: "Não autorizado" },
         { status: 401 }
       );
     }
 
-    // Extrair dados do corpo da requisição
-    const data = await req.json();
-    const { name, patientName, patientEmail, patientPhone } = data;
+    const { patientId } = await req.json();
 
-    if (!name || typeof name !== 'string' || name.trim() === '') {
+    if (!patientId) {
       return NextResponse.json(
-        { error: 'Nome da indicação é obrigatório' },
+        { error: "ID do paciente é obrigatório" },
         { status: 400 }
       );
     }
 
-    // Validar dados do paciente
-    if (!patientName || !patientEmail || !patientPhone) {
-      return NextResponse.json(
-        { error: 'Dados do paciente são obrigatórios' },
-        { status: 400 }
-      );
-    }
-
-    // Gerar o slug a partir do nome
-    const baseSlug = slugify(name, {
-      lower: true,
-      strict: true,
-      locale: 'pt'
-    }).substring(0, 50);
-
-    // Verificar se já existe uma indicação com esse slug
-    const existingCount = await prisma.indication.count({
+    // Verifica se o paciente existe e pertence ao usuário
+    const patient = await prisma.patient.findFirst({
       where: {
-        userId: session.user.id,
-        slug: {
-          startsWith: baseSlug
-        }
-      }
-    });
-
-    // Se já existe, adicionar um sufixo numérico
-    const slug = existingCount > 0 ? `${baseSlug}-${existingCount + 1}` : baseSlug;
-
-    // Criar o lead primeiro
-    const lead = await prisma.lead.create({
-      data: {
-        name: patientName,
-        phone: patientPhone,
-        userId: session.user.id,
-        status: 'Novo'
-      }
-    });
-
-    // Criar o paciente vinculado ao lead
-    const patient = await prisma.patient.create({
-      data: {
-        name: patientName,
-        email: patientEmail,
-        phone: patientPhone,
-        userId: session.user.id,
-        leadId: lead.id
-      }
-    });
-
-    // Criar a nova indicação vinculada ao lead
-    const newIndication = await prisma.indication.create({
-      data: {
-        name,
-        slug,
-        userId: session.user.id,
-        leads: {
-          connect: {
-            id: lead.id
-          }
-        }
+        id: patientId,
+        userId: token.sub as string,
       },
-      include: {
-        leads: {
-          include: {
-            patient: true
-          }
-        }
-      }
     });
 
-    return NextResponse.json(newIndication, { status: 201 });
+    if (!patient) {
+      return NextResponse.json(
+        { error: "Paciente não encontrado" },
+        { status: 404 }
+      );
+    }
+
+    // Verifica se o paciente já tem uma indicação ativa
+    const existingIndication = await prisma.indication.findFirst({
+      where: {
+        patientId: patientId,
+      },
+    });
+
+    if (existingIndication) {
+      return NextResponse.json(
+        { error: "Este paciente já possui um link de indicação ativo" },
+        { status: 400 }
+      );
+    }
+
+    // Gera um slug único para a indicação
+    const slug = nanoid(10);
+
+    // Cria a indicação
+    const indication = await prisma.indication.create({
+      data: {
+        slug,
+        userId: token.sub as string,
+        patientId: patientId,
+        name: patient.name,
+        fullLink: `${process.env.NEXT_PUBLIC_APP_URL}/i/${slug}`,
+      },
+    });
+
+    // Registra o evento de criação da indicação
+    await prisma.event.create({
+      data: {
+        type: "INDICATION_CREATED",
+        userId: token.sub as string,
+        indicationId: indication.id,
+        metadata: {
+          patientName: patient.name,
+          patientId: patient.id,
+        },
+      },
+    });
+
+    return NextResponse.json(indication);
   } catch (error) {
-    console.error('Erro ao criar indicação:', error);
+    console.error("Erro ao criar indicação:", error);
     return NextResponse.json(
-      { error: 'Erro ao processar a solicitação' },
+      { error: "Erro ao criar indicação" },
       { status: 500 }
     );
   }
