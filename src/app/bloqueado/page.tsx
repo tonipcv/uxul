@@ -1,11 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { Button } from '@/components/ui/button';
+import { Button } from "@/components/ui/button";
 import { Logo } from '@/components/ui/logo';
 import { motion } from 'framer-motion';
 import { ChevronRightIcon, XMarkIcon } from '@heroicons/react/24/outline';
-import { useRouter } from 'next/navigation';
+import { useRouter } from "next/navigation";
 
 export default function BloqueadoPage() {
   const router = useRouter();

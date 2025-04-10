@@ -16,6 +16,7 @@ declare module 'next-auth' {
     type: 'user' | 'patient';
     userSlug?: string;
     image?: string | null;
+    plan?: string;
   }
 
   interface Session {
@@ -53,7 +54,8 @@ export const authOptions: AuthOptions = {
             include: {
               user: {
                 select: {
-                  slug: true
+                  slug: true,
+                  plan: true
                 }
               }
             }
@@ -77,7 +79,8 @@ export const authOptions: AuthOptions = {
             email: patient.email,
             name: patient.name,
             type: 'patient' as const,
-            userSlug: patient.user?.slug
+            userSlug: patient.user?.slug,
+            plan: patient.user?.plan
           };
         }
 
@@ -89,7 +92,8 @@ export const authOptions: AuthOptions = {
             name: true,
             password: true,
             slug: true,
-            image: true
+            image: true,
+            plan: true
           }
         });
 
@@ -112,7 +116,8 @@ export const authOptions: AuthOptions = {
           name: user.name,
           type: 'user' as const,
           userSlug: user.slug,
-          image: user.image
+          image: user.image,
+          plan: user.plan
         };
       }
     })
@@ -124,6 +129,8 @@ export const authOptions: AuthOptions = {
         token.type = user.type;
         token.userSlug = user.userSlug;
         token.image = user.image;
+        token.plan = user.plan;
+        token.email = user.email;
       }
       return token;
     },
@@ -133,9 +140,11 @@ export const authOptions: AuthOptions = {
         user: {
           ...session.user,
           id: token.id,
+          email: token.email,
           type: token.type as 'user' | 'patient',
           userSlug: token.userSlug as string | undefined,
-          image: token.image as string | null | undefined
+          image: token.image as string | null | undefined,
+          plan: token.plan
         }
       };
     }

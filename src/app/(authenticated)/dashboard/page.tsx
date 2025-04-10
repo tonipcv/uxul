@@ -27,6 +27,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowPathIcon } from "@heroicons/react/24/outline";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useRouter } from 'next/navigation';
 
 // Função para verificar se uma data é válida
 const isValidDate = (date: Date): boolean => {
@@ -93,7 +94,8 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 };
 
 export default function DashboardPage() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
+  const router = useRouter();
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("overview");
@@ -104,6 +106,13 @@ export default function DashboardPage() {
       fetchDashboardData();
     }
   }, [session]);
+
+  useEffect(() => {
+    // Verifica se o usuário está autenticado e não é premium
+    if (status === 'authenticated' && session?.user && session.user.plan !== 'premium') {
+      router.push('/bloqueado'); // Redireciona para a página de bloqueio
+    }
+  }, [session, status, router]);
 
   const fetchDashboardData = async () => {
     try {
@@ -165,6 +174,20 @@ export default function DashboardPage() {
     name: indication.name || indication.slug,
     leads: indication._count.leads
   })) || [];
+
+  // Mostra loading enquanto verifica
+  if (status === 'loading' || !session?.user) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-blue-800">
+        <div className="animate-spin h-6 w-6 border-2 border-blue-300 border-t-transparent rounded-full" />
+      </div>
+    );
+  }
+
+  // Se não for premium, não renderiza o conteúdo
+  if (session.user.plan !== 'premium') {
+    return null;
+  }
 
   return (
     <div className="min-h-[100dvh] bg-gray-100 pt-20 pb-24 md:pt-12 md:pb-16 px-4">

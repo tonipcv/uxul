@@ -17,6 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { UserCircleIcon } from "@heroicons/react/24/outline";
 import { format } from "date-fns";
 import { Textarea } from "@/components/ui/textarea";
+import { useRouter } from "next/navigation";
 
 // Importação dinâmica para resolver problema de renderização no servidor
 const DragDropContextLib = dynamic(
@@ -87,9 +88,16 @@ export default function PipelinePage() {
     name: '',
     phone: ''
   });
+  const router = useRouter();
 
   useEffect(() => {
-    if (status === 'authenticated' && session?.user?.id) {
+    // Verifica se o usuário está autenticado e não é premium
+    if (status === 'authenticated' && session?.user && session.user.plan !== 'premium') {
+      router.push('/bloqueado'); // Redireciona para a página de bloqueio
+      return;
+    }
+
+    if (session?.user?.id) {
       fetchLeads();
       fetchDashboardData();
     } else if (status === 'unauthenticated') {
