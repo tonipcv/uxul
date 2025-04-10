@@ -81,8 +81,8 @@ function PatientPageContent() {
     async function fetchPatientData() {
       try {
         const url = token 
-          ? `/api/patient/${params.slug}?token=${token}`
-          : `/api/patient/${params.slug}`;
+          ? `/api/patient/${params.slug}?token=${token}&includeStats=true`
+          : `/api/patient/${params.slug}?includeStats=true`;
         
         const response = await fetch(url, {
           credentials: 'include'
@@ -98,7 +98,32 @@ function PatientPageContent() {
         }
         
         const data = await response.json();
+        
+        // Atualizar os dados a cada 30 segundos
+        const interval = setInterval(async () => {
+          try {
+            const statsResponse = await fetch(`/api/patient/${params.slug}/stats`);
+            if (statsResponse.ok) {
+              const statsData = await statsResponse.json();
+              setPatient(prev => prev ? {
+                ...prev,
+                lead: {
+                  ...prev.lead,
+                  indication: prev.lead?.indication ? {
+                    ...prev.lead.indication,
+                    _count: statsData.counts
+                  } : null
+                }
+              } : null);
+            }
+          } catch (error) {
+            console.error('Erro ao atualizar estatísticas:', error);
+          }
+        }, 30000);
+
         setPatient(data);
+        
+        return () => clearInterval(interval);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Erro ao carregar dados');
         if (!token) {
@@ -114,18 +139,31 @@ function PatientPageContent() {
 
   const handleCopyLink = () => {
     if (patient?.lead?.indication?.fullLink) {
-      navigator.clipboard.writeText(patient.lead.indication.fullLink);
-      toast.success('Link copiado com sucesso!');
+      const link = patient.lead.indication.fullLink;
+      navigator.clipboard.writeText(link);
+      toast.success('Link copiado para a área de transferência!');
     }
   };
 
   const handleShareLink = () => {
     if (patient?.lead?.indication?.fullLink) {
-      navigator.share({
-        title: 'Link de Indicação',
-        text: 'Confira este link de indicação:',
-        url: patient.lead.indication.fullLink,
-      });
+      const link = patient.lead.indication.fullLink;
+      const text = `Olá! Gostaria de compartilhar este link de indicação: ${link}`;
+      
+      if (navigator.share) {
+        navigator.share({
+          title: 'Link de Indicação',
+          text: 'Confira este link de indicação:',
+          url: link
+        }).catch(error => {
+          console.error('Erro ao compartilhar:', error);
+          // Fallback para WhatsApp se o compartilhamento nativo falhar
+          window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+        });
+      } else {
+        // Fallback direto para WhatsApp se navigator.share não estiver disponível
+        window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+      }
     }
   };
 
@@ -421,18 +459,28 @@ function PatientPageContent() {
                         <div>
                           <p className="text-xs text-gray-500 mb-1">Cliques</p>
                           <p className="text-xl font-semibold text-gray-900">{patient.lead.indication._count.events}</p>
+                          <p className="text-xs text-gray-500 mt-1">Total de visitas</p>
                         </div>
                         <div>
                           <p className="text-xs text-gray-500 mb-1">Leads</p>
                           <p className="text-xl font-semibold text-gray-900">{patient.lead.indication._count.leads}</p>
+                          <p className="text-xs text-gray-500 mt-1">Pacientes cadastrados</p>
                         </div>
                       </div>
                       
                       <div className="mt-2 pt-2 border-t border-gray-200">
-                        <div className="text-xs text-gray-500 mb-1">Taxa de conversão</div>
+                        <div className="flex justify-between items-center mb-1">
+                          <p className="text-xs text-gray-500">Taxa de conversão</p>
+                          <p className="text-xs font-medium text-gray-700">
+                            {patient.lead.indication._count.events > 0 
+                              ? `${Math.round((patient.lead.indication._count.leads / patient.lead.indication._count.events) * 100)}%`
+                              : '0%'
+                            }
+                          </p>
+                        </div>
                         <div className="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
                           <div 
-                            className="h-full bg-blue-600 rounded-full" 
+                            className="h-full bg-blue-600 rounded-full transition-all duration-500"
                             style={{ 
                               width: `${
                                 patient.lead.indication._count.events > 0 
@@ -442,11 +490,14 @@ function PatientPageContent() {
                             }}
                           />
                         </div>
+                        <p className="text-xs text-gray-500 mt-1">
+                          {patient.lead.indication._count.leads} pacientes de {patient.lead.indication._count.events} visitas
+                        </p>
                       </div>
                     </div>
                   </div>
                   
-                  <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 mb-4">
+                  <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
                     <p className="text-xs text-gray-500 mb-1">URL do Link</p>
                     <div className="flex items-center justify-between">
                       <p className="text-sm text-gray-700 truncate">
@@ -472,63 +523,23 @@ function PatientPageContent() {
                       </div>
                     </div>
                   </div>
-                  
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <h3 className="text-sm font-medium text-gray-900">Desempenho do Link</h3>
-                      <Button variant="ghost" size="sm" className="h-7 text-xs text-gray-500 hover:text-gray-900">
-                        <BarChart3 className="h-3.5 w-3.5 mr-1" />
-                        Ver detalhes
-                      </Button>
-                    </div>
-                    <div className="bg-gray-50 rounded-lg border border-gray-200 p-3 h-60">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <AreaChart
-                          data={[
-                            { name: 'Jan', value: 20 },
-                            { name: 'Fev', value: 35 },
-                            { name: 'Mar', value: 25 },
-                            { name: 'Abr', value: 40 },
-                            { name: 'Mai', value: 30 },
-                            { name: 'Jun', value: 55 }
-                          ]}
-                          margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
-                        >
-                          <defs>
-                            <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.8}/>
-                              <stop offset="95%" stopColor="#3B82F6" stopOpacity={0.1}/>
-                            </linearGradient>
-                          </defs>
-                          <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                          <XAxis 
-                            dataKey="name" 
-                            stroke="#6B7280"
-                            tick={{ fill: '#6B7280', fontSize: 10 }}
-                          />
-                          <YAxis 
-                            stroke="#6B7280"
-                            tick={{ fill: '#6B7280', fontSize: 10 }}
-                          />
-                          <Tooltip 
-                            contentStyle={{ 
-                              backgroundColor: 'white',
-                              border: '1px solid #E5E7EB',
-                              borderRadius: '8px'
-                            }}
-                            labelStyle={{ color: '#111827' }}
-                            itemStyle={{ color: '#3B82F6' }}
-                          />
-                          <Area
-                            type="monotone"
-                            dataKey="value"
-                            stroke="#3B82F6"
-                            fillOpacity={1}
-                            fill="url(#colorValue)"
-                          />
-                        </AreaChart>
-                      </ResponsiveContainer>
-                    </div>
+
+                  <div className="mt-4 flex gap-2">
+                    <Button 
+                      variant="outline" 
+                      className="flex-1 bg-white border-gray-200 text-gray-700 hover:bg-gray-50"
+                      onClick={handleCopyLink}
+                    >
+                      <Copy className="h-4 w-4 mr-2" />
+                      Copiar Link
+                    </Button>
+                    <Button 
+                      className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+                      onClick={handleShareLink}
+                    >
+                      <Share2 className="h-4 w-4 mr-2" />
+                      Compartilhar
+                    </Button>
                   </div>
                 </div>
               )}

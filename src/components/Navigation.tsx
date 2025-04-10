@@ -13,6 +13,9 @@ import {
   LinkIcon,
   UsersIcon,
   Cog6ToothIcon,
+  ClipboardDocumentListIcon,
+  FunnelIcon,
+  HeartIcon,
 } from '@heroicons/react/24/outline';
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -79,13 +82,13 @@ export default function Navigation() {
         {
           href: '/dashboard/pacientes',
           label: 'Pacientes',
-          icon: UserCircleIcon,
+          icon: HeartIcon,
           description: 'Gerenciar pacientes'
         },
         {
           href: '/dashboard/pipeline',
           label: 'Pipeline',
-          icon: CalendarDaysIcon,
+          icon: FunnelIcon,
           description: 'Gestão de status'
         },
         {

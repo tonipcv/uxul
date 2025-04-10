@@ -343,9 +343,9 @@ export default function PipelinePage() {
 
   return (
     <DragDropContextLib onDragEnd={handleDragEnd}>
-      <div className="min-h-[100dvh] bg-gray-100 pt-20 pb-24 md:pt-12 md:pb-16 px-4">
-        <div className="container mx-auto pl-1 sm:pl-4 md:pl-8 lg:pl-16 max-w-[98%] sm:max-w-[95%] md:max-w-[90%] lg:max-w-[85%]">
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6">
+      <div className="min-h-[100dvh] bg-gray-100 pt-20 pb-24 md:pt-12 md:pb-16">
+        <div className="w-full md:container md:mx-auto md:pl-8 lg:pl-16 md:max-w-[90%] lg:max-w-[85%]">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6 px-4 md:px-0">
             <div>
               <h1 className="text-xl font-bold text-gray-900 tracking-[-0.03em] font-inter">Pipeline</h1>
               <p className="text-xs text-gray-600 tracking-[-0.01em] font-inter">Seus leads e vendas</p>
@@ -359,10 +359,10 @@ export default function PipelinePage() {
             </Button>
           </div>
 
-          <div className="px-1">
+          <div className="w-full">
             <div className="flex overflow-x-auto pb-4 w-full md:grid md:grid-cols-5 gap-4 md:gap-3">
               {columns.map((column) => (
-                <div key={column.id} className="min-w-[250px] md:min-w-0 flex-shrink-0 md:flex-shrink-1 min-h-[300px] flex flex-col">
+                <div key={column.id} className="min-w-[280px] md:min-w-0 flex-shrink-0 md:flex-shrink-1 min-h-[300px] flex flex-col first:ml-4 last:mr-4 md:first:ml-0 md:last:mr-0">
                   <div className="bg-gray-800/5 rounded-lg p-2 shadow-[0_2px_8px_rgba(0,0,0,0.05)] mb-2">
                     <h2 className="text-sm font-semibold text-gray-800 flex items-center">
                       <span className="mr-auto">{column.title}</span>
