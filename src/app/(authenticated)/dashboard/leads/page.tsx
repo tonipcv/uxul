@@ -61,6 +61,28 @@ interface DashboardData {
   conversionRate: number;
 }
 
+const formatPhoneNumber = (phone: string) => {
+  // Remove todos os caracteres não numéricos
+  const numbers = phone.replace(/\D/g, '');
+  
+  // Se não tiver números, retorna vazio
+  if (!numbers) return '';
+  
+  // Se começar com +55, remove
+  const cleanNumbers = numbers.startsWith('55') ? numbers.slice(2) : numbers;
+  
+  // Verifica se tem DDD (2 dígitos após o +55)
+  if (cleanNumbers.length >= 2) {
+    const ddd = cleanNumbers.slice(0, 2);
+    const number = cleanNumbers.slice(2);
+    
+    // Formata o número final
+    return `+55 (${ddd}) ${number}`;
+  }
+  
+  return `+55 ${cleanNumbers}`;
+};
+
 export default function LeadsPage() {
   const { data: session } = useSession();
   const [leads, setLeads] = useState<Lead[]>([]);
@@ -119,10 +141,15 @@ export default function LeadsPage() {
         ? format(parseISO(editingLead.appointmentDate), "HH:mm")
         : "";
 
+      // Remove o código do país se já existir
+      const phoneNumber = editingLead.phone.startsWith('+') 
+        ? editingLead.phone.substring(editingLead.phone.indexOf(' ') + 1)
+        : editingLead.phone;
+
       setFormData({
         name: editingLead.name || "",
         email: editingLead.email || "",
-        phone: editingLead.phone || "",
+        phone: phoneNumber,
         interest: editingLead.interest || "",
         status: editingLead.status || "Novo",
         potentialValue: editingLead.potentialValue?.toString() || "",
@@ -190,11 +217,29 @@ export default function LeadsPage() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    
+    // Se for o campo de telefone, formata o número
+    if (name === 'phone') {
+      setFormData(prev => ({ ...prev, [name]: formatPhoneNumber(value) }));
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }));
+    }
   };
 
   const handleSelectChange = (name: string, value: string) => {
-    setFormData(prev => ({ ...prev, [name]: value }));
+    if (name === 'status') {
+      setFormData(prev => ({ ...prev, status: value }));
+      
+      // Se o status for alterado para "Fechado", significa que o lead foi convertido para paciente
+      if (value === 'Fechado') {
+        toast({
+          title: "Lead convertido",
+          description: "Lead foi convertido para paciente com sucesso",
+        });
+      }
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }));
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -1012,6 +1057,7 @@ export default function LeadsPage() {
                 <Label htmlFor="name" className="text-sm sm:text-xs font-medium text-gray-700 tracking-[-0.03em] font-inter">Nome</Label>
                 <Input
                   id="name"
+                  name="name"
                   value={newLead.name}
                   onChange={(e) => setNewLead({ ...newLead, name: e.target.value })}
                   placeholder="Nome completo"
@@ -1023,6 +1069,7 @@ export default function LeadsPage() {
                 <Label htmlFor="email" className="text-sm sm:text-xs font-medium text-gray-700 tracking-[-0.03em] font-inter">E-mail</Label>
                 <Input
                   id="email"
+                  name="email"
                   type="email"
                   value={newLead.email}
                   onChange={(e) => setNewLead({ ...newLead, email: e.target.value })}
@@ -1035,9 +1082,10 @@ export default function LeadsPage() {
                 <Label htmlFor="phone" className="text-sm sm:text-xs font-medium text-gray-700 tracking-[-0.03em] font-inter">Telefone</Label>
                 <Input
                   id="phone"
+                  name="phone"
                   value={newLead.phone}
-                  onChange={(e) => setNewLead({ ...newLead, phone: e.target.value })}
-                  placeholder="Telefone do lead"
+                  onChange={(e) => setNewLead({ ...newLead, phone: formatPhoneNumber(e.target.value) })}
+                  placeholder="Digite o telefone"
                   className="bg-white/50 border-gray-200 focus:border-gray-300 text-gray-900 placeholder:text-gray-400 rounded-xl h-10 sm:h-9 text-base sm:text-sm"
                 />
               </div>
@@ -1102,6 +1150,7 @@ export default function LeadsPage() {
                 <Label htmlFor="name" className="text-sm sm:text-xs font-medium text-gray-700 tracking-[-0.03em] font-inter">Nome</Label>
                 <Input
                   id="name"
+                  name="name"
                   value={formData.name}
                   onChange={handleInputChange}
                   placeholder="Nome completo"
@@ -1113,6 +1162,7 @@ export default function LeadsPage() {
                 <Label htmlFor="email" className="text-sm sm:text-xs font-medium text-gray-700 tracking-[-0.03em] font-inter">E-mail</Label>
                 <Input
                   id="email"
+                  name="email"
                   type="email"
                   value={formData.email}
                   onChange={handleInputChange}
@@ -1125,9 +1175,10 @@ export default function LeadsPage() {
                 <Label htmlFor="phone" className="text-sm sm:text-xs font-medium text-gray-700 tracking-[-0.03em] font-inter">Telefone</Label>
                 <Input
                   id="phone"
+                  name="phone"
                   value={formData.phone}
                   onChange={handleInputChange}
-                  placeholder="Telefone do lead"
+                  placeholder="Digite o telefone"
                   className="bg-white/50 border-gray-200 focus:border-gray-300 text-gray-900 placeholder:text-gray-400 rounded-xl h-11 sm:h-9 text-base sm:text-sm"
                 />
               </div>
@@ -1136,6 +1187,7 @@ export default function LeadsPage() {
                 <Label htmlFor="interest" className="text-sm sm:text-xs font-medium text-gray-700 tracking-[-0.03em] font-inter">Interesse</Label>
                 <Input
                   id="interest"
+                  name="interest"
                   value={formData.interest}
                   onChange={handleInputChange}
                   placeholder="Interesse do lead"
@@ -1146,19 +1198,32 @@ export default function LeadsPage() {
               <div className="space-y-2 sm:space-y-1">
                 <Label htmlFor="status" className="text-sm sm:text-xs font-medium text-gray-700 tracking-[-0.03em] font-inter">Status</Label>
                 <Select
+                  name="status"
                   value={formData.status}
-                  onValueChange={handleSelectChange.bind(null, 'status')}
+                  onValueChange={(value) => handleSelectChange('status', value)}
                 >
-                  <SelectTrigger className="bg-white/50 border-gray-200 focus:border-gray-300 text-gray-900 rounded-xl h-11 sm:h-9 text-base sm:text-sm">
+                  <SelectTrigger id="status" className="bg-white/50 border-gray-200 focus:border-gray-300 text-gray-900 rounded-xl h-11 sm:h-9 text-base sm:text-sm">
                     <SelectValue placeholder="Selecione o status" />
                   </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Novo">Novo</SelectItem>
-                    <SelectItem value="Agendado">Agendado</SelectItem>
-                    <SelectItem value="Compareceu">Compareceu</SelectItem>
-                    <SelectItem value="Fechado">Fechado</SelectItem>
-                    <SelectItem value="Não veio">Não veio</SelectItem>
-                    <SelectItem value="Cancelado">Cancelado</SelectItem>
+                  <SelectContent 
+                    className="bg-white border border-gray-200 shadow-lg rounded-lg z-[9999] relative"
+                    align="center"
+                    side="bottom"
+                    avoidCollisions={false}
+                  >
+                    <SelectGroup>
+                      <SelectLabel className="text-xs text-gray-500 font-medium">Lead</SelectLabel>
+                      <SelectItem value="Novo" className="text-sm text-gray-700">Novo</SelectItem>
+                      <SelectItem value="Agendado" className="text-sm text-gray-700">Agendado</SelectItem>
+                      <SelectItem value="Compareceu" className="text-sm text-gray-700">Compareceu</SelectItem>
+                      <SelectItem value="Não veio" className="text-sm text-gray-700">Não veio</SelectItem>
+                      <SelectItem value="Cancelado" className="text-sm text-gray-700">Cancelado</SelectItem>
+                    </SelectGroup>
+                    <SelectSeparator className="bg-gray-200" />
+                    <SelectGroup>
+                      <SelectLabel className="text-xs text-gray-500 font-medium">Converter para</SelectLabel>
+                      <SelectItem value="Fechado" className="text-sm text-gray-700">Paciente</SelectItem>
+                    </SelectGroup>
                   </SelectContent>
                 </Select>
               </div>
@@ -1167,6 +1232,7 @@ export default function LeadsPage() {
                 <Label htmlFor="potentialValue" className="text-sm sm:text-xs font-medium text-gray-700 tracking-[-0.03em] font-inter">Valor Potencial</Label>
                 <Input
                   id="potentialValue"
+                  name="potentialValue"
                   type="number"
                   value={formData.potentialValue}
                   onChange={handleInputChange}
@@ -1179,6 +1245,7 @@ export default function LeadsPage() {
                 <Label htmlFor="appointmentDate" className="text-sm sm:text-xs font-medium text-gray-700 tracking-[-0.03em] font-inter">Data da Consulta</Label>
                 <Input
                   id="appointmentDate"
+                  name="appointmentDate"
                   type="date"
                   value={formData.appointmentDate}
                   onChange={handleInputChange}
@@ -1190,6 +1257,7 @@ export default function LeadsPage() {
                 <Label htmlFor="appointmentTime" className="text-sm sm:text-xs font-medium text-gray-700 tracking-[-0.03em] font-inter">Horário da Consulta</Label>
                 <Input
                   id="appointmentTime"
+                  name="appointmentTime"
                   type="time"
                   value={formData.appointmentTime}
                   onChange={handleInputChange}
@@ -1201,6 +1269,7 @@ export default function LeadsPage() {
                 <Label htmlFor="medicalNotes" className="text-sm sm:text-xs font-medium text-gray-700 tracking-[-0.03em] font-inter">Observações</Label>
                 <Textarea
                   id="medicalNotes"
+                  name="medicalNotes"
                   value={formData.medicalNotes}
                   onChange={handleInputChange}
                   placeholder="Observações sobre o lead"
