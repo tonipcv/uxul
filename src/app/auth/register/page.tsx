@@ -46,7 +46,13 @@ export default function Register() {
   };
 
   return (
-    <div className="min-h-[100dvh] bg-gradient-to-br from-blue-800 via-blue-700 to-blue-900 flex flex-col items-center justify-center px-4">
+    <div className="min-h-[100dvh] bg-gradient-to-br from-blue-800 via-blue-700 to-blue-900 flex flex-col items-center justify-center px-4 pb-8">
+      <style jsx global>{`
+        body {
+          background: linear-gradient(to bottom right, var(--tw-gradient-from), var(--tw-gradient-via), var(--tw-gradient-to));
+          min-height: 100vh;
+        }
+      `}</style>
       <div className="w-full max-w-[400px] mx-auto">
         <div className="flex justify-center mb-6">
           <Logo className="scale-150" variant="light" />

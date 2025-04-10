@@ -43,7 +43,13 @@ export default function SignIn() {
   };
 
   return (
-    <div className="min-h-[100dvh] bg-gradient-primary flex flex-col items-center justify-center px-4">
+    <div className="min-h-[100dvh] bg-gradient-primary flex flex-col items-center justify-center px-4 pb-8">
+      <style jsx global>{`
+        body {
+          background: var(--gradient-primary);
+          min-height: 100vh;
+        }
+      `}</style>
       <div className="w-full max-w-[400px] mx-auto">
         <div className="flex justify-center mb-8">
           <Logo className="scale-150" variant="light" />

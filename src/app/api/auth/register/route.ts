@@ -53,10 +53,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // Generate verification code (6 digits)
-    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
-    const codeExpiry = new Date(Date.now() + 3600000); // 1 hour from now
-
     // Hash password
     const hashedPassword = await hash(password, 12);
 
@@ -66,23 +62,14 @@ export async function POST(req: Request) {
         name,
         email,
         password: hashedPassword,
-        emailVerified: null,
+        emailVerified: new Date(), // Automatically verify the email
         slug,
         specialty
       },
     });
 
-    // Create verification token
-    await prisma.verificationToken.create({
-      data: {
-        identifier: email,
-        token: verificationCode,
-        expires: codeExpiry
-      }
-    });
-
-    console.log('Sending verification email to:', email);
-    // Send verification email
+    console.log('Sending welcome email to:', email);
+    // Send welcome email
     try {
       await transporter.verify();
       console.log('SMTP connection verified');
@@ -93,38 +80,42 @@ export async function POST(req: Request) {
           address: 'ai@booplabs.com'
         },
         to: email,
-        subject: 'Verifique seu email',
+        subject: 'Bem-vindo ao MED1',
         html: `
-          <h1>Bem-vindo ao MED1!</h1>
-          <p>Para confirmar seu cadastro, use o código abaixo:</p>
-          <div style="background-color: #f4f4f4; padding: 12px; text-align: center; font-size: 24px; letter-spacing: 4px; margin: 20px 0;">
-            <strong>${verificationCode}</strong>
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <h1 style="color: #1a365d; margin-bottom: 24px;">Bem-vindo ao MED1!</h1>
+            <p style="color: #4a5568; font-size: 16px; line-height: 1.5;">Olá ${name},</p>
+            <p style="color: #4a5568; font-size: 16px; line-height: 1.5;">Seu cadastro foi realizado com sucesso! Agora você já pode acessar sua conta e começar a usar todas as funcionalidades do MED1.</p>
+            <div style="margin: 32px 0;">
+              <a href="${process.env.NEXT_PUBLIC_APP_URL}/auth/signin" 
+                 style="background-color: #3b82f6; 
+                        color: white; 
+                        text-decoration: none; 
+                        padding: 12px 24px; 
+                        border-radius: 6px;
+                        font-weight: 500;
+                        display: inline-block;">
+                Acessar minha conta
+              </a>
+            </div>
+            <p style="color: #4a5568; font-size: 16px; line-height: 1.5;">Se tiver alguma dúvida, estamos à disposição para ajudar.</p>
+            <p style="color: #4a5568; font-size: 16px; line-height: 1.5;">Atenciosamente,<br>Equipe MED1</p>
           </div>
-          <p>Este código é válido por 1 hora.</p>
-          <p>Se você não solicitou este cadastro, ignore este email.</p>
         `
       });
-      console.log('Verification email sent successfully');
+      console.log('Welcome email sent successfully');
     } catch (emailError) {
       console.error('Email sending error:', emailError);
-      // If email fails, delete the user and verification token
+      // If email fails, delete the user
       await prisma.user.delete({
         where: { id: user.id }
-      });
-      await prisma.verificationToken.delete({
-        where: {
-          identifier_token: {
-            identifier: email,
-            token: verificationCode
-          }
-        }
       });
       throw emailError;
     }
 
     return NextResponse.json(
       {
-        message: "Usuário criado com sucesso. Verifique seu email para confirmar o cadastro.",
+        message: "Usuário criado com sucesso. Você já pode fazer login.",
         userId: user.id
       },
       { status: 201 }
