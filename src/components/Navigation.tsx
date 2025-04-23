@@ -17,6 +17,7 @@ import {
   FunnelIcon,
   HeartIcon,
 } from '@heroicons/react/24/outline';
+import { MessageSquare, FileQuestion } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useSession } from "next-auth/react";
@@ -74,6 +75,18 @@ export default function Navigation() {
           description: 'Gerenciar links'
         },
         {
+          href: '/dashboard/chatbots',
+          label: 'Chatbots',
+          icon: ChatBubbleLeftIcon,
+          description: 'Assistentes virtuais'
+        },
+        {
+          href: '/dashboard/quizzes',
+          label: 'Questionários',
+          icon: FileQuestion,
+          description: 'Questionários de Triagem'
+        },
+        {
           href: '/dashboard/leads',
           label: 'Leads',
           icon: UsersIcon,
@@ -96,7 +109,7 @@ export default function Navigation() {
           label: 'Agenda',
           icon: CalendarDaysIcon,
           description: 'Google Calendar'
-        }
+        },
       ]
     },
     {

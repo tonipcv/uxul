@@ -6,12 +6,12 @@ import { getToken } from "next-auth/jwt";
 
 /**
  * @swagger
- * /api/indications/{slug}:
+ * /api/indications/{userSlug}:
  *   get:
  *     summary: Obtém detalhes de uma indicação específica
  *     parameters:
  *       - in: path
- *         name: slug
+ *         name: userSlug
  *         required: true
  *         schema:
  *           type: string
@@ -28,7 +28,7 @@ export async function GET(
   context: any
 ) {
   try {
-    const { slug } = context.params;
+    const { userSlug } = context.params;
 
     // Obter a sessão atual
     const session = await getServerSession(authOptions);
@@ -43,7 +43,7 @@ export async function GET(
     // Buscar a indicação pelo slug
     const indication = await prisma.indication.findFirst({
       where: {
-        slug,
+        slug: userSlug,
         userId: session.user.id
       },
       include: {
@@ -118,12 +118,12 @@ export async function GET(
 
 /**
  * @swagger
- * /api/indications/{slug}:
+ * /api/indications/{userSlug}:
  *   put:
  *     summary: Atualiza uma indicação específica
  *     parameters:
  *       - in: path
- *         name: slug
+ *         name: userSlug
  *         required: true
  *         schema:
  *           type: string
@@ -149,7 +149,7 @@ export async function PUT(
   context: any
 ) {
   try {
-    const { slug } = context.params;
+    const { userSlug } = context.params;
     const { name } = await request.json();
 
     // Obter a sessão atual
@@ -165,7 +165,7 @@ export async function PUT(
     // Verificar se a indicação existe e pertence ao usuário
     const existingIndication = await prisma.indication.findFirst({
       where: {
-        slug,
+        slug: userSlug,
         userId: session.user.id
       }
     });
@@ -199,12 +199,12 @@ export async function PUT(
 
 /**
  * @swagger
- * /api/indications/{slug}:
+ * /api/indications/{userSlug}:
  *   delete:
  *     summary: Exclui uma indicação específica
  *     parameters:
  *       - in: path
- *         name: slug
+ *         name: userSlug
  *         required: true
  *         schema:
  *           type: string
@@ -221,7 +221,7 @@ export async function DELETE(
   context: any
 ) {
   try {
-    const { slug } = context.params;
+    const { userSlug } = context.params;
 
     // Obter a sessão atual
     const session = await getServerSession(authOptions);
@@ -236,7 +236,7 @@ export async function DELETE(
     // Verificar se a indicação existe e pertence ao usuário
     const indication = await prisma.indication.findFirst({
       where: {
-        slug,
+        slug: userSlug,
         userId: session.user.id
       }
     });
@@ -278,7 +278,7 @@ export async function DELETE(
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { slug: string } }
+  { params }: { params: { userSlug: string } }
 ) {
   const token = await getToken({ req });
   if (!token) {
@@ -286,7 +286,7 @@ export async function POST(
   }
 
   const indication = await prisma.indication.findFirst({
-    where: { slug: params.slug },
+    where: { slug: params.userSlug },
   });
 
   if (!indication) {

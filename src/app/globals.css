@@ -59,9 +59,9 @@
 
     --turquoise: 171 77% 64%;
 
-    --foreground-rgb: 255, 255, 255;
-    --background-start-rgb: 0, 0, 0;
-    --background-end-rgb: 0, 0, 0;
+    --foreground-rgb: 0, 0, 0;
+    --background-start-rgb: 255, 255, 255;
+    --background-end-rgb: 255, 255, 255;
   }
 
   .dark {
@@ -102,14 +102,7 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
-    color: rgb(var(--foreground-rgb));
-    background: linear-gradient(
-        to bottom,
-        transparent,
-        rgb(var(--background-end-rgb))
-      )
-      rgb(var(--background-start-rgb));
+    @apply bg-white text-gray-900;
     font-feature-settings: "rlig" 1, "calt" 1;
     font-family: 'Montserrat', sans-serif;
   }
@@ -188,4 +181,39 @@
   .input-glass {
     @apply bg-white/10 backdrop-blur-sm border-2 border-white/30 text-white placeholder:text-white/60 focus:ring-2 focus:ring-white/50 focus:border-transparent;
   }
+}
+
+/* ReactFlow specific styles to override dark background */
+.react-flow__container {
+  background-color: white !important;
+}
+
+.react-flow__pane {
+  background-color: white !important;
+}
+
+.react-flow {
+  background-color: white !important;
+}
+
+/* Additional ReactFlow elements that might have dark backgrounds */
+.react-flow__viewport {
+  background-color: white !important;
+}
+
+.react-flow__node {
+  background-color: transparent !important;
+}
+
+.react-flow__edge {
+  color: #94a3b8 !important;
+}
+
+.react-flow__attribution {
+  background-color: transparent !important;
+  color: #64748b !important;
+}
+
+.react-flow__background {
+  background-color: white !important;
 }

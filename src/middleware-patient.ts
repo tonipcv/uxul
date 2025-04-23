@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { verify } from 'jsonwebtoken';
 import { prisma } from '@/lib/prisma';
 
-// Regex para detectar URLs no formato /{slug}/{indicador}
+// Regex para detectar URLs no formato /{userSlug}/{indicador}
 const INDICATION_REGEX = /^\/([^\/]+)\/([^\/]+)$/;
 
 // Verificar se o paciente está autenticado
@@ -112,6 +112,6 @@ export const config = {
     // Rotas do paciente
     '/patient/:path*',
     // Qualquer rota para capturar padrões de indicação
-    '/:slug/:indication',
+    '/:userSlug/:indication',
   ],
 }; 

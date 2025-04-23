@@ -17,14 +17,16 @@ import {
   ArrowTrendingUpIcon,
   UserIcon,
   ArrowPathIcon,
-  TrashIcon
+  TrashIcon,
+  PencilIcon
 } from "@heroicons/react/24/outline";
 import { toast } from "@/components/ui/use-toast";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Check, ChevronsUpDown } from "lucide-react";
+import { Check, ChevronsUpDown, Edit, Share2, Copy, Trash } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useRouter } from "next/navigation";
 
 interface IndicationCount {
   events: number;
@@ -55,6 +57,8 @@ interface Indication {
       phone: string;
     };
   }>;
+  type: string;
+  chatbotFlowId?: string;
 }
 
 interface Patient {
@@ -94,6 +98,14 @@ export default function IndicationsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [filteredPatients, setFilteredPatients] = useState<Patient[]>([]);
   const [currentIndication, setCurrentIndication] = useState<Indication | null>(null);
+
+  // Variáveis adicionais para chatbot
+  const [showCreateChatbotModal, setShowCreateChatbotModal] = useState(false);
+  const [chatbotName, setChatbotName] = useState('');
+  const [chatbotGreeting, setChatbotGreeting] = useState('');
+  const [chatbotWelcomeMessage, setChatbotWelcomeMessage] = useState('');
+
+  const router = useRouter();
 
   useEffect(() => {
     // Marcador de renderização client-side para evitar problemas de hidratação
@@ -395,6 +407,82 @@ export default function IndicationsPage() {
     setShowDeleteModal(true);
   };
 
+  const handleCreateChatbot = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!chatbotName.trim() || !session?.user?.id) {
+      toast({
+        title: "Erro",
+        description: "O nome do chatbot é obrigatório",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    setIsLoading(true);
+    try {
+      // Primeiro criar o fluxo de chatbot
+      const flowResponse = await fetch('/api/chatbot-flows', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: chatbotName,
+          description: 'Fluxo de chatbot criado através do painel'
+        })
+      });
+      
+      if (!flowResponse.ok) {
+        const errorData = await flowResponse.json();
+        throw new Error(errorData.error || "Não foi possível criar o fluxo de chatbot");
+      }
+      
+      const flowData = await flowResponse.json();
+      console.log("Fluxo criado com sucesso:", flowData);
+      
+      // Agora criar a indicação vinculada ao fluxo
+      const response = await fetch('/api/indications', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: chatbotName,
+          type: 'chatbot',
+          chatbotConfig: {
+            name: chatbotName,
+            greeting: chatbotGreeting || `Olá! Sou o assistente virtual do Dr. ${session?.user?.name}`,
+            welcomeMessage: chatbotWelcomeMessage || 'Como posso ajudar você hoje?',
+            collectDataInConversation: true,
+            flowId: flowData.id
+          },
+          chatbotFlowId: flowData.id
+        })
+      });
+      
+      if (response.ok) {
+        toast({
+          title: "Sucesso",
+          description: "Chatbot criado com sucesso! Acesse o editor de fluxo para personalizar as interações.",
+        });
+        setChatbotName('');
+        setChatbotGreeting('');
+        setChatbotWelcomeMessage('');
+        setShowCreateChatbotModal(false);
+        fetchIndications();
+      } else {
+        const errorData = await response.json();
+        console.error("Erro na resposta da API de indicações:", errorData);
+        throw new Error(errorData.error || "Não foi possível criar o chatbot");
+      }
+    } catch (error) {
+      console.error('Erro ao criar chatbot:', error);
+      toast({
+        title: "Erro",
+        description: error instanceof Error ? error.message : "Ocorreu um erro ao criar o chatbot",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-[100dvh] bg-gray-100 pt-20 pb-24 md:pt-12 md:pb-16 px-2 sm:px-4">
       <div className="container mx-auto px-0 sm:pl-4 md:pl-8 lg:pl-16 max-w-full sm:max-w-[95%] md:max-w-[90%] lg:max-w-[85%]">
@@ -403,13 +491,24 @@ export default function IndicationsPage() {
             <h1 className="text-lg md:text-xl font-bold text-gray-900 tracking-[-0.03em] font-inter">Indicações</h1>
             <p className="text-xs md:text-sm text-gray-600 tracking-[-0.03em] font-inter">Gerencie suas indicações</p>
           </div>
-          <Button 
-            onClick={() => setShowCreateModal(true)}
-            className="w-full md:w-auto mt-2 md:mt-0 bg-gray-800/5 border-0 shadow-[0_4px_12px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.1)] transition-all duration-300 rounded-2xl text-gray-700 hover:bg-gray-800/10 text-xs"
-          >
-            <PlusIcon className="h-4 w-4 mr-2" />
-            Nova Indicação
-          </Button>
+          <div className="w-full md:w-auto mt-2 md:mt-0 flex flex-col sm:flex-row gap-2">
+            <Button 
+              onClick={() => setShowCreateModal(true)}
+              className="w-full md:w-auto bg-gray-800/5 border-0 shadow-[0_4px_12px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.1)] transition-all duration-300 rounded-2xl text-gray-700 hover:bg-gray-800/10 text-xs"
+            >
+              <PlusIcon className="h-4 w-4 mr-2" />
+              Nova Indicação
+            </Button>
+            <Button 
+              onClick={() => setShowCreateChatbotModal(true)}
+              className="w-full md:w-auto bg-blue-600 border-0 shadow-[0_4px_12px_rgba(59,130,246,0.3)] hover:shadow-[0_8px_24px_rgba(59,130,246,0.4)] transition-all duration-300 rounded-2xl text-white hover:bg-blue-700 text-xs"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" className="h-4 w-4 mr-2">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+              </svg>
+              Criar Chatbot
+            </Button>
+          </div>
         </div>
 
         <Card className="bg-gray-800/5 border-0 shadow-[0_8px_30px_rgba(0,0,0,0.12)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.16)] transition-all duration-300 rounded-2xl">
@@ -466,13 +565,24 @@ export default function IndicationsPage() {
                         <ShareIcon className="h-3 w-3 mr-1" />
                         Compartilhar
                       </Button>
+                      {indication.type === 'chatbot' && indication.chatbotFlowId && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="bg-white border-yellow-300 text-yellow-700 hover:bg-yellow-50 hover:border-yellow-400 hover:text-yellow-800 transition-colors text-xs h-7 px-2"
+                          onClick={() => router.push(`/dashboard/chatbot-editor/${indication.chatbotFlowId}`)}
+                        >
+                          <PencilIcon className="h-3 w-3 mr-1" />
+                          Editar Chatbot
+                        </Button>
+                      )}
                       <Button
                         onClick={() => openDeleteModal(indication)}
-                        variant="ghost"
+                        variant="outline"
                         size="sm"
-                        className="text-gray-500 hover:text-red-600 hover:bg-red-50 transition-colors text-xs h-7 w-7 p-0"
+                        className="bg-white border-red-300 text-red-700 hover:bg-red-50 hover:border-red-400 hover:text-red-800 transition-colors text-xs h-7 px-2"
                       >
-                        <TrashIcon className="h-3 w-3" />
+                        <Trash className="h-3 w-3" />
                       </Button>
                     </div>
                   </div>
@@ -527,7 +637,7 @@ export default function IndicationsPage() {
                             className="bg-white border-sky-300 text-sky-700 hover:bg-sky-50 hover:border-sky-400 hover:text-sky-800 transition-colors text-xs h-7 px-2"
                             onClick={() => copyToClipboard(`${baseUrl}/${userSlug}/${indication.slug}`)}
                           >
-                            <ClipboardIcon className="h-3 w-3 mr-1" />
+                            <Copy className="h-3 w-3 mr-1" />
                             Copiar
                           </Button>
                           <Button
@@ -536,9 +646,20 @@ export default function IndicationsPage() {
                             className="bg-white border-sky-300 text-sky-700 hover:bg-sky-50 hover:border-sky-400 hover:text-sky-800 transition-colors text-xs h-7 px-2"
                             onClick={() => shareOnWhatsApp(`${baseUrl}/${userSlug}/${indication.slug}`)}
                           >
-                            <ShareIcon className="h-3 w-3 mr-1" />
+                            <Share2 className="h-3 w-3 mr-1" />
                             Compartilhar
                           </Button>
+                          {indication.type === 'chatbot' && indication.chatbotFlowId && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="bg-white border-yellow-300 text-yellow-700 hover:bg-yellow-50 hover:border-yellow-400 hover:text-yellow-800 transition-colors text-xs h-7 px-2"
+                              onClick={() => router.push(`/dashboard/chatbot-editor/${indication.chatbotFlowId}`)}
+                            >
+                              <PencilIcon className="h-3 w-3 mr-1" />
+                              Editar Chatbot
+                            </Button>
+                          )}
                           <Button
                             onClick={() => openDeleteModal(indication)}
                             variant="ghost"
@@ -718,6 +839,63 @@ export default function IndicationsPage() {
                 </Button>
               </div>
             </CardContent>
+          </DialogContent>
+        </Dialog>
+
+        {/* Modal de criação de chatbot */}
+        <Dialog open={showCreateChatbotModal} onOpenChange={setShowCreateChatbotModal}>
+          <DialogContent className="sm:max-w-[425px]">
+            <h2 className="text-lg font-semibold mb-2">Criar Chatbot</h2>
+            <form onSubmit={handleCreateChatbot} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="chatbotName">Nome do Chatbot</Label>
+                <Input
+                  id="chatbotName"
+                  value={chatbotName}
+                  onChange={(e) => setChatbotName(e.target.value)}
+                  placeholder="Ex: Assistente Virtual"
+                  required
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="chatbotGreeting">Mensagem Inicial (opcional)</Label>
+                <Input
+                  id="chatbotGreeting"
+                  value={chatbotGreeting}
+                  onChange={(e) => setChatbotGreeting(e.target.value)}
+                  placeholder={`Olá! Sou o assistente virtual do Dr. ${session?.user?.name}`}
+                />
+                <p className="text-xs text-gray-500">Primeira mensagem exibida ao abrir o chat</p>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="chatbotWelcomeMessage">Mensagem de Boas-vindas (opcional)</Label>
+                <Input
+                  id="chatbotWelcomeMessage"
+                  value={chatbotWelcomeMessage}
+                  onChange={(e) => setChatbotWelcomeMessage(e.target.value)}
+                  placeholder="Como posso ajudar você hoje?"
+                />
+                <p className="text-xs text-gray-500">Mensagem exibida após o usuário se identificar</p>
+              </div>
+              
+              <div className="flex justify-end space-x-2 mt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowCreateChatbotModal(false)}
+                >
+                  Cancelar
+                </Button>
+                <Button 
+                  type="submit"
+                  disabled={isLoading || !chatbotName.trim()}
+                >
+                  {isLoading ? "Criando..." : "Criar Chatbot"}
+                </Button>
+              </div>
+            </form>
           </DialogContent>
         </Dialog>
       </div>

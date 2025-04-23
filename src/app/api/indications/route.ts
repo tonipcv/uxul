@@ -6,6 +6,8 @@ import slugify from 'slugify';
 import { getToken } from "next-auth/jwt";
 import { nanoid } from "nanoid";
 
+export const dynamic = 'force-dynamic';
+
 /**
  * @swagger
  * /api/indications:
@@ -125,62 +127,90 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { patientId } = await req.json();
+    const { patientId, chatbotConfig, chatbotFlowId, name, type } = await req.json();
 
-    if (!patientId) {
+    // Para chatbots, patientId é opcional
+    if (!patientId && !chatbotConfig && !chatbotFlowId) {
       return NextResponse.json(
-        { error: "ID do paciente é obrigatório" },
+        { error: "ID do paciente é obrigatório para indicações do tipo regular" },
         { status: 400 }
       );
     }
 
-    // Verifica se o paciente existe e pertence ao usuário
-    const patient = await prisma.patient.findFirst({
-      where: {
-        id: patientId,
-        userId: token.sub as string,
-      },
-    });
+    // Verificação para chatbot
+    const isChatbot = !!chatbotConfig || !!chatbotFlowId || type === 'chatbot';
 
-    if (!patient) {
-      return NextResponse.json(
-        { error: "Paciente não encontrado" },
-        { status: 404 }
-      );
-    }
+    // Para indicações normais, verifica dados do paciente
+    let patientName = "";
+    if (patientId) {
+      // Verifica se o paciente existe e pertence ao usuário
+      const patient = await prisma.patient.findFirst({
+        where: {
+          id: patientId,
+          userId: token.sub as string,
+        },
+      });
 
-    // Verifica se o paciente já tem uma indicação ativa
-    const existingIndication = await prisma.indication.findFirst({
-      where: {
-        patientId: patientId,
-      },
-    });
+      if (!patient) {
+        return NextResponse.json(
+          { error: "Paciente não encontrado" },
+          { status: 404 }
+        );
+      }
+      
+      patientName = patient.name;
 
-    if (existingIndication) {
-      return NextResponse.json(
-        { error: "Este paciente já possui um link de indicação ativo" },
-        { status: 400 }
-      );
+      // Verifica se o paciente já tem uma indicação ativa do mesmo tipo
+      const existingIndication = await prisma.indication.findFirst({
+        where: {
+          patientId: patientId,
+          type: isChatbot ? 'chatbot' : 'regular'
+        },
+      });
+
+      if (existingIndication) {
+        return NextResponse.json(
+          { error: `Este paciente já possui um link ${isChatbot ? "de chatbot" : "de indicação"} ativo` },
+          { status: 400 }
+        );
+      }
     }
 
     // Gera um slug único para a indicação
     const slug = nanoid(10);
+
+    // Define o nome baseado no tipo
+    let indicationName = name;
+    if (!indicationName) {
+      if (isChatbot) {
+        if (chatbotConfig && typeof chatbotConfig === 'object' && 'name' in chatbotConfig) {
+          indicationName = String(chatbotConfig.name);
+        } else {
+          indicationName = `Chatbot ${slug.substring(0, 5)}`;
+        }
+      } else {
+        indicationName = patientName || `Indicação ${slug.substring(0, 5)}`;
+      }
+    }
 
     // Cria a indicação
     const indication = await prisma.indication.create({
       data: {
         slug,
         userId: token.sub as string,
-        patientId: patientId,
-        name: patient.name,
-        fullLink: `${process.env.NEXT_PUBLIC_APP_URL}/i/${slug}`,
+        patientId: patientId || null,
+        name: indicationName,
+        type: type || (isChatbot ? 'chatbot' : 'regular'),
+        chatbotConfig: isChatbot && chatbotConfig ? chatbotConfig : undefined,
+        chatbotFlowId: chatbotFlowId || undefined,
+        fullLink: `${process.env.NEXT_PUBLIC_APP_URL}/${slug}`,
       },
     });
 
     // Registra o evento de criação da indicação
     await prisma.event.create({
       data: {
-        type: "INDICATION_CREATED",
+        type: isChatbot ? "CHATBOT_CREATED" : "INDICATION_CREATED",
         userId: token.sub as string,
         indicationId: indication.id,
       },

@@ -26,26 +26,35 @@ model User {
   planExpiresAt          DateTime?
   pageTemplate           String           @default("default")
   accounts               Account[]
+  chatbotFlows           ChatbotFlow[]
   events                 Event[]
   indications            Indication[]
   interestOptions        InterestOption[]
   leads                  Lead[]
   patients               Patient[]
+  quizzes                Quiz[]
   sessions               Session[]
 }
 
 model Indication {
-  id            String   @id @default(cuid())
+  id            String        @id @default(cuid())
   slug          String
   name          String?
   userId        String
-  patientId     String?
-  createdAt     DateTime @default(now())
+  createdAt     DateTime      @default(now())
   fullLink      String?
+  patientId     String?
+  type          String        @default("regular")
+  chatbotConfig Json?
+  chatbotFlowId String?
+  quizId        String?
+  chatMessages  ChatMessage[]
   events        Event[]
-  user          User     @relation(fields: [userId], references: [id])
+  chatbotFlow   ChatbotFlow?  @relation(fields: [chatbotFlowId], references: [id])
+  patient       Patient?      @relation(fields: [patientId], references: [id])
+  quiz          Quiz?         @relation(fields: [quizId], references: [id])
+  user          User          @relation(fields: [userId], references: [id])
   leads         Lead[]
-  patient       Patient? @relation(fields: [patientId], references: [id])
 }
 
 model Lead {
@@ -187,7 +196,112 @@ model Patient {
   welcomeEmailSent  Boolean      @default(false)
   resetToken        String?
   resetTokenExpiry  DateTime?
+  indications       Indication[]
   lead              Lead?        @relation(fields: [leadId], references: [id])
   user              User         @relation(fields: [userId], references: [id])
-  indications       Indication[]
+}
+
+model ChatMessage {
+  id           String     @id @default(cuid())
+  indicationId String
+  content      String
+  sender       String
+  createdAt    DateTime   @default(now())
+  metadata     Json?
+  indication   Indication @relation(fields: [indicationId], references: [id], onDelete: Cascade)
+
+  @@index([indicationId])
+}
+
+model ChatbotFlow {
+  id          String        @id @default(cuid())
+  name        String
+  description String?
+  userId      String
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  isPublished Boolean       @default(false)
+  startNodeId String?
+  edges       ChatbotEdge[]
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  nodes       ChatbotNode[]
+  indications Indication[]
+}
+
+model ChatbotNode {
+  id            String        @id @default(cuid())
+  flowId        String
+  type          String
+  content       Json
+  position      Json
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  outgoingEdges ChatbotEdge[] @relation("SourceNode")
+  incomingEdges ChatbotEdge[] @relation("TargetNode")
+  flow          ChatbotFlow   @relation(fields: [flowId], references: [id], onDelete: Cascade)
+
+  @@index([flowId])
+}
+
+model ChatbotEdge {
+  id           String      @id @default(cuid())
+  flowId       String
+  sourceNodeId String
+  targetNodeId String
+  condition    Json?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  flow         ChatbotFlow @relation(fields: [flowId], references: [id], onDelete: Cascade)
+  sourceNode   ChatbotNode @relation("SourceNode", fields: [sourceNodeId], references: [id], onDelete: Cascade)
+  targetNode   ChatbotNode @relation("TargetNode", fields: [targetNodeId], references: [id], onDelete: Cascade)
+
+  @@index([flowId])
+  @@index([sourceNodeId])
+  @@index([targetNodeId])
+}
+
+model ChatbotSession {
+  id            String   @id @default(cuid())
+  flowId        String
+  leadId        String?
+  currentNodeId String?
+  variables     Json?
+  isCompleted   Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([flowId])
+}
+
+model Quiz {
+  id               String         @id @default(cuid())
+  name             String
+  description      String?
+  userId           String
+  isPublished      Boolean        @default(false)
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  completionScreen Json?
+  openingScreen    Json?
+  indications      Indication[]
+  user             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  questions        QuizQuestion[]
+
+  @@index([userId])
+}
+
+model QuizQuestion {
+  id           String   @id @default(cuid())
+  quizId       String
+  type         String
+  text         String
+  required     Boolean  @default(true)
+  options      String?
+  variableName String?
+  order        Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  quiz         Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+
+  @@index([quizId])
 }
