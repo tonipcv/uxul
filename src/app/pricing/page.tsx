@@ -68,51 +68,10 @@ export default function PricingPage() {
   const { data: session } = useSession();
   const router = useRouter();
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSelectPlan = async (planId: string) => {
-    if (!session?.user) {
-      toast.error('Faça login para continuar');
-      router.push('/login');
-      return;
-    }
-
-    try {
-      setIsLoading(true);
-      setSelectedPlan(planId);
-
-      const response = await fetch('/api/checkout/create', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ planId }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Erro ao processar pagamento');
-      }
-
-      const data = await response.json();
-      
-      if (data.init_point) {
-        // Abrir o checkout da Appmax em uma nova janela
-        const checkoutWindow = window.open(data.init_point, '_blank');
-        
-        // Verificar se a janela foi bloqueada
-        if (!checkoutWindow) {
-          toast.error('Por favor, permita popups para continuar com o pagamento');
-        }
-      } else {
-        throw new Error('URL de pagamento não encontrada');
-      }
-    } catch (error) {
-      console.error('Erro ao processar pagamento:', error);
-      toast.error('Erro ao processar pagamento. Tente novamente.');
-      setSelectedPlan(null);
-    } finally {
-      setIsLoading(false);
-    }
+  const handleSelectPlan = (planId: string) => {
+    setSelectedPlan(planId);
+    window.location.href = 'mailto:contato@med1.app?subject=Interesse no plano ' + planId;
   };
 
   return (
@@ -126,7 +85,7 @@ export default function PricingPage() {
           <p className="text-xl text-gray-600 max-w-2xl mx-auto font-light">
             Escolha o plano ideal para sua clínica e comece a usar hoje mesmo.
             <br />
-            <span className="text-primary font-medium">Cancele quando quiser.</span>
+            <span className="text-primary font-medium">Entre em contato para mais informações.</span>
           </p>
         </div>
 
@@ -183,18 +142,8 @@ export default function PricingPage() {
                       : 'bg-white text-primary border-2 border-primary hover:bg-primary hover:text-white'
                   }`}
                   onClick={() => handleSelectPlan(plan.id)}
-                  disabled={isLoading || selectedPlan === plan.id}
                 >
-                  {isLoading && selectedPlan === plan.id ? (
-                    <div className="flex items-center justify-center">
-                      <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
-                      Processando...
-                    </div>
-                  ) : selectedPlan === plan.id ? (
-                    'Selecionado'
-                  ) : (
-                    'Começar Agora'
-                  )}
+                  Entrar em Contato
                 </Button>
               </CardFooter>
             </Card>
