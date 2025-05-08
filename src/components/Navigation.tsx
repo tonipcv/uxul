@@ -139,8 +139,8 @@ export default function Navigation() {
       className={cn(
         "w-full h-10 flex items-center justify-start px-3 bg-transparent transition-colors border-transparent gap-2 rounded-xl",
         pathname === item.href 
-          ? "bg-[#eaf212] text-black border-[#eaf212] hover:bg-[#eaf212]/90" 
-          : "text-gray-400 hover:text-black hover:bg-[#eaf212]",
+          ? "bg-[#0070df] text-white border-[#0070df] hover:bg-[#0070df]/90" 
+          : "text-gray-400 hover:text-white hover:bg-[#0070df]",
         className
       )}
     >
@@ -239,8 +239,8 @@ export default function Navigation() {
                     className={cn(
                       "w-full h-10 flex items-center justify-center bg-transparent transition-colors border-transparent rounded-xl",
                       pathname === item.href 
-                        ? "bg-[#eaf212] text-black border-[#eaf212] hover:bg-[#eaf212]/90" 
-                        : "text-gray-400 hover:text-black hover:bg-[#eaf212]"
+                        ? "bg-[#0070df] text-white border-[#0070df] hover:bg-[#0070df]/90" 
+                        : "text-gray-400 hover:text-white hover:bg-[#0070df]"
                     )}
                   >
                     <item.icon className="h-5 w-5 stroke-current" />

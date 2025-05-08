@@ -35,7 +35,7 @@ const isValidDate = (date: Date): boolean => {
 };
 
 // Cores para os gráficos - Atualizando para usar as cores pastel especificadas
-const COLORS = ['#eaf212', '#eaf212/80', '#eaf212/60', '#eaf212/40', '#eaf212/20'];
+const COLORS = ['#0070df', '#eaf212', '#0070df/80', '#eaf212/80', '#0070df/60'];
 
 interface Lead {
   id: string;
@@ -445,8 +445,8 @@ export default function DashboardPage() {
                       >
                         <defs>
                           <linearGradient id="colorBar" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#eaf212" stopOpacity={0.8}/>
-                            <stop offset="95%" stopColor="#eaf212" stopOpacity={0.2}/>
+                            <stop offset="5%" stopColor="#0070df" stopOpacity={0.8}/>
+                            <stop offset="95%" stopColor="#0070df" stopOpacity={0.2}/>
                           </linearGradient>
                         </defs>
                         <CartesianGrid strokeDasharray="3 3" stroke="#e5e5e5" />
@@ -474,7 +474,7 @@ export default function DashboardPage() {
                         <Bar 
                           dataKey="leads" 
                           fill="url(#colorBar)"
-                          stroke="#eaf212"
+                          stroke="#0070df"
                           strokeWidth={1}
                           radius={[4, 4, 0, 0]}
                         />
@@ -517,8 +517,8 @@ export default function DashboardPage() {
                     >
                       <defs>
                         <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#eaf212" stopOpacity={0.8}/>
-                          <stop offset="95%" stopColor="#eaf212" stopOpacity={0.2}/>
+                          <stop offset="5%" stopColor="#0070df" stopOpacity={0.8}/>
+                          <stop offset="95%" stopColor="#0070df" stopOpacity={0.2}/>
                         </linearGradient>
                       </defs>
                       <CartesianGrid strokeDasharray="3 3" stroke="#e5e5e5" />
@@ -551,7 +551,7 @@ export default function DashboardPage() {
                       <Area 
                         type="monotone" 
                         dataKey="value" 
-                        stroke="#eaf212" 
+                        stroke="#0070df" 
                         fill="url(#colorRevenue)" 
                         strokeWidth={2}
                       />
@@ -576,7 +576,7 @@ export default function DashboardPage() {
                     <div className="flex items-center">
                       <div className="w-full bg-gray-100 h-2 rounded-full mr-3">
                         <div 
-                          className="bg-gradient-to-r from-[#eaf212] to-[#eaf212]/80 h-2 rounded-full" 
+                          className="bg-gradient-to-r from-[#0070df] to-[#0070df]/80 h-2 rounded-full" 
                           style={{ width: `${Math.min(dashboardData?.conversionRate || 0, 100)}%` }}
                         ></div>
                       </div>
@@ -713,7 +713,7 @@ export default function DashboardPage() {
                       <div className="flex items-center">
                         <div className="w-full bg-gray-100 h-2 rounded-full mr-3">
                           <div 
-                            className="bg-gradient-to-r from-[#eaf212] to-[#eaf212]/80 h-2 rounded-full" 
+                            className="bg-gradient-to-r from-[#0070df] to-[#0070df]/80 h-2 rounded-full" 
                             style={{ width: `${Math.min(dashboardData?.conversionRate || 0, 100)}%` }}
                           ></div>
                         </div>

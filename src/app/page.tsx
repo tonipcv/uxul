@@ -23,10 +23,9 @@ export default function Home() {
     <div className="min-h-screen w-full flex items-center justify-center bg-[#2b2a2c]">
       <div className="text-center">
         <div className="flex justify-center mb-8">
-          <Logo className="scale-150" variant="light" />
+          <Logo className="scale-100" variant="light" />
         </div>
-        <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-white border-r-transparent motion-reduce:animate-[spin_1.5s_linear_infinite] mb-4"></div>
-        <h2 className="text-lg text-white">Carregando...</h2>
+        <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
       </div>
     </div>
   );
