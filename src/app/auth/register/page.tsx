@@ -52,11 +52,6 @@ export default function Register() {
           <Logo className="scale-100" />
         </div>
         
-        <div className="space-y-2 text-center mb-8">
-          <h2 className="text-2xl font-light text-black">Create an account</h2>
-          <p className="text-gray-600 font-light">Enter your information to get started</p>
-        </div>
-
         <div className="bg-white border border-gray-200 rounded-xl p-8 shadow-sm">
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-2">
@@ -64,7 +59,7 @@ export default function Register() {
               <Input
                 id="name"
                 type="text"
-                placeholder="John Smith"
+                placeholder="Enter your name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
@@ -76,7 +71,7 @@ export default function Register() {
               <Input
                 id="email"
                 type="email"
-                placeholder="m@example.com"
+                placeholder="Work e-mail"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -88,7 +83,7 @@ export default function Register() {
               <Input
                 id="slug"
                 type="text"
-                placeholder="drjohn"
+                placeholder="Choose your username"
                 value={slug}
                 onChange={(e) => setSlug(e.target.value)}
                 required
@@ -103,7 +98,7 @@ export default function Register() {
               <Input
                 id="specialty"
                 type="text"
-                placeholder="Enter here"
+                placeholder="Your medical specialty"
                 value={specialty}
                 onChange={(e) => setSpecialty(e.target.value)}
                 className="bg-white border-gray-200 text-black placeholder:text-gray-400 focus:ring-2 focus:ring-black/50 focus:border-transparent"
@@ -114,6 +109,7 @@ export default function Register() {
               <Input
                 id="password"
                 type="password"
+                placeholder="Enter your password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -125,7 +121,7 @@ export default function Register() {
             )}
             <Button 
               type="submit" 
-              className="w-full bg-[#eaf212] text-black hover:bg-[#eaf212]/90 transition-colors border-none"
+              className="w-full bg-[#0070df] text-white hover:bg-[#0070df]/90 transition-colors border-none rounded-full"
               disabled={isLoading}
             >
               {isLoading ? "Creating account..." : "Create account"}

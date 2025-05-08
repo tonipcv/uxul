@@ -47,11 +47,6 @@ export default function ForgotPassword() {
           <Logo className="scale-100" />
         </div>
         
-        <div className="space-y-2 text-center mb-8">
-          <h2 className="text-2xl font-light text-black">Reset password</h2>
-          <p className="text-gray-600 font-light">Enter your email to receive a recovery link</p>
-        </div>
-
         <div className="bg-white border border-gray-200 rounded-xl p-8 shadow-sm">
           {isSubmitted ? (
             <div className="text-center space-y-4">
@@ -72,7 +67,7 @@ export default function ForgotPassword() {
                 <Input
                   id="email"
                   type="email"
-                  placeholder="m@example.com"
+                  placeholder="Work e-mail"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
@@ -84,7 +79,7 @@ export default function ForgotPassword() {
               )}
               <Button 
                 type="submit" 
-                className="w-full bg-[#eaf212] text-black hover:bg-[#eaf212]/90 transition-colors border-none"
+                className="w-full bg-[#0070df] text-white hover:bg-[#0070df]/90 transition-colors border-none rounded-full"
                 disabled={isLoading}
               >
                 {isLoading ? "Sending..." : "Send recovery link"}

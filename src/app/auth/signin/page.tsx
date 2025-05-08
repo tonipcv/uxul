@@ -56,17 +56,12 @@ function SignInContent() {
   };
 
   return (
-    <div className="min-h-[100dvh] bg-[#f8fafc] flex flex-col items-center justify-center px-4 pb-8">
-      <div className="w-full max-w-[480px] mx-auto relative z-10">
+    <div className="min-h-screen bg-white relative flex items-center justify-center">
+      <div className="w-full max-w-[480px] mx-auto px-4">
         <div className="flex justify-center mb-8">
           <Logo className="scale-100" variant="dark" />
         </div>
         
-        <div className="space-y-2 text-center mb-8">
-          <h2 className="text-2xl font-medium text-gray-900">Welcome back</h2>
-          <p className="text-gray-600">Sign in to continue to your account</p>
-        </div>
-
         <div className="bg-white rounded-xl p-8 border border-gray-200 shadow-sm">
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
@@ -74,7 +69,7 @@ function SignInContent() {
               <Input
                 id="email"
                 type="email"
-                placeholder="m@example.com"
+                placeholder="Work e-mail"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -86,6 +81,7 @@ function SignInContent() {
               <Input
                 id="password"
                 type="password"
+                placeholder="Enter your password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -97,7 +93,7 @@ function SignInContent() {
             )}
             <Button 
               type="submit" 
-              className="w-full bg-[#eaf212] text-black hover:bg-[#eaf212]/90 transition-colors border-none"
+              className="w-full bg-[#0070df] text-white hover:bg-[#0070df]/90 transition-colors border-none rounded-full"
               disabled={isLoading}
             >
               {isLoading ? "Signing in..." : "Sign in"}
