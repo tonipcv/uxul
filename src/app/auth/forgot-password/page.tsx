@@ -44,25 +44,25 @@ export default function ForgotPassword() {
     <div className="min-h-screen bg-white relative flex items-center justify-center">
       <div className="w-full max-w-[480px] mx-auto px-4">
         <div className="flex justify-center mb-8">
-          <Logo className="scale-150" />
+          <Logo className="scale-100" />
         </div>
         
         <div className="space-y-2 text-center mb-8">
-          <h2 className="text-2xl font-light text-black">Recuperar senha</h2>
-          <p className="text-gray-600 font-light">Digite seu email para receber o link de recuperação</p>
+          <h2 className="text-2xl font-light text-black">Reset password</h2>
+          <p className="text-gray-600 font-light">Enter your email to receive a recovery link</p>
         </div>
 
         <div className="bg-white border border-gray-200 rounded-xl p-8 shadow-sm">
           {isSubmitted ? (
             <div className="text-center space-y-4">
               <p className="text-gray-600">
-                Se este email estiver cadastrado em nossa base, você receberá um link para redefinir sua senha.
+                If this email is registered in our database, you will receive a link to reset your password.
               </p>
               <Link 
                 href="/auth/signin" 
                 className="text-gray-600 hover:text-black text-sm block"
               >
-                Voltar para o login
+                Back to sign in
               </Link>
             </div>
           ) : (
@@ -84,10 +84,10 @@ export default function ForgotPassword() {
               )}
               <Button 
                 type="submit" 
-                className="w-full bg-black text-white hover:bg-gray-900 transition-colors border-none"
+                className="w-full bg-[#eaf212] text-black hover:bg-[#eaf212]/90 transition-colors border-none"
                 disabled={isLoading}
               >
-                {isLoading ? "Enviando..." : "Enviar link de recuperação"}
+                {isLoading ? "Sending..." : "Send recovery link"}
               </Button>
 
               <div className="text-center">
@@ -95,7 +95,7 @@ export default function ForgotPassword() {
                   href="/auth/signin" 
                   className="text-gray-600 hover:text-black text-sm"
                 >
-                  Voltar para o login
+                  Back to sign in
                 </Link>
               </div>
             </form>

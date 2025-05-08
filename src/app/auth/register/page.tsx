@@ -34,12 +34,12 @@ export default function Register() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || 'Erro ao criar conta');
+        throw new Error(data.message || 'Error creating account');
       }
 
       router.push('/auth/signin');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao criar conta');
+      setError(err instanceof Error ? err.message : 'Error creating account');
     } finally {
       setIsLoading(false);
     }
@@ -53,18 +53,18 @@ export default function Register() {
         </div>
         
         <div className="space-y-2 text-center mb-8">
-          <h2 className="text-2xl font-light text-black">Criar uma conta</h2>
-          <p className="text-gray-600 font-light">Insira suas informações para começar</p>
+          <h2 className="text-2xl font-light text-black">Create an account</h2>
+          <p className="text-gray-600 font-light">Enter your information to get started</p>
         </div>
 
         <div className="bg-white border border-gray-200 rounded-xl p-8 shadow-sm">
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-2">
-              <Label htmlFor="name" className="text-black font-light">Nome</Label>
+              <Label htmlFor="name" className="text-black font-light">Name</Label>
               <Input
                 id="name"
                 type="text"
-                placeholder="João Silva"
+                placeholder="John Smith"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
@@ -84,33 +84,33 @@ export default function Register() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="slug" className="text-black font-light">Nome de usuário</Label>
+              <Label htmlFor="slug" className="text-black font-light">Username</Label>
               <Input
                 id="slug"
                 type="text"
-                placeholder="drjoao"
+                placeholder="drjohn"
                 value={slug}
                 onChange={(e) => setSlug(e.target.value)}
                 required
                 className="bg-white border-gray-200 text-black placeholder:text-gray-400 focus:ring-2 focus:ring-black/50 focus:border-transparent"
               />
               <p className="text-xs text-gray-500">
-                Esta será sua URL pessoal: med1.app/<span className="text-black">{slug || 'username'}</span>
+                This will be your personal URL: med1.app/<span className="text-black">{slug || 'username'}</span>
               </p>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="specialty" className="text-black font-light">Área de atuação</Label>
+              <Label htmlFor="specialty" className="text-black font-light">Specialty</Label>
               <Input
                 id="specialty"
                 type="text"
-                placeholder="Digite aqui"
+                placeholder="Enter here"
                 value={specialty}
                 onChange={(e) => setSpecialty(e.target.value)}
                 className="bg-white border-gray-200 text-black placeholder:text-gray-400 focus:ring-2 focus:ring-black/50 focus:border-transparent"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-black font-light">Senha</Label>
+              <Label htmlFor="password" className="text-black font-light">Password</Label>
               <Input
                 id="password"
                 type="password"
@@ -128,7 +128,7 @@ export default function Register() {
               className="w-full bg-[#eaf212] text-black hover:bg-[#eaf212]/90 transition-colors border-none"
               disabled={isLoading}
             >
-              {isLoading ? "Criando conta..." : "Criar conta"}
+              {isLoading ? "Creating account..." : "Create account"}
             </Button>
 
             <div className="text-center">
@@ -136,7 +136,7 @@ export default function Register() {
                 href="/auth/signin" 
                 className="text-gray-600 hover:text-black text-sm"
               >
-                Já tem uma conta? Entrar
+                Already have an account? Sign in
               </Link>
             </div>
           </form>

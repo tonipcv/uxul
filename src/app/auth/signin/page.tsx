@@ -56,18 +56,18 @@ function SignInContent() {
   };
 
   return (
-    <div className="min-h-[100dvh] bg-[#2b2a2c] flex flex-col items-center justify-center px-4 pb-8">
+    <div className="min-h-[100dvh] bg-[#f8fafc] flex flex-col items-center justify-center px-4 pb-8">
       <div className="w-full max-w-[480px] mx-auto relative z-10">
         <div className="flex justify-center mb-8">
-          <Logo className="scale-100" variant="light" />
+          <Logo className="scale-100" variant="dark" />
         </div>
         
         <div className="space-y-2 text-center mb-8">
-          <h2 className="text-2xl font-medium text-white">Bem-vindo de volta</h2>
-          <p className="text-gray-400">Entre para continuar na sua conta</p>
+          <h2 className="text-2xl font-medium text-gray-900">Welcome back</h2>
+          <p className="text-gray-600">Sign in to continue to your account</p>
         </div>
 
-        <div className="bg-white rounded-xl p-8 border border-gray-200">
+        <div className="bg-white rounded-xl p-8 border border-gray-200 shadow-sm">
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
               <Label htmlFor="email" className="text-gray-700 font-medium">Email</Label>
@@ -82,7 +82,7 @@ function SignInContent() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-gray-700 font-medium">Senha</Label>
+              <Label htmlFor="password" className="text-gray-700 font-medium">Password</Label>
               <Input
                 id="password"
                 type="password"
@@ -100,7 +100,7 @@ function SignInContent() {
               className="w-full bg-[#eaf212] text-black hover:bg-[#eaf212]/90 transition-colors border-none"
               disabled={isLoading}
             >
-              {isLoading ? "Entrando..." : "Entrar"}
+              {isLoading ? "Signing in..." : "Sign in"}
             </Button>
           </form>
 
@@ -109,13 +109,13 @@ function SignInContent() {
               href="/auth/forgot-password" 
               className="text-gray-600 hover:text-black text-sm block mb-2"
             >
-              Esqueceu sua senha?
+              Forgot your password?
             </Link>
             <Link 
               href="/auth/register" 
               className="text-gray-600 hover:text-black text-sm"
             >
-              Não tem uma conta? Registre-se
+              Don't have an account? Sign up
             </Link>
           </div>
         </div>
