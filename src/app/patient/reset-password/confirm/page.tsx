@@ -11,11 +11,11 @@ import { Loader2, ArrowLeft } from 'lucide-react';
 
 function LoadingState() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-blue-900 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-[#2b2a2c] flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <h1 className="text-2xl font-montserrat text-white mb-2">MED1</h1>
-          <p className="text-blue-100">Carregando...</p>
+          <p className="text-white">Carregando...</p>
         </div>
       </div>
     </div>
@@ -96,11 +96,11 @@ function ResetPasswordForm() {
 
   if (!tokenValid) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-blue-900 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-[#2b2a2c] flex items-center justify-center p-4">
         <div className="w-full max-w-md">
           <div className="text-center mb-8">
             <h1 className="text-2xl font-montserrat text-white mb-2">MED1</h1>
-            <p className="text-blue-100">Verificando token...</p>
+            <p className="text-white">Verificando token...</p>
           </div>
         </div>
       </div>
@@ -108,11 +108,11 @@ function ResetPasswordForm() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-blue-900 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-[#2b2a2c] flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <h1 className="text-2xl font-montserrat text-white mb-2">MED1</h1>
-          <p className="text-blue-100">Crie uma nova senha</p>
+          <p className="text-white">Crie uma nova senha</p>
         </div>
 
         <div className="bg-white/10 backdrop-blur-sm rounded-xl p-8 border border-white/20 shadow-lg">

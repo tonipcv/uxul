@@ -4,9 +4,11 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { Mail, ArrowRight, LogIn } from 'lucide-react';
 import Link from 'next/link';
+import { Logo } from '@/components/ui/logo';
 
 export default function PatientAccessPage() {
   const [email, setEmail] = useState('');
@@ -50,88 +52,83 @@ export default function PatientAccessPage() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-20">
-        <div className="max-w-md mx-auto">
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-montserrat font-light text-white mb-2">MED1</h1>
-            <p className="text-zinc-400">Área do Paciente</p>
-          </div>
+    <div className="min-h-[100dvh] bg-white flex flex-col items-center justify-center px-4 pb-8">
+      <div className="w-full max-w-[400px] mx-auto relative z-10">
+        <div className="flex justify-center mb-8">
+          <Logo className="scale-150" variant="dark" />
+        </div>
+        
+        <div className="space-y-2 text-center mb-8">
+          <h2 className="text-2xl font-medium text-black">Área do Paciente</h2>
+          <p className="text-gray-600">Solicite um link de acesso ao seu prontuário</p>
+        </div>
 
-          <div className="bg-zinc-900/50 border border-zinc-800 rounded-lg p-6 sm:p-8">
-            <h2 className="text-xl font-medium text-white mb-6">Acesso Temporário</h2>
-            <p className="text-zinc-400 mb-6">
-              Digite seu email para receber um link de acesso ao seu prontuário. Este acesso é válido por 24 horas.
-            </p>
-
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium text-zinc-400 mb-2">
-                  Email
-                </label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-zinc-400" />
-                  <Input
-                    id="email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => {
-                      setEmail(e.target.value);
-                      if (error) setError('');
-                    }}
-                    placeholder="seu@email.com"
-                    required
-                    className={`pl-10 bg-zinc-900 border-zinc-700 text-white placeholder-zinc-500 focus:border-blue-500 focus:ring-blue-500 ${
-                      error ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''
-                    }`}
-                  />
-                </div>
-                {error && (
-                  <p className="mt-2 text-sm text-red-500">{error}</p>
-                )}
+        <div className="bg-white rounded-xl p-8 border border-gray-200">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="space-y-2">
+              <Label htmlFor="email" className="text-gray-700 font-medium">Email</Label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <Input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    if (error) setError('');
+                  }}
+                  placeholder="seu@email.com"
+                  required
+                  className={`pl-10 bg-white text-black ${
+                    error ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''
+                  }`}
+                />
               </div>
-
-              <Button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-              >
-                {loading ? (
-                  <div className="flex items-center justify-center">
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                  </div>
-                ) : (
-                  <>
-                    Solicitar Link de Acesso
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </>
-                )}
-              </Button>
-            </form>
-
-            <div className="mt-8 pt-8 border-t border-zinc-800 text-center">
-              <p className="text-sm text-zinc-400 mb-4">
-                Prefere fazer login com email e senha?
-              </p>
-              <Button
-                variant="outline"
-                className="w-full border-zinc-700 text-white hover:bg-zinc-800"
-                onClick={() => router.push('/patient/login')}
-              >
-                <LogIn className="h-4 w-4 mr-2" />
-                Acessar com Email e Senha
-              </Button>
+              {error && (
+                <p className="text-sm text-red-600">{error}</p>
+              )}
             </div>
-          </div>
 
-          <div className="mt-8 text-center">
-            <p className="text-sm text-zinc-400">
-              Não tem uma conta?{' '}
-              <Link href="/patient/register" className="text-blue-500 hover:text-blue-400 font-medium">
-                Cadastre-se
-              </Link>
+            <Button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-black text-white hover:bg-gray-900 transition-colors border-none"
+            >
+              {loading ? (
+                <div className="flex items-center justify-center">
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                </div>
+              ) : (
+                <>
+                  Solicitar Link de Acesso
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </>
+              )}
+            </Button>
+          </form>
+
+          <div className="mt-6 text-center">
+            <p className="text-gray-600 mb-4">
+              Prefere fazer login com email e senha?
             </p>
+            <Button
+              variant="outline"
+              className="w-full border-gray-200 text-gray-700 hover:bg-gray-50"
+              onClick={() => router.push('/patient/login')}
+            >
+              <LogIn className="h-4 w-4 mr-2" />
+              Acessar com Email e Senha
+            </Button>
           </div>
+        </div>
+
+        <div className="mt-8 text-center">
+          <p className="text-sm text-gray-600">
+            Não tem uma conta?{' '}
+            <Link href="/patient/register" className="text-black hover:text-gray-900 font-medium">
+              Cadastre-se
+            </Link>
+          </p>
         </div>
       </div>
     </div>

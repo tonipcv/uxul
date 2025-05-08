@@ -18,8 +18,8 @@ export default function IntegrationsPage() {
   // Mostrar um spinner enquanto carrega
   if (!session) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-100">
-        <div className="w-12 h-12 rounded-full border-4 border-blue-500 border-t-transparent animate-spin"></div>
+      <div className="flex items-center justify-center min-h-screen bg-[#2b2a2c]">
+        <div className="w-12 h-12 rounded-full border-4 border-white border-t-transparent animate-spin"></div>
       </div>
     );
   }

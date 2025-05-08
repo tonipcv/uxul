@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { ShieldCheckIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
 import { CheckCircleIcon as CheckCircleSolid } from '@heroicons/react/24/solid';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import { HomeIcon, UserGroupIcon, ShareIcon, SparklesIcon } from '@heroicons/react/24/outline';
 
 interface Doctor {
   name?: string;
@@ -169,6 +170,13 @@ export default function DefaultTemplate({ doctor, slug }: DefaultTemplateProps) 
       setIsLoading(false);
     }
   };
+
+  const navigation = [
+    { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
+    { name: 'Pacientes', href: '/dashboard/pacientes', icon: UserGroupIcon },
+    { name: 'Indicações', href: '/dashboard/indicacoes', icon: ShareIcon },
+    { name: 'Assistente IA', href: '/IA', icon: SparklesIcon },
+  ];
 
   if (success) {
     return (

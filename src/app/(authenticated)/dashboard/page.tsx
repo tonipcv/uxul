@@ -35,7 +35,7 @@ const isValidDate = (date: Date): boolean => {
 };
 
 // Cores para os gráficos - Atualizando para usar as cores pastel especificadas
-const COLORS = ['#d8fffa', '#ffe6e7', '#def6ff', '#f2f1ff', '#a5b4fc'];
+const COLORS = ['#eaf212', '#eaf212/80', '#eaf212/60', '#eaf212/40', '#eaf212/20'];
 
 interface Lead {
   id: string;
@@ -178,8 +178,8 @@ export default function DashboardPage() {
   // Mostra loading enquanto verifica
   if (status === 'loading' || !session?.user) {
     return (
-      <div className="flex items-center justify-center h-screen bg-blue-800">
-        <div className="animate-spin h-6 w-6 border-2 border-blue-300 border-t-transparent rounded-full" />
+      <div className="flex items-center justify-center h-screen bg-[#2b2a2c]">
+        <div className="animate-spin h-6 w-6 border-2 border-white border-t-transparent rounded-full" />
       </div>
     );
   }
@@ -371,7 +371,7 @@ export default function DashboardPage() {
                           cy="50%"
                           labelLine={true}
                           outerRadius={80}
-                          fill="#8884d8"
+                          fill="#000000"
                           dataKey="value"
                           label={({
                             cx,
@@ -384,7 +384,6 @@ export default function DashboardPage() {
                             name
                           }) => {
                             const RADIAN = Math.PI / 180;
-                            // Position the label outside the pie
                             const radius = outerRadius * 1.2;
                             const x = cx + radius * Math.cos(-midAngle * RADIAN);
                             const y = cy + radius * Math.sin(-midAngle * RADIAN);
@@ -393,7 +392,7 @@ export default function DashboardPage() {
                               <text
                                 x={x}
                                 y={y}
-                                fill="#333333"
+                                fill="#000000"
                                 textAnchor={x > cx ? 'start' : 'end'}
                                 dominantBaseline="central"
                                 fontWeight="500"
@@ -405,17 +404,22 @@ export default function DashboardPage() {
                           }}
                         >
                           {sourceChartData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                            <Cell 
+                              key={`cell-${index}`} 
+                              fill={COLORS[index % COLORS.length]} 
+                              opacity={0.8}
+                            />
                           ))}
                         </Pie>
                         <Tooltip 
                           contentStyle={{ 
-                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                            border: '1px solid #333',
+                            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                            border: '1px solid #e5e5e5',
                             borderRadius: '8px',
-                            color: '#fff'
+                            color: '#000',
+                            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
                           }}
-                          itemStyle={{ color: '#fff' }}
+                          itemStyle={{ color: '#000' }}
                         />
                       </PieChart>
                     </ResponsiveContainer>
@@ -441,32 +445,37 @@ export default function DashboardPage() {
                       >
                         <defs>
                           <linearGradient id="colorBar" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#6366f1" stopOpacity={0.8}/>
-                            <stop offset="95%" stopColor="#d8fffa" stopOpacity={0.2}/>
+                            <stop offset="5%" stopColor="#eaf212" stopOpacity={0.8}/>
+                            <stop offset="95%" stopColor="#eaf212" stopOpacity={0.2}/>
                           </linearGradient>
                         </defs>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#eee" />
+                        <CartesianGrid strokeDasharray="3 3" stroke="#e5e5e5" />
                         <XAxis 
                           dataKey="name" 
                           stroke="#666"
-                          tick={{ fill: '#666' }}
+                          tick={{ fill: '#666', fontSize: 12 }}
+                          axisLine={{ stroke: '#e5e5e5' }}
                         />
                         <YAxis 
                           stroke="#666"
-                          tick={{ fill: '#666' }}
+                          tick={{ fill: '#666', fontSize: 12 }}
+                          axisLine={{ stroke: '#e5e5e5' }}
                         />
                         <Tooltip 
                           contentStyle={{ 
-                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                            border: '1px solid #333',
+                            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                            border: '1px solid #e5e5e5',
                             borderRadius: '8px',
-                            color: '#fff'
+                            color: '#000',
+                            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
                           }}
-                          itemStyle={{ color: '#4d61fc' }}
+                          itemStyle={{ color: '#000' }}
                         />
                         <Bar 
                           dataKey="leads" 
                           fill="url(#colorBar)"
+                          stroke="#eaf212"
+                          strokeWidth={1}
                           radius={[4, 4, 0, 0]}
                         />
                       </BarChart>
@@ -508,19 +517,21 @@ export default function DashboardPage() {
                     >
                       <defs>
                         <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#6366f1" stopOpacity={0.8}/>
-                          <stop offset="95%" stopColor="#d8fffa" stopOpacity={0.1}/>
+                          <stop offset="5%" stopColor="#eaf212" stopOpacity={0.8}/>
+                          <stop offset="95%" stopColor="#eaf212" stopOpacity={0.2}/>
                         </linearGradient>
                       </defs>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#eee" />
+                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e5e5" />
                       <XAxis 
                         dataKey="name"
                         stroke="#666"
-                        tick={{ fill: '#666' }}
+                        tick={{ fill: '#666', fontSize: 12 }}
+                        axisLine={{ stroke: '#e5e5e5' }}
                       />
                       <YAxis 
                         stroke="#666"
-                        tick={{ fill: '#666' }}
+                        tick={{ fill: '#666', fontSize: 12 }}
+                        axisLine={{ stroke: '#e5e5e5' }}
                         tickFormatter={(value) => `R$${value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')}`}
                       />
                       <Tooltip 
@@ -529,17 +540,18 @@ export default function DashboardPage() {
                           'Receita'
                         ]}
                         contentStyle={{ 
-                          backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                          border: '1px solid #333',
+                          backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                          border: '1px solid #e5e5e5',
                           borderRadius: '8px',
-                          color: '#fff'
+                          color: '#000',
+                          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
                         }}
-                        itemStyle={{ color: '#4d61fc' }}
+                        itemStyle={{ color: '#000' }}
                       />
                       <Area 
                         type="monotone" 
                         dataKey="value" 
-                        stroke="#4d61fc" 
+                        stroke="#eaf212" 
                         fill="url(#colorRevenue)" 
                         strokeWidth={2}
                       />
@@ -564,7 +576,7 @@ export default function DashboardPage() {
                     <div className="flex items-center">
                       <div className="w-full bg-gray-100 h-2 rounded-full mr-3">
                         <div 
-                          className="bg-gradient-to-r from-[#def6ff] to-[#f2f1ff] h-2 rounded-full" 
+                          className="bg-gradient-to-r from-[#eaf212] to-[#eaf212]/80 h-2 rounded-full" 
                           style={{ width: `${Math.min(dashboardData?.conversionRate || 0, 100)}%` }}
                         ></div>
                       </div>
@@ -581,7 +593,7 @@ export default function DashboardPage() {
                     <div className="flex items-center">
                       <div className="w-full bg-gray-100 h-2 rounded-full mr-3">
                         <div 
-                          className="bg-gradient-to-r from-[#def6ff] to-[#ffe6e7] h-2 rounded-full" 
+                          className="bg-gradient-to-r from-[#eaf212] to-[#eaf212]/80 h-2 rounded-full" 
                           style={{ width: `${Math.min(dashboardData?.clickToLeadRate || 0, 100)}%` }}
                         ></div>
                       </div>
@@ -701,7 +713,7 @@ export default function DashboardPage() {
                       <div className="flex items-center">
                         <div className="w-full bg-gray-100 h-2 rounded-full mr-3">
                           <div 
-                            className="bg-gradient-to-r from-[#def6ff] to-[#f2f1ff] h-2 rounded-full" 
+                            className="bg-gradient-to-r from-[#eaf212] to-[#eaf212]/80 h-2 rounded-full" 
                             style={{ width: `${Math.min(dashboardData?.conversionRate || 0, 100)}%` }}
                           ></div>
                         </div>

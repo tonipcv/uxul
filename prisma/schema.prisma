@@ -22,7 +22,9 @@ model User {
   verificationCode       String?
   verificationCodeExpiry DateTime?
   createdAt              DateTime         @default(now())
-  plan                   String           @default("free")
+  plan                   String?
+  planStatus             String?         @default("inactive")
+  planUpdatedAt          DateTime?
   planExpiresAt          DateTime?
   pageTemplate           String           @default("default")
   accounts               Account[]
@@ -34,6 +36,9 @@ model User {
   patients               Patient[]
   quizzes                Quiz[]
   sessions               Session[]
+  paymentLinks           PaymentLink[]
+  isPremium              Boolean          @default(false)
+  premiumSince           DateTime?
 }
 
 model Indication {
@@ -304,4 +309,20 @@ model QuizQuestion {
   quiz         Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
 
   @@index([quizId])
+}
+
+model PaymentLink {
+  id            String    @id @default(cuid())
+  userId        String
+  planId        String
+  externalId    String    @unique // ID do link na Appmax
+  paymentUrl    String
+  status        String    // pending, paid, refused, expired
+  transactionId String?
+  createdAt     DateTime  @default(now())
+  paidAt        DateTime?
+  
+  user          User      @relation(fields: [userId], references: [id])
+
+  @@index([userId])
 }

@@ -21,7 +21,7 @@ export default function AuthenticatedLayout({
 
   if (status === 'loading') {
     return (
-      <div className="min-h-[100dvh] h-full bg-gradient-to-br from-blue-800 via-blue-700 to-blue-900 flex items-center justify-center">
+      <div className="min-h-[100dvh] h-full bg-[#2b2a2c] flex items-center justify-center">
         <div className="text-white">Carregando...</div>
       </div>
     );

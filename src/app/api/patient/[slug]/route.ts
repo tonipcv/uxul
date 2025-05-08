@@ -24,8 +24,26 @@ export async function GET(
       where: {
         id: slug
       },
-      include: {
-        user: true
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        hasPassword: true,
+        hasPortalAccess: true,
+        firstAccess: true,
+        welcomeEmailSent: true,
+        resetToken: true,
+        resetTokenExpiry: true,
+        user: {
+          select: {
+            name: true,
+            specialty: true,
+            phone: true,
+            image: true,
+            slug: true
+          }
+        }
       }
     });
 
@@ -53,23 +71,7 @@ export async function GET(
           specialty: patient.user?.specialty || 'Especialidade não informada',
           phone: patient.user?.phone || '',
           image: patient.user?.image || null,
-          slug: patient.id
-        },
-        lead: {
-          status: 'active',
-          appointmentDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(), // Data 14 dias no futuro
-          medicalNotes: "Paciente em boas condições de saúde. Recomendada atividade física regular e alimentação balanceada. Retorno em 6 meses para acompanhamento de rotina.",
-          indication: {
-            id: 'ind-123',
-            name: 'Link de Indicação Padrão',
-            slug: 'link-padrao',
-            createdAt: new Date().toISOString(),
-            fullLink: `${process.env.NEXT_PUBLIC_APP_URL || 'https://med1.app.br'}/${patient.user?.slug || 'doutor'}/consulta`,
-            _count: {
-              leads: 5,
-              events: 20
-            }
-          }
+          slug: patient.user?.slug || patient.id
         }
       });
     }
@@ -114,23 +116,7 @@ export async function GET(
         specialty: patient.user?.specialty || 'Especialidade não informada',
         phone: patient.user?.phone || '',
         image: patient.user?.image || null,
-        slug: patient.id
-      },
-      lead: {
-        status: 'active',
-        appointmentDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(), // Data 14 dias no futuro
-        medicalNotes: "Paciente em boas condições de saúde. Recomendada atividade física regular e alimentação balanceada. Retorno em 6 meses para acompanhamento de rotina.",
-        indication: {
-          id: 'ind-123',
-          name: 'Link de Indicação Padrão',
-          slug: 'link-padrao',
-          createdAt: new Date().toISOString(),
-          fullLink: `${process.env.NEXT_PUBLIC_APP_URL || 'https://med1.app.br'}/${patient.user?.slug || 'doutor'}/consulta`,
-          _count: {
-            leads: 5,
-            events: 20
-          }
-        }
+        slug: patient.user?.slug || patient.id
       }
     });
 

@@ -1,214 +1,231 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { useState } from 'react';
 import { useSession } from 'next-auth/react';
-import { useUserPlan } from '@/hooks/use-user-plan';
-import { CheckIcon, SparklesIcon, LockClosedIcon } from '@heroicons/react/24/outline';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Logo } from '@/components/ui/logo';
+import { useRouter } from 'next/navigation';
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { CheckIcon } from 'lucide-react';
+import { toast } from 'sonner';
 
-function PricingPageContent() {
+const plans = [
+  {
+    id: 'personal',
+    name: 'Pessoal',
+    price: 197,
+    period: '/mês',
+    description: 'Ideal para profissionais independentes',
+    features: [
+      'Até 100 pacientes por mês',
+      'Questionários ilimitados',
+      'Página de perfil personalizada',
+      'Integração com WhatsApp',
+      'Suporte por email'
+    ],
+    highlighted: false
+  },
+  {
+    id: 'scale',
+    name: 'Escala',
+    price: 497,
+    period: '/mês',
+    description: 'Para clínicas em crescimento',
+    features: [
+      'Até 500 pacientes por mês',
+      'Questionários ilimitados',
+      'Página de perfil personalizada',
+      'Integração com WhatsApp',
+      'Suporte prioritário',
+      'Dashboard avançado',
+      'Múltiplos profissionais',
+      'Relatórios personalizados'
+    ],
+    highlighted: true
+  },
+  {
+    id: 'business',
+    name: 'Business',
+    price: 997,
+    period: '/mês',
+    description: 'Para clínicas estabelecidas',
+    features: [
+      'Pacientes ilimitados',
+      'Questionários ilimitados',
+      'Página de perfil personalizada',
+      'Integração com WhatsApp',
+      'Suporte VIP',
+      'Dashboard avançado',
+      'Múltiplos profissionais',
+      'Relatórios personalizados',
+      'API personalizada',
+      'Onboarding dedicado'
+    ],
+    highlighted: false
+  }
+];
+
+export default function PricingPage() {
   const { data: session } = useSession();
-  const { isPremium } = useUserPlan();
-  const [loading, setLoading] = useState(false);
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const fromPath = searchParams.get('from');
-  const [showAlert, setShowAlert] = useState(!!fromPath);
+  const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    // Definir um timer para esconder o alerta após 5 segundos
-    if (showAlert) {
-      const timer = setTimeout(() => {
-        setShowAlert(false);
-      }, 5000);
-      return () => clearTimeout(timer);
+  const handleSelectPlan = async (planId: string) => {
+    if (!session?.user) {
+      toast.error('Faça login para continuar');
+      router.push('/login');
+      return;
     }
-  }, [showAlert]);
 
-  const handlePayment = async (planType: string) => {
-    setLoading(true);
     try {
-      // Aqui você implementaria a integração com um gateway de pagamento
-      // como Stripe, PagSeguro, etc.
-      
-      // Simulação de pagamento bem-sucedido:
-      const response = await fetch('/api/users/upgrade', {
+      setIsLoading(true);
+      setSelectedPlan(planId);
+
+      const response = await fetch('/api/checkout/create', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          plan: planType,
-          duration: planType === 'premium_monthly' ? 30 : 365
-        }),
+        body: JSON.stringify({ planId }),
       });
 
-      if (response.ok) {
-        // Redirecionar para uma página de sucesso ou dashboard
-        router.push('/dashboard?upgrade=success');
+      if (!response.ok) {
+        throw new Error('Erro ao processar pagamento');
+      }
+
+      const data = await response.json();
+      
+      if (data.init_point) {
+        // Abrir o checkout da Appmax em uma nova janela
+        const checkoutWindow = window.open(data.init_point, '_blank');
+        
+        // Verificar se a janela foi bloqueada
+        if (!checkoutWindow) {
+          toast.error('Por favor, permita popups para continuar com o pagamento');
+        }
       } else {
-        const data = await response.json();
-        alert(`Erro ao processar pagamento: ${data.error}`);
+        throw new Error('URL de pagamento não encontrada');
       }
     } catch (error) {
       console.error('Erro ao processar pagamento:', error);
-      alert('Ocorreu um erro ao processar o pagamento. Tente novamente.');
+      toast.error('Erro ao processar pagamento. Tente novamente.');
+      setSelectedPlan(null);
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
-  // Recursos do plano Premium
-  const premiumFeatures = [
-    'Número ilimitado de indicações',
-    'Histórico completo de leads',
-    'Estatísticas detalhadas de conversão',
-    'Interface personalizada',
-    'Relatórios avançados',
-    'Suporte prioritário'
-  ];
-
-  if (!session) {
-    return (
-      <div className="min-h-[100dvh] bg-gradient-to-br from-blue-800 via-blue-700 to-blue-900">
-        <div className="container mx-auto px-4 py-16 max-w-6xl">
-          <div className="text-center mb-12">
-            <div className="flex justify-center mb-6">
-              <Logo className="scale-150" variant="light" />
-            </div>
-            <h1 className="text-2xl font-light text-white mb-2">Escolha seu plano</h1>
-            <p className="text-blue-100">
-              Faça login para continuar com a assinatura premium
-            </p>
-            <Button 
-              className="mt-4 bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/20 transition-all" 
-              variant="ghost"
-              onClick={() => router.push('/auth/signin')}
-            >
-              Fazer Login
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-[100dvh] bg-gradient-to-br from-blue-800 via-blue-700 to-blue-900">
-      <div className="container mx-auto px-4 py-8 max-w-6xl">
-        <div className="flex justify-center mb-8">
-          <Logo className="scale-150" variant="light" />
-        </div>
-        
-        {showAlert && (
-          <Alert className="mb-8 bg-white/10 backdrop-blur-sm border border-white/20">
-            <LockClosedIcon className="h-5 w-5 text-white" />
-            <AlertTitle className="text-white font-medium">Recurso Premium</AlertTitle>
-            <AlertDescription className="text-blue-100">
-              Você foi redirecionado porque o recurso que tentou acessar está disponível apenas para usuários premium.
-            </AlertDescription>
-          </Alert>
-        )}
-
-        <div className="text-center mb-8">
-          <h1 className="text-2xl font-light text-white">Escolha seu plano</h1>
-          <p className="text-blue-100">
-            Selecione o plano que melhor se adapta às suas necessidades
+    <div className="min-h-screen bg-white py-20">
+      <div className="container mx-auto px-4">
+        {/* Header */}
+        <div className="text-center mb-16">
+          <h1 className="text-5xl font-bold text-gray-900 mb-6 font-display">
+            Planos Med1
+          </h1>
+          <p className="text-xl text-gray-600 max-w-2xl mx-auto font-light">
+            Escolha o plano ideal para sua clínica e comece a usar hoje mesmo.
+            <br />
+            <span className="text-primary font-medium">Cancele quando quiser.</span>
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
-          {/* Plano Mensal */}
-          <Card className="bg-white/10 backdrop-blur-sm border border-white/20 shadow-lg relative">
-            <div className="absolute top-0 right-0 bg-white/20 backdrop-blur-sm text-white text-xs px-3 py-1 rounded-bl-md">
-              Popular
-            </div>
-            <CardHeader className="border-b border-white/10 pb-4">
-              <CardTitle className="text-lg font-medium text-white">Premium Mensal</CardTitle>
-              <CardDescription className="text-blue-100">Ideal para profissionais</CardDescription>
-              <p className="text-2xl font-medium text-white mt-2">R$ 597<span className="text-base font-normal text-blue-200">/mês</span></p>
-            </CardHeader>
-            <CardContent className="pt-4 pb-6">
-              <ul className="space-y-3">
-                {premiumFeatures.map((feature, index) => (
-                  <li key={index} className="flex items-start">
-                    <CheckIcon className="h-5 w-5 text-green-400 mr-2 flex-shrink-0" />
-                    <span className="text-sm text-blue-100">{feature}</span>
-                  </li>
-                ))}
-              </ul>
-            </CardContent>
-            <CardFooter>
-              <Button 
-                className="w-full bg-blue-500 text-white hover:bg-blue-600 transition-all border-none shadow-lg"
-                variant="ghost"
-                onClick={() => handlePayment('premium_monthly')}
-                disabled={loading || (isPremium && !loading)}
-              >
-                {loading ? 'Processando...' : isPremium ? 'Plano atual' : 'Assinar agora'}
-              </Button>
-            </CardFooter>
-          </Card>
+        {/* Plans Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-7xl mx-auto">
+          {plans.map((plan) => (
+            <Card 
+              key={plan.id}
+              className={`relative transform transition-all duration-300 hover:scale-105 ${
+                plan.highlighted 
+                  ? 'border-2 border-primary shadow-lg' 
+                  : 'border border-gray-100 hover:border-primary/30'
+              } rounded-2xl`}
+            >
+              {plan.highlighted && (
+                <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 z-20">
+                  <span className="bg-primary text-white px-6 py-2 rounded-full text-sm font-medium shadow-lg inline-block">
+                    Mais Popular
+                  </span>
+                </div>
+              )}
 
-          {/* Plano Anual */}
-          <Card className="bg-white/10 backdrop-blur-sm border border-white/20 shadow-lg">
-            <CardHeader className="border-b border-white/10 pb-4">
-              <CardTitle className="text-lg font-medium text-white">Premium Anual</CardTitle>
-              <CardDescription className="text-blue-100">Melhor custo-benefício</CardDescription>
-              <p className="text-2xl font-medium text-white mt-2">R$ 297<span className="text-base font-normal text-blue-200">/mês</span></p>
-              <p className="text-xs text-green-400 mt-1">Economize 25% no plano anual</p>
-            </CardHeader>
-            <CardContent className="pt-4 pb-6">
-              <ul className="space-y-3">
-                {premiumFeatures.map((feature, index) => (
-                  <li key={index} className="flex items-start">
-                    <CheckIcon className="h-5 w-5 text-green-400 mr-2 flex-shrink-0" />
-                    <span className="text-sm text-blue-100">{feature}</span>
-                  </li>
-                ))}
-                <li className="flex items-start">
-                  <SparklesIcon className="h-5 w-5 text-amber-400 mr-2 flex-shrink-0" />
-                  <span className="text-sm font-medium text-blue-50">Acesso a novidades antecipadas</span>
-                </li>
-              </ul>
-            </CardContent>
-            <CardFooter>
-              <Button 
-                className="w-full bg-blue-500 text-white hover:bg-blue-600 transition-all border-none shadow-lg"
-                variant="ghost"
-                onClick={() => handlePayment('premium_annual')}
-                disabled={loading}
-              >
-                {loading ? 'Processando...' : 'Assinar plano anual'}
-              </Button>
-            </CardFooter>
-          </Card>
+              <CardHeader className="pb-0">
+                <CardTitle className="text-2xl font-bold text-gray-900">{plan.name}</CardTitle>
+                <CardDescription className="text-gray-500">{plan.description}</CardDescription>
+              </CardHeader>
+
+              <CardContent className="pt-6">
+                <div className="mb-8">
+                  <div className="flex items-baseline">
+                    <span className="text-5xl font-bold text-gray-900">R$ {plan.price}</span>
+                    <span className="text-gray-500 ml-2">{plan.period}</span>
+                  </div>
+                  <div className="text-gray-500 text-sm mt-2">
+                    ou 12x de R$ {(plan.price).toFixed(2)}
+                  </div>
+                </div>
+
+                <ul className="space-y-4">
+                  {plan.features.map((feature, index) => (
+                    <li key={index} className="flex items-start">
+                      <CheckIcon className="h-5 w-5 text-primary mr-3 mt-0.5 flex-shrink-0" />
+                      <span className="text-gray-600">{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+              </CardContent>
+
+              <CardFooter className="pt-6">
+                <Button 
+                  className={`w-full h-12 text-base font-medium transition-all duration-300 ${
+                    plan.highlighted
+                      ? 'bg-primary hover:bg-primary/90 text-white shadow-xl shadow-primary/20'
+                      : 'bg-white text-primary border-2 border-primary hover:bg-primary hover:text-white'
+                  }`}
+                  onClick={() => handleSelectPlan(plan.id)}
+                  disabled={isLoading || selectedPlan === plan.id}
+                >
+                  {isLoading && selectedPlan === plan.id ? (
+                    <div className="flex items-center justify-center">
+                      <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
+                      Processando...
+                    </div>
+                  ) : selectedPlan === plan.id ? (
+                    'Selecionado'
+                  ) : (
+                    'Começar Agora'
+                  )}
+                </Button>
+              </CardFooter>
+            </Card>
+          ))}
         </div>
 
-        <div className="mt-12 text-center">
-          <p className="text-blue-100 text-sm">
-            Dúvidas sobre os planos? Entre em contato com nosso suporte em <span className="text-white font-medium">suporte@med1.app</span>
+        {/* Métodos de Pagamento */}
+        <div className="mt-16 text-center">
+          <h3 className="text-xl font-semibold text-gray-900 mb-4">Formas de Pagamento</h3>
+          <div className="flex justify-center items-center gap-8">
+            <div className="text-center">
+              <div className="text-4xl mb-2">💳</div>
+              <p className="text-gray-600">Cartão de Crédito<br/>em até 12x</p>
+            </div>
+            <div className="text-center">
+              <div className="text-4xl mb-2">📱</div>
+              <p className="text-gray-600">PIX<br/>à vista</p>
+            </div>
+          </div>
+        </div>
+
+        {/* FAQ Section */}
+        <div className="mt-20 text-center">
+          <p className="text-gray-500">
+            Tem dúvidas? Entre em contato com nosso time{' '}
+            <a href="mailto:contato@med1.app" className="text-primary hover:underline">
+              contato@med1.app
+            </a>
           </p>
         </div>
       </div>
     </div>
-  );
-}
-
-export default function PricingPage() {
-  return (
-    <Suspense fallback={
-      <div className="min-h-[100dvh] bg-gradient-to-br from-blue-800 via-blue-700 to-blue-900 flex items-center justify-center">
-        <div className="text-white text-center">
-          <p>Carregando...</p>
-        </div>
-      </div>
-    }>
-      <PricingPageContent />
-    </Suspense>
   );
 } 

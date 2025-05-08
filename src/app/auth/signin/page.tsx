@@ -1,69 +1,76 @@
 'use client';
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { signIn } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Logo } from "@/components/ui/logo";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 export default function SignIn() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <SignInContent />
+    </Suspense>
+  );
+}
+
+function SignInContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
+  const error = searchParams.get('error');
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    setError("");
 
     try {
-      const result = await signIn("credentials", {
+      const result = await signIn('credentials', {
         email,
         password,
+        type: 'user',
         redirect: false,
+        callbackUrl
       });
 
       if (result?.error) {
-        setError("Email ou senha inválidos");
-      } else {
-        router.refresh();
-        router.push("/dashboard");
+        // Handle error
+      }
+
+      if (result?.ok) {
+        router.push(callbackUrl);
         router.refresh();
       }
-    } catch (error) {
-      setError("Ocorreu um erro ao fazer login");
+    } catch (err) {
+      // Handle general error
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-[100dvh] bg-gradient-primary flex flex-col items-center justify-center px-4 pb-8">
-      <style jsx global>{`
-        body {
-          background: var(--gradient-primary);
-          min-height: 100vh;
-        }
-      `}</style>
-      <div className="w-full max-w-[400px] mx-auto">
+    <div className="min-h-[100dvh] bg-[#2b2a2c] flex flex-col items-center justify-center px-4 pb-8">
+      <div className="w-full max-w-[480px] mx-auto relative z-10">
         <div className="flex justify-center mb-8">
-          <Logo className="scale-150" variant="light" />
+          <Logo className="scale-100" variant="light" />
         </div>
         
         <div className="space-y-2 text-center mb-8">
-          <h2 className="text-2xl font-light text-white">Bem-vindo de volta</h2>
-          <p className="text-blue-100/80 font-light">Entre para continuar na sua conta</p>
+          <h2 className="text-2xl font-medium text-white">Bem-vindo de volta</h2>
+          <p className="text-gray-400">Entre para continuar na sua conta</p>
         </div>
 
-        <div className="bg-glass rounded-xl p-8">
+        <div className="bg-white rounded-xl p-8 border border-gray-200">
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-white font-light">Email</Label>
+              <Label htmlFor="email" className="text-gray-700 font-medium">Email</Label>
               <Input
                 id="email"
                 type="email"
@@ -71,11 +78,11 @@ export default function SignIn() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="bg-white text-black placeholder:text-gray-500"
+                className="bg-white text-black"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-white font-light">Senha</Label>
+              <Label htmlFor="password" className="text-gray-700 font-medium">Senha</Label>
               <Input
                 id="password"
                 type="password"
@@ -86,11 +93,11 @@ export default function SignIn() {
               />
             </div>
             {error && (
-              <div className="text-red-300 text-sm font-light">{error}</div>
+              <div className="text-red-600 text-sm">{error}</div>
             )}
             <Button 
               type="submit" 
-              className="w-full bg-white text-blue-700 hover:bg-white/90 transition-all border-none shadow-lg"
+              className="w-full bg-[#eaf212] text-black hover:bg-[#eaf212]/90 transition-colors border-none"
               disabled={isLoading}
             >
               {isLoading ? "Entrando..." : "Entrar"}
@@ -100,13 +107,13 @@ export default function SignIn() {
           <div className="mt-6 text-center">
             <Link 
               href="/auth/forgot-password" 
-              className="text-white/80 hover:text-white transition-colors text-sm block mb-2"
+              className="text-gray-600 hover:text-black text-sm block mb-2"
             >
               Esqueceu sua senha?
             </Link>
             <Link 
               href="/auth/register" 
-              className="text-white/80 hover:text-white transition-colors text-sm"
+              className="text-gray-600 hover:text-black text-sm"
             >
               Não tem uma conta? Registre-se
             </Link>

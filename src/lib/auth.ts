@@ -80,7 +80,7 @@ export const authOptions: AuthOptions = {
             name: patient.name,
             type: 'patient' as const,
             userSlug: patient.user?.slug,
-            plan: patient.user?.plan
+            plan: patient.user?.plan || undefined
           };
         }
 
@@ -117,7 +117,7 @@ export const authOptions: AuthOptions = {
           type: 'user' as const,
           userSlug: user.slug,
           image: user.image,
-          plan: user.plan
+          plan: user.plan || undefined
         };
       }
     })
@@ -150,8 +150,8 @@ export const authOptions: AuthOptions = {
     }
   },
   pages: {
-    signIn: '/login',
-    error: '/login'
+    signIn: '/auth/signin',
+    error: '/auth/signin'
   }
 };
 

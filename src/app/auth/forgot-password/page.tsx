@@ -3,7 +3,6 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Logo } from "@/components/ui/logo";
@@ -41,77 +40,66 @@ export default function ForgotPassword() {
     }
   };
 
-  if (isSubmitted) {
-    return (
-      <div className="min-h-screen w-full flex items-center justify-center bg-background font-['Helvetica'] font-light px-4">
-        <div className="w-full max-w-[350px] mx-auto">
-          <Card className="border-none shadow-none">
-            <CardHeader className="space-y-1 pb-4">
-              <Logo className="flex justify-center h-8 w-8 mx-auto" />
-            </CardHeader>
-            <CardContent className="text-center text-white/70">
-              Enviamos um link de recuperação de senha para seu email.
-            </CardContent>
-            <CardFooter>
-              <Link 
-                href="/auth/signin" 
-                className="text-sm text-white/70 hover:text-white transition-colors w-full text-center"
-              >
-                Voltar para login
-              </Link>
-            </CardFooter>
-          </Card>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-[100dvh] bg-gradient-primary flex flex-col items-center justify-center px-4">
-      <div className="w-full max-w-[400px] mx-auto">
+    <div className="min-h-screen bg-white relative flex items-center justify-center">
+      <div className="w-full max-w-[480px] mx-auto px-4">
         <div className="flex justify-center mb-8">
-          <Logo className="scale-150" variant="light" />
+          <Logo className="scale-150" />
         </div>
         
         <div className="space-y-2 text-center mb-8">
-          <h2 className="text-2xl font-light text-white">Recuperar senha</h2>
-          <p className="text-blue-100/80 font-light">Digite seu email para receber o link de recuperação</p>
+          <h2 className="text-2xl font-light text-black">Recuperar senha</h2>
+          <p className="text-gray-600 font-light">Digite seu email para receber o link de recuperação</p>
         </div>
 
-        <div className="bg-glass rounded-xl p-8">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="email" className="text-white font-light">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="m@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="bg-white text-black placeholder:text-gray-500"
-              />
+        <div className="bg-white border border-gray-200 rounded-xl p-8 shadow-sm">
+          {isSubmitted ? (
+            <div className="text-center space-y-4">
+              <p className="text-gray-600">
+                Se este email estiver cadastrado em nossa base, você receberá um link para redefinir sua senha.
+              </p>
+              <Link 
+                href="/auth/signin" 
+                className="text-gray-600 hover:text-black text-sm block"
+              >
+                Voltar para o login
+              </Link>
             </div>
-            {error && (
-              <div className="text-red-300 text-sm font-light">{error}</div>
-            )}
-            <Button 
-              type="submit" 
-              className="w-full bg-white text-blue-700 hover:bg-white/90 transition-all border-none shadow-lg"
-              disabled={isLoading}
-            >
-              {isLoading ? "Enviando link..." : "Recuperar senha"}
-            </Button>
-          </form>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-5">
+              <div className="space-y-2">
+                <Label htmlFor="email" className="text-black font-light">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="m@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  className="bg-white border-gray-200 text-black placeholder:text-gray-400 focus:ring-2 focus:ring-black/50 focus:border-transparent"
+                />
+              </div>
+              {error && (
+                <div className="text-red-600 text-sm">{error}</div>
+              )}
+              <Button 
+                type="submit" 
+                className="w-full bg-black text-white hover:bg-gray-900 transition-colors border-none"
+                disabled={isLoading}
+              >
+                {isLoading ? "Enviando..." : "Enviar link de recuperação"}
+              </Button>
 
-          <div className="mt-6 text-center">
-            <Link 
-              href="/auth/signin" 
-              className="text-white/80 hover:text-white transition-colors text-sm"
-            >
-              Voltar para login
-            </Link>
-          </div>
+              <div className="text-center">
+                <Link 
+                  href="/auth/signin" 
+                  className="text-gray-600 hover:text-black text-sm"
+                >
+                  Voltar para o login
+                </Link>
+              </div>
+            </form>
+          )}
         </div>
       </div>
     </div>

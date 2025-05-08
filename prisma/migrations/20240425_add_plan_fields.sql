@@ -1,0 +1,6 @@
+-- AlterTable
+ALTER TABLE "User" 
+ALTER COLUMN "plan" DROP DEFAULT,
+ALTER COLUMN "plan" DROP NOT NULL,
+ADD COLUMN "planStatus" TEXT DEFAULT 'inactive',
+ADD COLUMN "planUpdatedAt" TIMESTAMP(3); 

@@ -20,7 +20,7 @@ export default function Home() {
   }, [session, status, router]);
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-blue-800 via-blue-700 to-blue-900">
+    <div className="min-h-screen w-full flex items-center justify-center bg-[#2b2a2c]">
       <div className="text-center">
         <div className="flex justify-center mb-8">
           <Logo className="scale-150" variant="light" />

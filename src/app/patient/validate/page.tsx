@@ -105,10 +105,10 @@ function ValidateTokenContent() {
 export default function ValidateTokenPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white flex flex-col items-center justify-center p-4 pt-20">
+      <div className="min-h-screen bg-[#2b2a2c] flex flex-col items-center justify-center p-4 pt-20">
         <div className="w-full max-w-md text-center">
-          <Loader2 className="h-8 w-8 animate-spin text-blue-600 mx-auto" />
-          <p className="mt-4 text-gray-600">Carregando...</p>
+          <Loader2 className="h-8 w-8 animate-spin text-white mx-auto" />
+          <p className="mt-4 text-white">Carregando...</p>
         </div>
       </div>
     }>

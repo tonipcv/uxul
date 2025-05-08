@@ -281,8 +281,8 @@ export default function QuizPage() {
   // Loading state
   if (initialLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-50">
-        <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen flex items-center justify-center bg-[#2b2a2c]">
+        <div className="w-10 h-10 border-4 border-white border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }

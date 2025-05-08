@@ -1,20 +1,17 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { compare } from 'bcryptjs';
 import { sign } from 'jsonwebtoken';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
 
 // Verificar se a variável de ambiente JWT_SECRET está definida
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-for-development';
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
-    const { email, password } = await request.json();
-    console.log('Tentativa de login para:', email);
+    const body = await request.json();
+    const { email, password } = body;
 
     if (!email || !password) {
-      console.log('Email ou senha não fornecidos');
       return NextResponse.json(
         { error: 'Email e senha são obrigatórios' },
         { status: 400 }
@@ -27,6 +24,10 @@ export async function POST(request: Request) {
       include: {
         user: {
           select: {
+            name: true,
+            specialty: true,
+            phone: true,
+            image: true,
             slug: true
           }
         }
@@ -34,80 +35,84 @@ export async function POST(request: Request) {
     });
 
     if (!patient) {
-      console.log('Paciente não encontrado');
+      console.log('Login attempt failed: Email not found', { email });
       return NextResponse.json(
-        { error: 'Email não encontrado' },
-        { status: 404 }
+        { error: 'Email ou senha inválidos' },
+        { status: 401 }
       );
     }
 
     // Verificar se o paciente tem senha definida
     if (!patient.hasPassword || !patient.password) {
-      console.log('Paciente sem senha definida');
+      console.log('Login attempt failed: No password set', { email });
       return NextResponse.json(
-        { error: 'Conta sem senha definida. Por favor, solicite um link de acesso por email.' },
+        { error: 'Senha não definida. Por favor, use o link de primeiro acesso.' },
+        { status: 401 }
+      );
+    }
+
+    // Verificar se o paciente tem acesso ao portal
+    if (!patient.hasPortalAccess) {
+      console.log('Login attempt failed: No portal access', { email });
+      return NextResponse.json(
+        { error: 'Acesso ao portal não autorizado. Entre em contato com seu médico.' },
         { status: 401 }
       );
     }
 
     // Verificar senha
-    const passwordValid = await compare(password, patient.password);
-    if (!passwordValid) {
-      console.log('Senha incorreta');
+    const isValidPassword = await compare(password, patient.password);
+    if (!isValidPassword) {
+      console.log('Login attempt failed: Invalid password', { email });
       return NextResponse.json(
-        { error: 'Senha incorreta' },
+        { error: 'Email ou senha inválidos' },
         { status: 401 }
       );
     }
 
-    // Criar sessão usando NextAuth
-    const session = await getServerSession(authOptions);
-    
-    // Gerar JWT
+    // Gerar token JWT
     const token = sign(
-      {
+      { 
         id: patient.id,
         email: patient.email,
-        name: patient.name,
         type: 'patient'
       },
-      JWT_SECRET,
-      { expiresIn: '7d' } // Token válido por 7 dias
+      process.env.JWT_SECRET || 'your-secret-key',
+      { expiresIn: '7d' }
     );
 
-    console.log('Login bem-sucedido para:', email);
-    console.log('ID do paciente:', patient.id);
-
-    // Retornar dados necessários para o frontend
+    // Criar resposta com cookie
     const response = NextResponse.json({
-      success: true,
       patientId: patient.id,
-      session: {
-        user: {
-          id: patient.id,
-          email: patient.email,
-          name: patient.name,
-          type: 'patient'
-        }
+      name: patient.name,
+      email: patient.email,
+      hasPassword: patient.hasPassword,
+      hasPortalAccess: patient.hasPortalAccess,
+      firstAccess: patient.firstAccess,
+      doctorName: patient.user?.name,
+      user: {
+        name: patient.user?.name || 'Médico',
+        specialty: patient.user?.specialty || 'Especialidade não informada',
+        phone: patient.user?.phone || '',
+        image: patient.user?.image || null,
+        slug: patient.user?.slug || patient.id
       }
     });
 
-    // Definir cookie
-    response.cookies.set({
-      name: 'patient_token',
-      value: token,
+    // Configurar cookie de autenticação
+    response.cookies.set('auth_token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      maxAge: 60 * 60 * 24 * 7, // 7 dias
-      path: '/',
-      sameSite: 'lax'
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60 // 7 dias
     });
 
     return response;
+
   } catch (error) {
-    console.error('Erro ao autenticar paciente:', error);
+    console.error('Error in patient login:', error);
     return NextResponse.json(
-      { error: 'Erro ao autenticar paciente' },
+      { error: 'Erro ao processar login' },
       { status: 500 }
     );
   }

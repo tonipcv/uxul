@@ -16,6 +16,7 @@ import {
   ClipboardDocumentListIcon,
   FunnelIcon,
   HeartIcon,
+  SparklesIcon,
 } from '@heroicons/react/24/outline';
 import { MessageSquare, FileQuestion } from 'lucide-react';
 import { Button } from "@/components/ui/button";
@@ -49,7 +50,8 @@ export default function Navigation() {
     '/dashboard/pipeline',
     '/agenda',
     '/profile',
-    '/settings'
+    '/settings',
+    '/IA'
   ];
 
   // Só mostrar navegação em rotas protegidas
@@ -110,6 +112,12 @@ export default function Navigation() {
           icon: CalendarDaysIcon,
           description: 'Google Calendar'
         },
+        {
+          href: '/IA',
+          label: 'Assistente IA',
+          icon: SparklesIcon,
+          description: 'Análise de pacientes'
+        },
       ]
     },
     {
@@ -131,8 +139,8 @@ export default function Navigation() {
       className={cn(
         "w-full h-10 flex items-center justify-start px-3 bg-transparent transition-colors border-transparent gap-2 rounded-xl",
         pathname === item.href 
-          ? "bg-blue-700 text-blue-100 border-blue-600 hover:bg-blue-600" 
-          : "text-blue-200 hover:text-blue-100 hover:bg-blue-800",
+          ? "bg-[#eaf212] text-black border-[#eaf212] hover:bg-[#eaf212]/90" 
+          : "text-gray-400 hover:text-black hover:bg-[#eaf212]",
         className
       )}
     >
@@ -143,7 +151,7 @@ export default function Navigation() {
 
   const UserAvatar = () => (
     session?.user?.image ? (
-      <div className="relative w-full h-full rounded-full overflow-hidden bg-blue-800">
+      <div className="relative w-full h-full rounded-full overflow-hidden bg-gray-800">
         <Image
           src={session.user.image}
           alt={session.user.name || 'Profile'}
@@ -155,7 +163,7 @@ export default function Navigation() {
       </div>
     ) : (
       <div className="w-full h-full flex items-center justify-center">
-        <UserCircleIcon className="h-5 w-5 text-blue-200" />
+        <UserCircleIcon className="h-5 w-5 text-gray-400" />
       </div>
     )
   );
@@ -163,11 +171,11 @@ export default function Navigation() {
   return (
     <>
       {/* Desktop Navigation */}
-      <nav className="fixed left-0 top-0 bottom-0 w-44 border-r border-blue-700 bg-blue-900 shadow-md hidden lg:block z-40 rounded-tr-xl rounded-br-xl">
+      <nav className="fixed left-0 top-0 bottom-0 w-44 border-r border-gray-800 bg-[#2f3739] shadow-lg hidden lg:block z-40">
         <div className="flex flex-col h-full">
-          <div className="p-4 border-b border-blue-700">
+          <div className="p-4 border-b border-gray-800">
             <Link href="/" className="flex items-center justify-center">
-              <span className="text-sm font-medium text-blue-100 tracking-wide">MED1</span>
+              <span className="text-sm font-medium text-gray-100 tracking-wide">MED1</span>
             </Link>
           </div>
           <div className="flex-1 py-4">
@@ -183,13 +191,13 @@ export default function Navigation() {
               ))}
             </nav>
           </div>
-          <div className="p-4 border-t border-blue-700">
+          <div className="p-4 border-t border-gray-800">
             <Link href="/profile">
-              <div className="flex items-center gap-2 cursor-pointer border border-blue-600 rounded-xl px-3 py-2 hover:border-blue-500 hover:bg-blue-800 transition-colors">
-                <div className="w-8 h-8 flex items-center justify-center rounded-full overflow-hidden flex-shrink-0 bg-blue-800">
+              <div className="flex items-center gap-2 cursor-pointer border border-gray-800 rounded-xl px-3 py-2 hover:border-gray-700 hover:bg-gray-800 transition-colors">
+                <div className="w-8 h-8 flex items-center justify-center rounded-full overflow-hidden flex-shrink-0 bg-gray-800">
                   <UserAvatar />
                 </div>
-                <span className="text-xs text-blue-100">Perfil</span>
+                <span className="text-xs text-gray-100">Perfil</span>
               </div>
             </Link>
           </div>
@@ -202,13 +210,13 @@ export default function Navigation() {
       {/* Mobile Navigation */}
       <div className="lg:hidden">
         {/* Mobile Header */}
-        <div className="fixed top-0 left-0 right-0 border-b border-blue-700 bg-blue-900 shadow-md z-40">
+        <div className="fixed top-0 left-0 right-0 border-b border-gray-800 bg-[#2f3739] shadow-lg z-40">
           <div className="py-4 px-4 flex justify-between items-center">
             <Link href="/" className="flex items-center">
-              <span className="text-sm font-medium text-blue-100 tracking-wide">MED1</span>
+              <span className="text-sm font-medium text-gray-100 tracking-wide">MED1</span>
             </Link>
             <Link href="/profile">
-              <div className="h-8 w-8 flex items-center justify-center cursor-pointer border border-blue-600 rounded-xl hover:border-blue-500 hover:bg-blue-800 transition-colors">
+              <div className="h-8 w-8 flex items-center justify-center cursor-pointer border border-gray-800 rounded-xl hover:border-gray-700 hover:bg-gray-800 transition-colors">
                 <div className="w-7 h-7 rounded-full overflow-hidden">
                   <UserAvatar />
                 </div>
@@ -218,11 +226,11 @@ export default function Navigation() {
         </div>
 
         {/* Mobile Navigation Bar */}
-        <nav className="fixed bottom-0 left-0 right-0 border-t border-blue-700 bg-blue-900 shadow-md z-50 rounded-tl-xl rounded-tr-xl">
+        <nav className="fixed bottom-0 left-0 right-0 border-t border-gray-800 bg-[#2f3739] shadow-lg z-50">
           <div className="py-2 px-3">
             <div className="flex items-center justify-around gap-1">
               {navSections
-                .filter(section => section.title !== "Configurações") // Filter out the "Configurações" section for mobile
+                .filter(section => section.title !== "Configurações")
                 .flatMap(section => section.items)
                 .map((item) => (
                 <Link key={item.href} href={item.href} className="flex-1">
@@ -231,8 +239,8 @@ export default function Navigation() {
                     className={cn(
                       "w-full h-10 flex items-center justify-center bg-transparent transition-colors border-transparent rounded-xl",
                       pathname === item.href 
-                        ? "bg-blue-700 text-blue-100 border-blue-600 hover:bg-blue-600" 
-                        : "text-blue-200 hover:text-blue-100 hover:bg-blue-800"
+                        ? "bg-[#eaf212] text-black border-[#eaf212] hover:bg-[#eaf212]/90" 
+                        : "text-gray-400 hover:text-black hover:bg-[#eaf212]"
                     )}
                   >
                     <item.icon className="h-5 w-5 stroke-current" />

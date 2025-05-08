@@ -182,9 +182,9 @@ function PatientPageContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+      <div className="min-h-screen bg-[#2b2a2c] text-white flex items-center justify-center">
         <div className="text-center">
-          <div className="inline-flex items-center justify-center rounded-full h-12 w-12 bg-blue-600/10 text-blue-600 mb-4">
+          <div className="inline-flex items-center justify-center rounded-full h-12 w-12 bg-white/10 text-white mb-4">
             <Loader2 className="h-6 w-6 animate-spin" />
           </div>
           <p className="text-zinc-400">Carregando seus dados...</p>
