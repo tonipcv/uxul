@@ -1,21 +1,30 @@
 {
-  "name": "MED1",
+  "name": "MED1 - Be the TOP1",
   "short_name": "MED1",
-  "description": "Track your habits, achieve your goals, and unlock your full potential with MED1.",
+  "description": "The platform that helps doctors reach the top of their profession. Transform your medical practice with our innovative management solution.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#1e40af",
-  "theme_color": "#1e40af",
+  "background_color": "#ffffff",
+  "theme_color": "#0070df",
   "orientation": "portrait",
   "icons": [
     {
-      "src": "/icon.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
+      "src": "/favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
     },
     {
-      "src": "/icon-512.png",
+      "src": "/favicon.png",
+      "sizes": "32x32",
+      "type": "image/png"
+    },
+    {
+      "src": "/apple-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"

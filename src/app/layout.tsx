@@ -11,27 +11,46 @@ const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
   title: {
-    template: '%s | MED1',
-    default: 'MED1',
+    default: 'MED1 - Be the TOP1',
+    template: '%s | MED1 - Be the TOP1'
   },
-  description: 'Plataforma para médicos gerenciarem seus consultórios',
+  description: 'MED1 - Be the TOP1. The platform that helps doctors reach the top of their profession. Transform your medical practice with our innovative management solution.',
   manifest: '/manifest.json',
   icons: {
     icon: [
-      {
-        url: '/favicon.png',
-        type: 'image/png',
-      }
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+      { url: '/favicon.png', type: 'image/png', sizes: '32x32' },
+      { url: '/icon.png', type: 'image/png', sizes: '512x512' },
     ],
     apple: [
       { url: '/apple-icon.png', sizes: '180x180', type: 'image/png' },
+    ],
+    shortcut: '/favicon.ico',
+    other: [
+      {
+        rel: 'mask-icon',
+        url: '/favicon.svg',
+      },
     ],
   },
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'MED1',
+    title: 'MED1 - Be the TOP1',
   },
+  openGraph: {
+    title: 'MED1 - Be the TOP1',
+    description: 'The platform that helps doctors reach the top of their profession. Transform your medical practice with our innovative management solution.',
+    type: 'website',
+    siteName: 'MED1',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'MED1 - Be the TOP1',
+    description: 'The platform that helps doctors reach the top of their profession. Transform your medical practice with our innovative management solution.',
+  },
+  keywords: ['medical practice management', 'healthcare platform', 'doctor management system', 'medical scheduling', 'patient management', 'healthcare innovation', 'medical technology', 'TOP1 medical platform']
 }
 
 export default function RootLayout({

@@ -1,27 +1,23 @@
-<?xml version="1.0" standalone="no"?>
-<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 20010904//EN"
- "http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd">
-<svg version="1.0" xmlns="http://www.w3.org/2000/svg"
- width="1080.000000pt" height="1080.000000pt" viewBox="0 0 1080.000000 1080.000000"
- preserveAspectRatio="xMidYMid meet">
-
-<g transform="translate(0.000000,1080.000000) scale(0.100000,-0.100000)"
-fill="#000000" stroke="none">
-<path d="M0 5400 l0 -5400 5400 0 5400 0 0 5400 0 5400 -5400 0 -5400 0 0
--5400z m2483 828 c2 -7 129 -341 282 -743 153 -401 281 -734 285 -738 3 -4
-137 330 296 742 l289 751 158 0 157 0 0 -905 0 -905 -106 0 -105 0 3 794 3
-794 -35 -92 c-20 -50 -157 -407 -305 -793 l-270 -703 -90 0 -90 0 -175 463
-c-96 254 -231 611 -300 793 l-125 330 3 -793 3 -793 -100 0 -101 0 0 905 0
-905 159 0 c118 0 160 -3 164 -12z m2967 -83 l0 -95 -400 0 -400 0 0 -290 0
--290 375 0 375 0 0 -95 0 -95 -375 0 -375 0 0 -330 0 -330 400 0 400 0 0 -95
-0 -95 -505 0 -505 0 0 905 0 905 505 0 505 0 0 -95z m1130 80 c202 -30 344
--98 471 -225 71 -71 94 -101 132 -180 71 -143 89 -224 94 -422 6 -195 -5 -293
--48 -423 -101 -303 -334 -483 -694 -535 -38 -5 -211 -10 -382 -10 l-313 0 0
-898 c0 494 3 902 7 905 13 14 634 7 733 -8z m1750 -890 l0 -905 -105 0 -106 0
-3 788 3 788 -124 -103 c-151 -126 -231 -187 -234 -182 -2 2 -26 34 -55 71
-l-52 67 178 138 c97 75 208 161 246 190 l68 53 89 0 89 0 0 -905z"/>
-<path d="M6060 5335 l0 -725 143 0 c351 1 526 50 666 188 78 77 128 169 163
-297 31 116 30 383 -1 500 -60 227 -203 374 -417 430 -76 20 -254 35 -421 35
-l-133 0 0 -725z"/>
-</g>
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="512" height="512" rx="96" fill="#0070df"/>
+  
+  <!-- Medical Cross with shadow effect -->
+  <g filter="url(#shadow)">
+    <path d="M224 128H288V384H224V128ZM128 224H384V288H128V224Z" fill="white"/>
+  </g>
+  
+  <!-- Shadow filter -->
+  <defs>
+    <filter id="shadow" x="0" y="0" width="512" height="512" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+      <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0"/>
+      <feOffset dy="4"/>
+      <feGaussianBlur stdDeviation="8"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.25 0"/>
+      <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow"/>
+      <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow" result="shape"/>
+    </filter>
+  </defs>
 </svg>
