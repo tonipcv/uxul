@@ -3,22 +3,16 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  CheckCircleIcon,
   UserCircleIcon,
-  CheckIcon,
   CalendarDaysIcon,
-  ChatBubbleLeftIcon,
-  ClockIcon,
   ChartBarIcon,
   LinkIcon,
   UsersIcon,
   Cog6ToothIcon,
-  ClipboardDocumentListIcon,
   FunnelIcon,
   HeartIcon,
   SparklesIcon,
 } from '@heroicons/react/24/outline';
-import { MessageSquare, FileQuestion } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useSession } from "next-auth/react";
@@ -39,8 +33,6 @@ interface NavSection {
 export default function Navigation() {
   const pathname = usePathname();
   const { data: session } = useSession();
-  
-  console.log("Session data:", session);
 
   // Lista de rotas protegidas onde a navegação deve aparecer
   const protectedRoutes = [
@@ -51,7 +43,8 @@ export default function Navigation() {
     '/agenda',
     '/profile',
     '/settings',
-    '/IA'
+    '/IA',
+    '/links'
   ];
 
   // Só mostrar navegação em rotas protegidas
@@ -77,16 +70,10 @@ export default function Navigation() {
           description: 'Gerenciar links'
         },
         {
-          href: '/dashboard/chatbots',
-          label: 'Chatbots',
-          icon: ChatBubbleLeftIcon,
-          description: 'Assistentes virtuais'
-        },
-        {
-          href: '/dashboard/quizzes',
-          label: 'Questionários',
-          icon: FileQuestion,
-          description: 'Questionários de Triagem'
+          href: '/links',
+          label: 'Páginas',
+          icon: LinkIcon,
+          description: 'Páginas de links'
         },
         {
           href: '/dashboard/leads',

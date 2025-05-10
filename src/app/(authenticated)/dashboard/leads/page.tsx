@@ -177,29 +177,51 @@ export default function LeadsPage() {
   const fetchLeads = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/leads`);
-      if (response.ok) {
-        const result = await response.json();
-        // Verificar se data existe na resposta e é um array
-        if (result.data && Array.isArray(result.data)) {
-          setLeads(result.data);
-          setTotalLeads(result.data.length);
-          setDisplayedLeads(result.data);
-        } else if (Array.isArray(result)) {
-          // Fallback para o caso de a API retornar diretamente um array
-          setLeads(result);
-          setTotalLeads(result.length);
-          setDisplayedLeads(result);
-        } else {
-          setLeads([]);
-          setTotalLeads(0);
+      console.log('Iniciando busca de leads...');
+      
+      const response = await fetch(`/api/leads`, {
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
         }
+      });
+      
+      console.log('Status da resposta:', response.status);
+      const result = await response.json();
+      console.log('Resposta da API:', result);
+
+      if (response.ok) {
+        // A API retorna diretamente um array de leads
+        const leadsData = Array.isArray(result) ? result : [];
+        console.log('Leads encontrados:', leadsData.length);
+        
+        setLeads(leadsData);
+        setTotalLeads(leadsData.length);
+        setDisplayedLeads(leadsData);
+        
+        // Atualiza os dados do dashboard após carregar os leads
+        fetchDashboardData();
       } else {
+        console.error('Erro na resposta da API:', result);
+        toast({
+          title: "Erro",
+          description: result.error || "Erro ao carregar leads",
+          variant: "destructive"
+        });
         setLeads([]);
+        setTotalLeads(0);
+        setDisplayedLeads([]);
       }
     } catch (error) {
       console.error('Erro ao buscar leads:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível carregar os leads",
+        variant: "destructive"
+      });
       setLeads([]);
+      setTotalLeads(0);
+      setDisplayedLeads([]);
     } finally {
       setLoading(false);
     }

@@ -18,6 +18,7 @@ import { UserCircleIcon } from "@heroicons/react/24/outline";
 import { format } from "date-fns";
 import { Textarea } from "@/components/ui/textarea";
 import { useRouter } from "next/navigation";
+import { PipelineManager } from "@/components/PipelineManager";
 
 // Importação dinâmica para resolver problema de renderização no servidor
 const DragDropContextLib = dynamic(
@@ -55,6 +56,16 @@ interface Lead {
   };
 }
 
+interface Pipeline {
+  id: string;
+  name: string;
+  description?: string;
+  columns?: {
+    id: string;
+    title: string;
+  }[];
+}
+
 const columns = [
   { id: 'novos', title: 'Novos' },
   { id: 'agendados', title: 'Agendados' },
@@ -82,56 +93,86 @@ export default function PipelinePage() {
     totalLeads: number;
     totalIndications: number;
   } | null>(null);
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [newLead, setNewLead] = useState<Lead>({
-    id: '',
-    name: '',
-    phone: ''
-  });
+  const [pipelines, setPipelines] = useState<Pipeline[]>([]);
+  const [currentPipelineId, setCurrentPipelineId] = useState<string>('');
   const router = useRouter();
 
   useEffect(() => {
     // Verifica se o usuário está autenticado e não é premium
     if (status === 'authenticated' && session?.user && session.user.plan !== 'premium') {
-      router.push('/bloqueado'); // Redireciona para a página de bloqueio
+      router.push('/bloqueado');
       return;
     }
 
     if (session?.user?.id) {
-      fetchLeads();
-      fetchDashboardData();
+      fetchPipelines();
     } else if (status === 'unauthenticated') {
-      // Session foi carregada mas não há usuário (não autenticado)
       setLoading(false);
       setLeads([]);
     }
-    // Não fazer nada se status === "loading" (ainda carregando)
   }, [session, status]);
 
-  const fetchDashboardData = async () => {
+  useEffect(() => {
+    if (currentPipelineId) {
+      fetchLeads();
+    }
+  }, [currentPipelineId]);
+
+  const fetchPipelines = async () => {
     try {
-      const response = await fetch('/api/dashboard');
+      const response = await fetch('/api/pipelines');
       if (response.ok) {
         const data = await response.json();
-        setDashboardData(data);
+        setPipelines(data);
+        
+        // Se não houver pipeline selecionado e houver pipelines disponíveis,
+        // seleciona o primeiro
+        if (data.length > 0 && !currentPipelineId) {
+          setCurrentPipelineId(data[0].id);
+        }
       } else {
-        console.error('Erro ao buscar dados do dashboard:', await response.text());
+        console.error('Erro ao buscar pipelines:', await response.text());
         toast({
           title: "Erro",
-          description: "Não foi possível obter os dados do dashboard",
+          description: "Não foi possível obter os pipelines",
           variant: "destructive"
         });
       }
     } catch (error) {
-      console.error('Erro ao buscar dados do dashboard:', error);
+      console.error('Erro ao buscar pipelines:', error);
+    }
+  };
+
+  const handleCreatePipeline = async (pipeline: Pick<Pipeline, 'name' | 'description'>) => {
+    try {
+      const response = await fetch('/api/pipelines', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(pipeline),
+      });
+
+      if (!response.ok) {
+        throw new Error('Erro ao criar pipeline');
+      }
+
+      const newPipeline = await response.json();
+      setPipelines([...pipelines, newPipeline]);
+      setCurrentPipelineId(newPipeline.id);
+    } catch (error) {
+      console.error('Erro ao criar pipeline:', error);
+      throw error;
     }
   };
 
   const fetchLeads = async () => {
+    if (!currentPipelineId) return;
+    
     try {
       setLoading(true);
       
-      const response = await fetch(`/api/leads`);
+      const response = await fetch(`/api/leads?pipelineId=${currentPipelineId}`);
       
       if (response.ok) {
         const result = await response.json();
@@ -341,10 +382,29 @@ export default function PipelinePage() {
     }
   };
 
+  const fetchDashboardData = async () => {
+    try {
+      const response = await fetch('/api/dashboard');
+      if (response.ok) {
+        const data = await response.json();
+        setDashboardData(data);
+      } else {
+        console.error('Erro ao buscar dados do dashboard:', await response.text());
+        toast({
+          title: "Erro",
+          description: "Não foi possível obter os dados do dashboard",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error('Erro ao buscar dados do dashboard:', error);
+    }
+  };
+
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen bg-blue-800">
-        <div className="animate-spin h-6 w-6 border-2 border-blue-300 border-t-transparent rounded-full" />
+      <div className="flex items-center justify-center h-screen bg-gray-100">
+        <div className="animate-spin h-6 w-6 border-2 border-gray-300 border-t-transparent rounded-full" />
       </div>
     );
   }
@@ -366,6 +426,13 @@ export default function PipelinePage() {
               Atualizar
             </Button>
           </div>
+
+          <PipelineManager
+            pipelines={pipelines}
+            currentPipelineId={currentPipelineId}
+            onPipelineChange={setCurrentPipelineId}
+            onPipelineCreate={handleCreatePipeline}
+          />
 
           <div className="w-full">
             <div className="flex overflow-x-auto pb-4 w-full md:grid md:grid-cols-5 gap-4 md:gap-3">

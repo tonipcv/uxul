@@ -7,7 +7,7 @@ export async function GET(
 ) {
   try {
     const { userSlug, quizSlug } = params;
-    console.log(`API - Recebendo solicitação para quiz: userSlug=${userSlug}, quizSlug=${quizSlug}`);
+    console.log(`API - Recebendo solicitação para página: userSlug=${userSlug}, slug=${quizSlug}`);
 
     // Find the user by slug
     const user = await prisma.user.findUnique({
@@ -31,41 +31,28 @@ export async function GET(
 
     console.log(`API - Usuário encontrado: ${user.name} (${user.id})`);
 
-    // Find the indication by slug that contains a quiz
+    // Find the indication by slug
     const indication = await prisma.indication.findFirst({
       where: {
         slug: quizSlug,
-        userId: user.id,
-        quizId: { not: null } // Ensure it has a quiz
-      },
-      include: { 
-        // Include the associated quiz
-        quiz: {
-          include: {
-            questions: {
-              orderBy: {
-                order: 'asc'
-              }
-            }
-          }
-        }
+        userId: user.id
       }
     });
 
     if (!indication) {
-      console.log(`API - Indicação/Quiz não encontrado: ${quizSlug}`);
+      console.log(`API - Página não encontrada: ${quizSlug}`);
       return NextResponse.json(
-        { error: "Questionário não encontrado" },
+        { error: "Página não encontrada" },
         { status: 404 }
       );
     }
 
-    console.log(`API - Indicação encontrada: ${indication.id}, com quiz: ${indication.quizId}`);
+    console.log(`API - Indicação encontrada: ${indication.id}`);
 
     // Register view event
     await prisma.event.create({
       data: {
-        type: 'QUIZ_VIEW',
+        type: 'PAGE_VIEW',
         userId: user.id,
         indicationId: indication.id,
         ip: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
@@ -74,39 +61,14 @@ export async function GET(
     });
 
     // Prepare response data
-    let responseData: any = { 
+    const responseData = { 
       ...indication,
       user: user
     };
-    
-    // Process quiz data
-    if (indication.quiz) {
-      responseData.isQuiz = true;
-      
-      // Format questions for the frontend
-      if (indication.quiz.questions) {
-        responseData.quiz = {
-          ...indication.quiz,
-          openingScreen: indication.quiz.openingScreen ? JSON.parse(indication.quiz.openingScreen as string) : null,
-          completionScreen: indication.quiz.completionScreen ? JSON.parse(indication.quiz.completionScreen as string) : null,
-          questions: indication.quiz.questions.map(q => ({
-            id: q.id,
-            text: q.text,
-            type: q.type,
-            required: q.required,
-            variableName: q.variableName,
-            options: q.options ? JSON.parse(q.options) : []
-          }))
-        };
-      }
-    } else {
-      responseData.isQuiz = false;
-      responseData.quiz = null;
-    }
 
     return NextResponse.json(responseData);
   } catch (error) {
-    console.error('Erro ao buscar questionário:', error);
+    console.error('Erro ao buscar página:', error);
     return NextResponse.json(
       { error: "Erro ao processar a solicitação" },
       { status: 500 }

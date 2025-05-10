@@ -127,82 +127,62 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { patientId, chatbotConfig, chatbotFlowId, name, type } = await req.json();
+    const { patientId, name, type } = await req.json();
 
-    // Para chatbots, patientId é opcional
-    if (!patientId && !chatbotConfig && !chatbotFlowId) {
+    // Verificar se o patientId foi fornecido
+    if (!patientId) {
       return NextResponse.json(
-        { error: "ID do paciente é obrigatório para indicações do tipo regular" },
+        { error: "ID do paciente é obrigatório" },
         { status: 400 }
       );
     }
 
-    // Verificação para chatbot
-    const isChatbot = !!chatbotConfig || !!chatbotFlowId || type === 'chatbot';
+    // Verifica se o paciente existe e pertence ao usuário
+    const patient = await prisma.patient.findFirst({
+      where: {
+        id: patientId,
+        userId: token.sub as string,
+      },
+    });
 
-    // Para indicações normais, verifica dados do paciente
-    let patientName = "";
-    if (patientId) {
-      // Verifica se o paciente existe e pertence ao usuário
-      const patient = await prisma.patient.findFirst({
-        where: {
-          id: patientId,
-          userId: token.sub as string,
-        },
-      });
+    if (!patient) {
+      return NextResponse.json(
+        { error: "Paciente não encontrado" },
+        { status: 404 }
+      );
+    }
+    
+    const patientName = patient.name;
 
-      if (!patient) {
-        return NextResponse.json(
-          { error: "Paciente não encontrado" },
-          { status: 404 }
-        );
-      }
-      
-      patientName = patient.name;
+    // Verifica se o paciente já tem uma indicação ativa
+    const existingIndication = await prisma.indication.findFirst({
+      where: {
+        patientId: patientId,
+        type: type || 'regular'
+      },
+    });
 
-      // Verifica se o paciente já tem uma indicação ativa do mesmo tipo
-      const existingIndication = await prisma.indication.findFirst({
-        where: {
-          patientId: patientId,
-          type: isChatbot ? 'chatbot' : 'regular'
-        },
-      });
-
-      if (existingIndication) {
-        return NextResponse.json(
-          { error: `Este paciente já possui um link ${isChatbot ? "de chatbot" : "de indicação"} ativo` },
-          { status: 400 }
-        );
-      }
+    if (existingIndication) {
+      return NextResponse.json(
+        { error: "Este paciente já possui um link de indicação ativo" },
+        { status: 400 }
+      );
     }
 
     // Gera um slug único para a indicação
     const slug = nanoid(10);
 
-    // Define o nome baseado no tipo
-    let indicationName = name;
-    if (!indicationName) {
-      if (isChatbot) {
-        if (chatbotConfig && typeof chatbotConfig === 'object' && 'name' in chatbotConfig) {
-          indicationName = String(chatbotConfig.name);
-        } else {
-          indicationName = `Chatbot ${slug.substring(0, 5)}`;
-        }
-      } else {
-        indicationName = patientName || `Indicação ${slug.substring(0, 5)}`;
-      }
-    }
+    // Define o nome da indicação
+    const indicationName = name || patientName || `Indicação ${slug.substring(0, 5)}`;
 
     // Cria a indicação
     const indication = await prisma.indication.create({
       data: {
         slug,
         userId: token.sub as string,
-        patientId: patientId || null,
+        patientId,
         name: indicationName,
-        type: type || (isChatbot ? 'chatbot' : 'regular'),
-        chatbotConfig: isChatbot && chatbotConfig ? chatbotConfig : undefined,
-        chatbotFlowId: chatbotFlowId || undefined,
+        type: type || 'regular',
         fullLink: `${process.env.NEXT_PUBLIC_APP_URL}/${slug}`,
       },
     });
@@ -210,7 +190,7 @@ export async function POST(req: NextRequest) {
     // Registra o evento de criação da indicação
     await prisma.event.create({
       data: {
-        type: isChatbot ? "CHATBOT_CREATED" : "INDICATION_CREATED",
+        type: "INDICATION_CREATED",
         userId: token.sub as string,
         indicationId: indication.id,
       },

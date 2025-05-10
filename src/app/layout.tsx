@@ -2,7 +2,7 @@ import './globals.css'
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import { Providers } from '@/components/providers'
-import { Toaster } from 'react-hot-toast'
+import { Toaster } from 'sonner'
 import { satoshi } from '@/fonts/satoshi'
 import { cn } from '@/lib/utils'
 import Script from 'next/script'
@@ -63,7 +63,7 @@ export default function RootLayout({
         </noscript>
         <Providers>
           {children}
-          <Toaster position="top-right" />
+          <Toaster richColors position="top-right" />
         </Providers>
       </body>
     </html>

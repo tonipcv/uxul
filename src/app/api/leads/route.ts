@@ -58,57 +58,61 @@ import { db } from '@/lib/db';
  *       401:
  *         description: Não autorizado
  */
-export async function GET(req: NextRequest) {
+export async function GET(request: Request) {
   try {
-    // Obter a sessão atual
     const session = await getServerSession(authOptions);
-    const userId = session?.user?.id;
+    console.log('Session:', session);
     
-    if (!userId) {
+    if (!session?.user?.id) {
+      console.log('Usuário não autenticado');
       return NextResponse.json(
-        { error: 'Usuário não autenticado' },
+        { error: 'Não autorizado. Por favor, faça login novamente.' }, 
         { status: 401 }
       );
     }
-    
-    // Tentar usar o modelo Prisma primeiro
-    try {
-      const leads = await prisma.lead.findMany({
-        where: { userId }, // Filtrar apenas os leads do usuário atual
-        orderBy: { createdAt: 'desc' },
-        include: {
-          indication: {
-            select: {
-              name: true,
-              slug: true
-            }
+
+    const { searchParams } = new URL(request.url);
+    const pipelineId = searchParams.get('pipelineId');
+    console.log('Buscando leads para usuário:', session.user.id, 'pipelineId:', pipelineId);
+
+    const leads = await prisma.lead.findMany({
+      where: {
+        userId: session.user.id,
+        pipelineId: pipelineId || undefined,
+        status: {
+          not: 'Removido'
+        }
+      },
+      include: {
+        indication: {
+          select: {
+            name: true,
+            slug: true
           }
         }
-      });
-      
-      return NextResponse.json({ success: true, data: leads });
-    } catch (modelError) {
-      console.error('Erro ao usar modelo Prisma:', modelError);
-      
-      // Fallback para SQL direto
-      const results = await db.$queryRaw`
-        SELECT l.*, i."name" as "indicationName", i."slug" as "indicationSlug" 
-        FROM "Lead" l
-        LEFT JOIN "Indication" i ON l."indicationId" = i.id
-        WHERE l."userId" = ${userId}
-        ORDER BY l."createdAt" DESC
-      `;
-      
-      return NextResponse.json({ success: true, data: results });
-    }
-  } catch (error) {
-    console.error('Erro ao buscar leads:', error);
-    return NextResponse.json(
-      { 
-        error: 'Erro ao buscar leads', 
-        details: error instanceof Error ? error.message : String(error) 
       },
-      { status: 500 }
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
+
+    console.log('Leads encontrados:', leads.length);
+    return new NextResponse(JSON.stringify(leads), {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+  } catch (error) {
+    console.error('Erro detalhado ao buscar leads:', error);
+    return new NextResponse(
+      JSON.stringify({ error: 'Erro ao buscar leads' }),
+      { 
+        status: 500,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }
     );
   }
 }
@@ -211,11 +215,16 @@ export async function PUT(req: NextRequest) {
 }
 
 // Adicionar endpoint PATCH para atualizar campos do lead
-export async function PATCH(req: NextRequest) {
+export async function PATCH(request: Request) {
   try {
-    const { searchParams } = new URL(req.url);
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(request.url);
     const leadId = searchParams.get('leadId');
-    const data = await req.json();
+    const body = await request.json();
 
     if (!leadId) {
       return NextResponse.json(
@@ -224,46 +233,24 @@ export async function PATCH(req: NextRequest) {
       );
     }
 
-    // Obter a sessão atual
-    const session = await getServerSession(authOptions);
-    
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Usuário não autenticado' },
-        { status: 401 }
-      );
-    }
-
-    // Buscar o lead para verificar se pertence ao usuário
+    // Verifica se o lead pertence ao usuário
     const lead = await prisma.lead.findUnique({
-      where: { id: leadId }
+      where: { id: leadId },
+      select: { userId: true }
     });
 
-    if (!lead) {
+    if (!lead || lead.userId !== session.user.id) {
       return NextResponse.json(
         { error: 'Lead não encontrado' },
         { status: 404 }
       );
     }
 
-    if (lead.userId !== session.user.id) {
-      return NextResponse.json(
-        { error: 'Permissão negada' },
-        { status: 403 }
-      );
-    }
-
-    // Atualizar o lead
     const updatedLead = await prisma.lead.update({
       where: { id: leadId },
       data: {
-        name: data.name,
-        phone: data.phone,
-        interest: data.interest,
-        status: data.status,
-        potentialValue: data.potentialValue,
-        appointmentDate: data.appointmentDate,
-        medicalNotes: data.medicalNotes
+        ...body,
+        updatedAt: new Date()
       }
     });
 
@@ -271,7 +258,7 @@ export async function PATCH(req: NextRequest) {
   } catch (error) {
     console.error('Erro ao atualizar lead:', error);
     return NextResponse.json(
-      { error: 'Erro ao processar a solicitação' },
+      { error: 'Erro ao atualizar lead' },
       { status: 500 }
     );
   }
@@ -348,6 +335,44 @@ export async function DELETE(req: NextRequest) {
     console.error('Erro ao excluir lead:', error);
     return NextResponse.json(
       { error: 'Erro ao excluir lead' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function POST(request: Request) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
+    }
+
+    const body = await request.json();
+    const { name, phone, interest, pipelineId } = body;
+
+    if (!name || !phone) {
+      return NextResponse.json(
+        { error: 'Nome e telefone são obrigatórios' },
+        { status: 400 }
+      );
+    }
+
+    const lead = await prisma.lead.create({
+      data: {
+        name,
+        phone,
+        interest,
+        pipelineId,
+        userId: session.user.id,
+        status: 'Novo'
+      }
+    });
+
+    return NextResponse.json(lead);
+  } catch (error) {
+    console.error('Erro ao criar lead:', error);
+    return NextResponse.json(
+      { error: 'Erro ao criar lead' },
       { status: 500 }
     );
   }
