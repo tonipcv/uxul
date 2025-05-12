@@ -5,7 +5,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Logo } from "@/components/ui/logo";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -48,8 +48,16 @@ export default function Register() {
   return (
     <div className="min-h-screen bg-white relative flex items-center justify-center">
       <div className="w-full max-w-[480px] mx-auto px-4">
-        <div className="flex justify-center mb-8">
-          <Logo className="scale-100" />
+        <div className="flex justify-center mb-8 items-center gap-3">
+          <Image
+            src="/logo.png"
+            alt="MED1 Logo"
+            width={48}
+            height={48}
+            priority
+            className="h-12 w-12"
+          />
+          <span className="text-3xl font-semibold text-[#5c5b60]">MED1</span>
         </div>
         
         <div className="bg-white border border-gray-200 rounded-xl p-8 shadow-sm">
