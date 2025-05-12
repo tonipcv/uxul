@@ -9,12 +9,6 @@
 # next.js
 /.next/
 /out/
-.next
-.next/
-**/.next
-**/.next/
-.next/cache/
-.next/cache/webpack/
 
 # production
 /build
@@ -29,12 +23,7 @@ yarn-debug.log*
 yarn-error.log*
 
 # local env files
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-.env*
+.env*.local
 
 # vercel
 .vercel
@@ -43,14 +32,10 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# database
+*.db
+*.db-journal
+
 # IDE
 .vscode/
-.idea/
-
-# logs
-logs
-*.log
-
-# cache
-.cache/
-.next/cache/ 
+.idea/ 

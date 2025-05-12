@@ -3,11 +3,13 @@ import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import { Providers } from '@/components/providers'
 import { Toaster } from 'sonner'
-import { satoshi } from '@/fonts/satoshi'
 import { cn } from '@/lib/utils'
 import Script from 'next/script'
 
-const inter = Inter({ subsets: ['latin'] })
+const inter = Inter({
+  subsets: ['latin'],
+  display: 'swap',
+})
 
 export const metadata: Metadata = {
   title: {
@@ -59,7 +61,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="pt-BR" suppressHydrationWarning className={cn(satoshi.variable)}>
+    <html lang="pt-BR" suppressHydrationWarning className={inter.className}>
       <head>
         <Script id="google-tag-manager" strategy="beforeInteractive">
           {`(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
@@ -70,7 +72,8 @@ export default function RootLayout({
         </Script>
       </head>
       <body className={cn(
-        "min-h-screen bg-white font-sans antialiased tracking-tighter"
+        "min-h-screen bg-white antialiased tracking-tighter",
+        inter.className
       )}>
         <noscript>
           <iframe 

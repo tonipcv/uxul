@@ -45,7 +45,12 @@ export async function GET(req: NextRequest) {
 
     // Buscar contagem de leads
     const totalLeads = await prisma.lead.count({
-      where: { userId }
+      where: { 
+        userId,
+        status: {
+          not: 'Removido'
+        }
+      }
     });
 
     // Buscar contagem de indicações

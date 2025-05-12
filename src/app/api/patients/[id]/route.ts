@@ -3,275 +3,167 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { db } from '@/lib/db';
 
-export async function PUT(
-  request: NextRequest,
-  context: any
+export async function GET(
+  request: Request,
+  { params }: { params: { id: string } }
 ) {
   try {
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.id) {
-      return new NextResponse(
-        JSON.stringify({ error: 'Não autorizado' }),
-        { 
-          status: 401,
-          headers: {
-            'Content-Type': 'application/json',
-          }
-        }
+      return NextResponse.json(
+        { error: 'Não autorizado' },
+        { status: 401 }
       );
     }
 
-    const id = context.params.id;
-    
-    // Log para debug
-    console.log('ID do paciente:', id);
-    
-    const data = await request.json();
-    
-    // Log para debug
-    console.log('Dados recebidos:', JSON.stringify(data, null, 2));
-
-    // Validar dados de entrada
-    if (!data || typeof data !== 'object') {
-      return new NextResponse(
-        JSON.stringify({ error: 'Dados inválidos' }),
-        { 
-          status: 400,
-          headers: {
-            'Content-Type': 'application/json',
-          }
-        }
-      );
-    }
-
-    if (!data.name || !data.email || !data.phone) {
-      return new NextResponse(
-        JSON.stringify({ error: 'Dados obrigatórios faltando' }),
-        { 
-          status: 400,
-          headers: {
-            'Content-Type': 'application/json',
-          }
-        }
-      );
-    }
-
-    if (!id) {
-      return new NextResponse(
-        JSON.stringify({ error: 'ID do paciente é obrigatório' }),
-        { 
-          status: 400,
-          headers: {
-            'Content-Type': 'application/json',
-          }
-        }
-      );
-    }
-
-    // Verificar se o paciente existe e pertence ao usuário atual
     const patient = await db.patient.findFirst({
       where: {
-        id,
+        id: params.id,
         userId: session.user.id,
       },
       include: {
-        lead: true,
+        lead: {
+          select: {
+            status: true,
+            appointmentDate: true,
+            medicalNotes: true,
+          }
+        }
       },
     });
 
-    // Log para debug
-    console.log('Paciente encontrado:', JSON.stringify(patient, null, 2));
-
     if (!patient) {
-      return new NextResponse(
-        JSON.stringify({ error: 'Paciente não encontrado' }),
-        { 
-          status: 404,
-          headers: {
-            'Content-Type': 'application/json',
-          }
-        }
+      return NextResponse.json(
+        { error: 'Paciente não encontrado' },
+        { status: 404 }
       );
     }
 
-    // Preparar dados para atualização
-    const updateData = {
-      name: data.name.trim(),
-      email: data.email.trim(),
-      phone: data.phone.trim(),
-      lead: patient.leadId ? {
-        update: {
-          where: {
-            id: patient.leadId
-          },
-          data: {
-            status: data.lead?.status || undefined,
-            appointmentDate: data.lead?.appointmentDate ? new Date(data.lead.appointmentDate).toISOString() : null,
-            medicalNotes: data.lead?.medicalNotes || null,
-          }
-        }
-      } : undefined
-    };
+    return NextResponse.json({ data: patient }, { status: 200 });
+  } catch (error) {
+    console.error('Erro ao buscar paciente:', error);
+    return NextResponse.json(
+      { error: 'Erro ao buscar paciente' },
+      { status: 500 }
+    );
+  }
+}
 
-    // Log para debug
-    console.log('Dados para atualização:', JSON.stringify(updateData, null, 2));
+export async function PUT(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const session = await getServerSession(authOptions);
 
-    // Atualizar o paciente
-    const updatedPatient = await db.patient.update({
+    if (!session?.user?.id) {
+      return NextResponse.json(
+        { error: 'Não autorizado' },
+        { status: 401 }
+      );
+    }
+
+    const body = await request.json();
+
+    // Verificar se o paciente existe e pertence ao usuário
+    const existingPatient = await db.patient.findFirst({
       where: {
-        id,
-      },
-      data: updateData,
-      include: {
-        lead: true,
+        id: params.id,
+        userId: session.user.id,
       },
     });
 
-    // Log para debug
-    console.log('Paciente atualizado:', JSON.stringify(updatedPatient, null, 2));
-
-    return new NextResponse(
-      JSON.stringify(updatedPatient),
-      { 
-        status: 200,
-        headers: {
-          'Content-Type': 'application/json',
-        }
-      }
-    );
-  } catch (error: any) {
-    // Log detalhado do erro
-    const errorDetails = {
-      message: error?.message || 'Erro desconhecido',
-      stack: error?.stack,
-      name: error?.name,
-      code: error?.code,
-      meta: error?.meta
-    };
-    
-    console.error('Erro ao atualizar paciente:', errorDetails);
-
-    let errorMessage = 'Erro ao atualizar paciente';
-    
-    // Tratamento específico para erros do Prisma
-    if (error?.code === 'P2002') {
-      errorMessage = 'Este email já está em uso por outro paciente';
-    } else if (error?.code === 'P2025') {
-      errorMessage = 'Paciente não encontrado';
-    } else if (error?.name === 'PrismaClientValidationError') {
-      if (error.message.includes('appointmentDate')) {
-        errorMessage = 'Data da consulta inválida';
-      }
+    if (!existingPatient) {
+      return NextResponse.json(
+        { error: 'Paciente não encontrado' },
+        { status: 404 }
+      );
     }
 
-    return new NextResponse(
-      JSON.stringify({ 
-        error: errorMessage,
-        details: process.env.NODE_ENV === 'development' ? errorDetails : undefined
-      }),
-      { 
-        status: 500,
-        headers: {
-          'Content-Type': 'application/json',
+    // Atualizar o paciente e seu lead
+    const updatedPatient = await db.patient.update({
+          where: {
+        id: params.id,
+          },
+          data: {
+        name: body.name,
+        email: body.email,
+        phone: body.phone,
+        lead: {
+          update: {
+            status: body.lead.status,
+            appointmentDate: body.lead.appointmentDate,
+            medicalNotes: body.lead.medicalNotes,
+          }
+        }
+      },
+      include: {
+        lead: {
+          select: {
+            status: true,
+            appointmentDate: true,
+            medicalNotes: true,
+          }
         }
       }
+    });
+
+    return NextResponse.json(updatedPatient, { status: 200 });
+  } catch (error) {
+    console.error('Erro ao atualizar paciente:', error);
+    return NextResponse.json(
+      { error: 'Erro ao atualizar paciente' },
+      { status: 500 }
     );
   }
 }
 
 export async function DELETE(
-  request: NextRequest,
-  context: any
+  request: Request,
+  { params }: { params: { id: string } }
 ) {
   try {
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.id) {
-      return new NextResponse(
-        JSON.stringify({ error: 'Não autorizado' }),
-        { 
-          status: 401,
-          headers: {
-            'Content-Type': 'application/json',
-          }
-        }
+      return NextResponse.json(
+        { error: 'Não autorizado' },
+        { status: 401 }
       );
     }
 
-    const id = context.params.id;
-
-    if (!id) {
-      return new NextResponse(
-        JSON.stringify({ error: 'ID do paciente é obrigatório' }),
-        { 
-          status: 400,
-          headers: {
-            'Content-Type': 'application/json',
-          }
-        }
-      );
-    }
-
-    // Verificar se o paciente existe e pertence ao usuário atual
+    // Verificar se o paciente existe e pertence ao usuário
     const patient = await db.patient.findFirst({
       where: {
-        id,
+        id: params.id,
         userId: session.user.id,
       },
     });
 
     if (!patient) {
-      return new NextResponse(
-        JSON.stringify({ error: 'Paciente não encontrado' }),
-        { 
-          status: 404,
-          headers: {
-            'Content-Type': 'application/json',
-          }
-        }
+      return NextResponse.json(
+        { error: 'Paciente não encontrado' },
+        { status: 404 }
       );
     }
 
-    // Deletar o paciente e seu lead associado
+    // Excluir o paciente e seus dados relacionados
     await db.patient.delete({
       where: {
-        id,
+        id: params.id,
       },
     });
 
-    return new NextResponse(
-      JSON.stringify({ message: 'Paciente deletado com sucesso' }),
-      { 
-        status: 200,
-        headers: {
-          'Content-Type': 'application/json',
-        }
-      }
+    return NextResponse.json(
+      { message: 'Paciente excluído com sucesso' },
+      { status: 200 }
     );
-  } catch (error: any) {
-    // Log detalhado do erro
-    const errorDetails = {
-      message: error?.message || 'Erro desconhecido',
-      stack: error?.stack,
-      name: error?.name,
-      code: error?.code,
-      meta: error?.meta
-    };
-    
-    console.error('Erro ao deletar paciente:', errorDetails);
-
-    return new NextResponse(
-      JSON.stringify({ 
-        error: error?.message || 'Erro ao deletar paciente',
-        details: process.env.NODE_ENV === 'development' ? errorDetails : undefined
-      }),
-      { 
-        status: 500,
-        headers: {
-          'Content-Type': 'application/json',
-        }
-      }
+  } catch (error) {
+    console.error('Erro ao excluir paciente:', error);
+    return NextResponse.json(
+      { error: 'Erro ao excluir paciente' },
+      { status: 500 }
     );
   }
 } 

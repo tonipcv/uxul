@@ -5,7 +5,7 @@ import { trackPageView } from '@/lib/analytics';
 import ClassicTemplate from '@/components/pages/templates/ClassicTemplate';
 import ModernTemplate from '@/components/pages/templates/ModernTemplate';
 import MinimalTemplate from '@/components/pages/templates/MinimalTemplate';
-import { IndicationPage } from '@/components/pages';
+import { ReferralPage } from '@/components/pages';
 
 interface PageProps {
   params: {
@@ -13,8 +13,6 @@ interface PageProps {
     slug: string;
   };
 }
-
-type SocialPlatform = 'INSTAGRAM' | 'WHATSAPP' | 'YOUTUBE' | 'FACEBOOK' | 'LINKEDIN' | 'TIKTOK' | 'TWITTER';
 
 interface PageContent {
   type: 'page';
@@ -43,13 +41,33 @@ interface PageContent {
   };
 }
 
-interface IndicationContent {
-  type: 'indication';
+interface ReferralContent {
+  type: 'referral';
   content: {
     id: string;
-    name: string;
-    type: string;
-    fullLink?: string;
+    slug: string;
+    page: {
+      title: string;
+      subtitle?: string;
+      avatarUrl?: string;
+      primaryColor: string;
+      layout: string;
+      blocks: Array<{
+        id: string;
+        type: string;
+        content: any;
+        order: number;
+      }>;
+      socialLinks: Array<{
+        id: string;
+        platform: SocialPlatform;
+        url: string;
+      }>;
+    };
+    patient: {
+      id: string;
+      name: string;
+    };
     user: {
       id: string;
       name: string;
@@ -58,7 +76,9 @@ interface IndicationContent {
   };
 }
 
-type ContentResponse = PageContent | IndicationContent | null;
+type ContentResponse = (PageContent | ReferralContent) | null;
+
+type SocialPlatform = 'INSTAGRAM' | 'WHATSAPP' | 'YOUTUBE' | 'FACEBOOK' | 'LINKEDIN' | 'TIKTOK' | 'TWITTER';
 
 async function getContent(userSlug: string, slug: string): Promise<ContentResponse> {
   try {
@@ -127,31 +147,70 @@ async function getContent(userSlug: string, slug: string): Promise<ContentRespon
       return transformedContent;
     }
 
-    // If no page found, try to find an indication with retry logic
-    const indication = await withRetry(() =>
-      prisma.indication.findFirst({
+    // If no page found, try to find a patient referral with retry logic
+    const referral = await withRetry(() =>
+      prisma.patientReferral.findFirst({
         where: {
           slug,
-          userId: user.id,
+          patient: {
+            user: {
+              slug: userSlug
+            }
+          }
+        },
+        include: {
+          page: {
+            include: {
+              blocks: {
+                orderBy: {
+                  order: 'asc',
+                },
+              },
+              socialLinks: true,
+            },
+          },
+          patient: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
         },
       })
     );
 
-    console.log('Found indication:', indication);
+    console.log('Found referral:', referral);
 
-    if (indication) {
+    if (referral) {
       const transformedContent = {
-        type: 'indication' as const,
+        type: 'referral' as const,
         content: {
-          id: indication.id,
-          name: indication.name || indication.slug,
-          type: indication.type,
-          fullLink: indication.fullLink || undefined,
+          id: referral.id,
+          slug: referral.slug,
+          page: {
+            title: referral.page.title,
+            subtitle: referral.page.subtitle || undefined,
+            avatarUrl: referral.page.avatarUrl || undefined,
+            primaryColor: referral.page.primaryColor,
+            layout: referral.page.layout,
+            blocks: referral.page.blocks.map(block => ({
+              id: block.id,
+              type: block.type,
+              content: block.content,
+              order: block.order,
+            })),
+            socialLinks: referral.page.socialLinks.map(link => ({
+              id: link.id,
+              platform: link.platform as SocialPlatform,
+              url: link.url,
+            })),
+          },
+          patient: referral.patient,
           user,
         },
       };
 
-      console.log('Transformed indication content:', transformedContent);
+      console.log('Transformed referral content:', transformedContent);
       return transformedContent;
     }
 
@@ -210,7 +269,7 @@ export default async function DynamicPage({ params }: PageProps) {
           return <ClassicTemplate page={pageContent} />;
       }
     } else {
-      return <IndicationPage indication={content.content} />;
+      return <ReferralPage referral={content.content} />;
     }
   } catch (error) {
     console.error('Error in DynamicPage:', error);

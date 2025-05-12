@@ -1,7 +1,9 @@
 import { ThemeProvider } from '@/components/theme-provider'
 import { Toaster } from 'react-hot-toast'
-import { satoshi } from '@/fonts/satoshi'
+import { Inter } from 'next/font/google'
 import { cn } from '@/lib/utils'
+
+const inter = Inter({ subsets: ['latin'] })
 
 export default function PatientLayout({
   children,
@@ -15,8 +17,10 @@ export default function PatientLayout({
       enableSystem
       disableTransitionOnChange
     >
-      {children}
-      <Toaster position="top-right" />
+      <div className={cn(inter.className)}>
+        {children}
+        <Toaster position="top-right" />
+      </div>
     </ThemeProvider>
   )
 } 

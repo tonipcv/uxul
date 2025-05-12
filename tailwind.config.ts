@@ -22,9 +22,7 @@ const config = {
   	},
   	extend: {
   		fontFamily: {
-  			helvetica: ['Helvetica Neue', 'Helvetica', 'Arial', 'sans-serif'],
-  			sans: ['var(--font-satoshi)'],
-  			montserrat: ['Montserrat', 'sans-serif'],
+  			sans: ['Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'sans-serif'],
   		},
   		fontWeight: {
   			thin: '100',

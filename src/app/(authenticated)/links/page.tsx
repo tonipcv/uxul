@@ -7,7 +7,6 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -18,6 +17,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { PlusCircle, Link as LinkIcon, ExternalLink, Instagram, Youtube, Facebook, Linkedin, Twitter, Trash2 } from 'lucide-react';
 
 // Get the base URL from environment variable, fallback to localhost if not available
@@ -235,18 +235,18 @@ export default function LinksPage() {
   }
 
   return (
-    <div className="min-h-[100dvh] bg-gray-100 pt-20 pb-24 md:pt-12 md:pb-16 px-4">
-      <div className="container mx-auto pl-1 sm:pl-4 md:pl-8 lg:pl-16 max-w-[98%] sm:max-w-[95%] md:max-w-[90%] lg:max-w-[85%]">
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6">
+    <div className="min-h-[100dvh] bg-gray-100 pt-20 pb-24 md:pt-12 md:pb-16 px-2 sm:px-4">
+      <div className="container mx-auto px-0 sm:pl-4 md:pl-8 lg:pl-16 max-w-full sm:max-w-[95%] md:max-w-[90%] lg:max-w-[85%]">
+        <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-xl sm:text-lg md:text-xl font-bold text-gray-900 tracking-[-0.03em] font-inter">Minhas Páginas</h1>
-            <p className="text-sm sm:text-xs md:text-sm text-gray-600 tracking-[-0.03em] font-inter">
+            <h2 className="text-lg md:text-xl font-bold text-gray-900 tracking-[-0.03em] font-inter">Minhas Páginas</h2>
+            <p className="text-xs md:text-sm text-gray-600 tracking-[-0.03em] font-inter">
               Crie e gerencie suas páginas de links personalizadas
             </p>
           </div>
           <Button 
             onClick={() => setIsCreateModalOpen(true)}
-            className="mt-4 md:mt-0 bg-[#0070df] hover:bg-[#0070df]/90"
+            className="h-9 bg-gray-800/5 border-0 shadow-[0_4px_12px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.1)] transition-all duration-300 rounded-2xl text-gray-700 hover:bg-gray-800/10 text-xs"
           >
             <PlusCircle className="h-4 w-4 mr-2" />
             Nova Página
@@ -254,7 +254,7 @@ export default function LinksPage() {
         </div>
 
         {pages.length === 0 ? (
-          <Card className="bg-white border-gray-200">
+          <Card className="bg-gray-800/5 border-0 shadow-[0_8px_30px_rgba(0,0,0,0.12)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.16)] transition-all duration-300 rounded-2xl">
             <CardHeader>
               <CardTitle className="text-lg font-semibold text-gray-900">Nenhuma página criada</CardTitle>
               <CardDescription className="text-sm text-gray-500">
@@ -264,7 +264,7 @@ export default function LinksPage() {
             <CardContent className="flex justify-center py-8">
               <Button 
                 onClick={() => setIsCreateModalOpen(true)}
-                className="bg-[#0070df] hover:bg-[#0070df]/90"
+                className="h-9 bg-gray-800/5 border-0 shadow-[0_4px_12px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.1)] transition-all duration-300 rounded-2xl text-gray-700 hover:bg-gray-800/10 text-xs"
               >
                 <PlusCircle className="h-4 w-4 mr-2" />
                 Criar Página
@@ -272,225 +272,229 @@ export default function LinksPage() {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {pages.map((page) => (
-              <Card key={page.id} className="bg-white border-gray-200 hover:border-[#0070df]/20 transition-colors">
-                <CardHeader>
-                  <CardTitle className="text-lg font-semibold text-gray-900">{page.title}</CardTitle>
-                  <CardDescription className="flex items-center gap-1 text-sm text-gray-500">
+              <Card key={page.id} className="bg-gray-800/5 border-0 shadow-[0_8px_30px_rgba(0,0,0,0.12)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.16)] transition-all duration-300 rounded-2xl">
+                <CardHeader className="pb-2 sm:pb-1 pt-4 sm:pt-3 px-6 sm:px-4">
+                  <CardTitle className="text-base sm:text-sm md:text-base font-bold text-gray-900 tracking-[-0.03em] font-inter">{page.title}</CardTitle>
+                  <CardDescription className="flex items-center gap-1 text-sm sm:text-xs text-gray-500 tracking-[-0.03em] font-inter">
                     <LinkIcon className="h-4 w-4" />
                     {`${baseUrl}/${user?.slug || ''}/${page.slug}`}
                   </CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="pt-0 pb-4 sm:pb-3 px-6 sm:px-4">
                   <div className="flex flex-col gap-2">
-                    <div className="text-sm text-gray-500 flex items-center gap-1">
-                      <div className="w-2 h-2 rounded-full bg-[#0070df]/60" />
+                    <div className="text-sm sm:text-xs text-gray-500 flex items-center gap-1">
+                      <div className="w-2 h-2 rounded-full bg-gray-400/60" />
                       {page.blocks.length} {page.blocks.length === 1 ? 'bloco' : 'blocos'}
                     </div>
-                    <div className="text-sm text-gray-500 flex items-center gap-1">
-                      <div className="w-2 h-2 rounded-full bg-[#0070df]/60" />
+                    <div className="text-sm sm:text-xs text-gray-500 flex items-center gap-1">
+                      <div className="w-2 h-2 rounded-full bg-gray-400/60" />
                       {page.socialLinks.length} {page.socialLinks.length === 1 ? 'rede social' : 'redes sociais'}
                     </div>
                   </div>
-                </CardContent>
-                <CardFooter className="flex justify-between gap-2">
-                  <div className="flex gap-2">
+                  <div className="flex items-center justify-end gap-2 mt-4">
                     <Button 
-                      variant="outline" 
+                      variant="ghost" 
+                      size="sm"
                       asChild
-                      className="text-gray-700 hover:text-[#0070df] hover:border-[#0070df]"
+                      className="h-8 w-8 p-0 text-gray-500 hover:text-gray-700 hover:bg-gray-100"
                     >
                       <a
                         href={`${baseUrl}/${user?.slug || ''}/${page.slug}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center gap-1"
                       >
                         <ExternalLink className="h-4 w-4" />
-                        Ver
                       </a>
                     </Button>
                     <Button 
-                      variant="outline"
-                      className="text-red-600 hover:text-red-700 hover:border-red-200"
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 p-0 text-gray-500 hover:text-red-600 hover:bg-red-50"
                       onClick={() => setPageToDelete({ id: page.id, title: page.title })}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
+                    <Button 
+                      asChild
+                      size="sm"
+                      className="h-8 bg-gray-800/5 border-0 shadow-[0_4px_12px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.1)] transition-all duration-300 rounded-xl text-gray-700 hover:bg-gray-800/10 text-xs"
+                    >
+                      <a href={`/links/${page.id}/edit`}>Editar</a>
+                    </Button>
                   </div>
-                  <Button 
-                    asChild
-                    className="bg-[#0070df] hover:bg-[#0070df]/90"
-                  >
-                    <a href={`/links/${page.id}/edit`}>Editar</a>
-                  </Button>
-                </CardFooter>
+                </CardContent>
               </Card>
             ))}
           </div>
         )}
 
-        <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
-          <DialogContent className="sm:max-w-[500px]">
-            <DialogHeader>
-              <DialogTitle>Nova Página</DialogTitle>
-              <DialogDescription>
-                Crie uma nova página de links personalizada. Apenas o título é obrigatório, os demais campos são opcionais.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="title">
-                  Título da Página <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="title"
-                  value={newPage.title}
-                  onChange={(e) => {
-                    const title = e.target.value;
+        <Sheet open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
+          <SheetContent className="w-full sm:max-w-[500px] overflow-y-auto">
+            <div className="space-y-4">
+              <SheetHeader>
+                <SheetTitle>Nova Página</SheetTitle>
+                <SheetDescription>
+                  Crie uma nova página de links personalizada. Apenas o título é obrigatório, os demais campos são opcionais.
+                </SheetDescription>
+              </SheetHeader>
+
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="title">
+                    Título da Página <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    id="title"
+                    value={newPage.title}
+                    onChange={(e) => {
+                      const title = e.target.value;
+                      setNewPage({
+                        ...newPage,
+                        title,
+                        // Atualiza o slug automaticamente apenas se estiver vazio
+                        slug: newPage.slug ? newPage.slug : generateSlug(title)
+                      });
+                    }}
+                    placeholder="Ex: Meus Links"
+                  />
+                  <p className="text-xs text-gray-500">
+                    Este será o título principal da sua página
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="slug">Caminho da Página</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="slug"
+                      value={newPage.slug}
+                      onChange={(e) => setNewPage({ ...newPage, slug: generateSlug(e.target.value) })}
+                      placeholder="meus-links"
+                    />
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setNewPage({ ...newPage, slug: generateSlug(newPage.title) })}
+                      type="button"
+                    >
+                      Gerar
+                    </Button>
+                  </div>
+                  <p className="text-xs text-gray-500">
+                    Este será o caminho da sua página: localhost:3000/{user?.slug || 'seu-usuario'}/<strong>{newPage.slug || 'caminho-da-pagina'}</strong>
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="subtitle">Subtítulo</Label>
+                  <Input
+                    id="subtitle"
+                    value={newPage.subtitle}
+                    onChange={(e) => setNewPage({ ...newPage, subtitle: e.target.value })}
+                    placeholder="Ex: Links e contatos profissionais"
+                  />
+                  <p className="text-xs text-gray-500">
+                    Uma breve descrição que aparecerá abaixo do título
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="avatarUrl">URL do Avatar</Label>
+                  <Input
+                    id="avatarUrl"
+                    value={newPage.avatarUrl}
+                    onChange={(e) => setNewPage({ ...newPage, avatarUrl: e.target.value })}
+                    placeholder="https://exemplo.com/sua-foto.jpg"
+                  />
+                  <p className="text-xs text-gray-500">
+                    Link para a imagem que será exibida no topo da página
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="primaryColor">Cor Principal</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="primaryColor"
+                      value={newPage.primaryColor}
+                      onChange={(e) => setNewPage({ ...newPage, primaryColor: e.target.value })}
+                      placeholder="#0070df"
+                    />
+                    <input
+                      type="color"
+                      value={newPage.primaryColor}
+                      onChange={(e) => setNewPage({ ...newPage, primaryColor: e.target.value })}
+                      className="h-10 w-10"
+                    />
+                  </div>
+                  <p className="text-xs text-gray-500">
+                    Cor que será usada nos botões e elementos principais
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="layout">Layout</Label>
+                  <select
+                    id="layout"
+                    value={newPage.layout}
+                    onChange={(e) => setNewPage({ ...newPage, layout: e.target.value })}
+                    className="w-full rounded-md border border-input bg-background px-3 py-2"
+                  >
+                    <option value="classic">Clássico</option>
+                    <option value="modern">Moderno</option>
+                    <option value="minimal">Minimalista</option>
+                  </select>
+                  <p className="text-xs text-gray-500">
+                    Escolha o estilo visual da sua página
+                  </p>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="isModal"
+                    checked={newPage.isModal}
+                    onChange={(e) => setNewPage({ ...newPage, isModal: e.target.checked })}
+                    className="h-4 w-4 rounded border-gray-300"
+                  />
+                  <Label htmlFor="isModal">Ativar modo modal</Label>
+                  <p className="text-xs text-gray-500 ml-2">
+                    Quando ativado, a página será exibida em um modal ao invés de uma página completa
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-4 border-t">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setIsCreateModalOpen(false);
                     setNewPage({
-                      ...newPage,
-                      title,
-                      // Atualiza o slug automaticamente apenas se estiver vazio
-                      slug: newPage.slug ? newPage.slug : generateSlug(title)
+                      title: '',
+                      subtitle: '',
+                      slug: '',
+                      layout: 'classic',
+                      primaryColor: '#0070df',
+                      avatarUrl: '',
+                      isModal: false,
                     });
                   }}
-                  placeholder="Ex: Meus Links"
-                />
-                <p className="text-xs text-gray-500">
-                  Este será o título principal da sua página
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="slug">Caminho da Página</Label>
-                <div className="flex gap-2">
-                  <Input
-                    id="slug"
-                    value={newPage.slug}
-                    onChange={(e) => setNewPage({ ...newPage, slug: generateSlug(e.target.value) })}
-                    placeholder="meus-links"
-                  />
-                  <Button 
-                    variant="outline" 
-                    onClick={() => setNewPage({ ...newPage, slug: generateSlug(newPage.title) })}
-                    type="button"
-                  >
-                    Gerar
-                  </Button>
-                </div>
-                <p className="text-xs text-gray-500">
-                  Este será o caminho da sua página: localhost:3000/{user?.slug || 'seu-usuario'}/<strong>{newPage.slug || 'caminho-da-pagina'}</strong>
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="subtitle">Subtítulo</Label>
-                <Input
-                  id="subtitle"
-                  value={newPage.subtitle}
-                  onChange={(e) => setNewPage({ ...newPage, subtitle: e.target.value })}
-                  placeholder="Ex: Links e contatos profissionais"
-                />
-                <p className="text-xs text-gray-500">
-                  Uma breve descrição que aparecerá abaixo do título
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="avatarUrl">URL do Avatar</Label>
-                <Input
-                  id="avatarUrl"
-                  value={newPage.avatarUrl}
-                  onChange={(e) => setNewPage({ ...newPage, avatarUrl: e.target.value })}
-                  placeholder="https://exemplo.com/sua-foto.jpg"
-                />
-                <p className="text-xs text-gray-500">
-                  Link para a imagem que será exibida no topo da página
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="primaryColor">Cor Principal</Label>
-                <div className="flex gap-2">
-                  <Input
-                    id="primaryColor"
-                    value={newPage.primaryColor}
-                    onChange={(e) => setNewPage({ ...newPage, primaryColor: e.target.value })}
-                    placeholder="#0070df"
-                  />
-                  <input
-                    type="color"
-                    value={newPage.primaryColor}
-                    onChange={(e) => setNewPage({ ...newPage, primaryColor: e.target.value })}
-                    className="h-10 w-10"
-                  />
-                </div>
-                <p className="text-xs text-gray-500">
-                  Cor que será usada nos botões e elementos principais
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="layout">Layout</Label>
-                <select
-                  id="layout"
-                  value={newPage.layout}
-                  onChange={(e) => setNewPage({ ...newPage, layout: e.target.value })}
-                  className="w-full rounded-md border border-input bg-background px-3 py-2"
+                  disabled={isCreating}
                 >
-                  <option value="classic">Clássico</option>
-                  <option value="modern">Moderno</option>
-                  <option value="minimal">Minimalista</option>
-                </select>
-                <p className="text-xs text-gray-500">
-                  Escolha o estilo visual da sua página
-                </p>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  id="isModal"
-                  checked={newPage.isModal}
-                  onChange={(e) => setNewPage({ ...newPage, isModal: e.target.checked })}
-                  className="h-4 w-4 rounded border-gray-300"
-                />
-                <Label htmlFor="isModal">Ativar modo modal</Label>
-                <p className="text-xs text-gray-500 ml-2">
-                  Quando ativado, a página será exibida em um modal ao invés de uma página completa
-                </p>
+                  Cancelar
+                </Button>
+                <Button
+                  onClick={handleCreatePage}
+                  disabled={isCreating || !newPage.title.trim()}
+                  className="bg-[#0070df] hover:bg-[#0070df]/90"
+                >
+                  {isCreating ? 'Criando...' : 'Criar Página'}
+                </Button>
               </div>
             </div>
-            <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setIsCreateModalOpen(false);
-                  setNewPage({
-                    title: '',
-                    subtitle: '',
-                    slug: '',
-                    layout: 'classic',
-                    primaryColor: '#0070df',
-                    avatarUrl: '',
-                    isModal: false,
-                  });
-                }}
-                disabled={isCreating}
-              >
-                Cancelar
-              </Button>
-              <Button
-                onClick={handleCreatePage}
-                disabled={isCreating || !newPage.title.trim()}
-              >
-                {isCreating ? 'Criando...' : 'Criar Página'}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+          </SheetContent>
+        </Sheet>
 
         {/* Single confirmation dialog */}
         <AlertDialog open={!!pageToDelete} onOpenChange={(open) => !open && setPageToDelete(null)}>

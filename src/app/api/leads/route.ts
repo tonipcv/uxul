@@ -340,39 +340,79 @@ export async function DELETE(req: NextRequest) {
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
-    }
+    const body = await req.json();
+    const { 
+      name, 
+      phone, 
+      email,
+      referralId
+    } = body;
 
-    const body = await request.json();
-    const { name, phone, interest, pipelineId } = body;
-
-    if (!name || !phone) {
+    // Validação dos campos obrigatórios
+    if (!name || !phone || !referralId) {
       return NextResponse.json(
-        { error: 'Nome e telefone são obrigatórios' },
+        { error: 'Campos obrigatórios: name, phone, referralId' },
         { status: 400 }
       );
     }
 
+    // Buscar a referência
+    const referral = await prisma.patientReferral.findUnique({
+      where: { id: referralId },
+      include: {
+        patient: {
+          include: {
+            user: true
+          }
+        }
+      }
+    });
+
+    if (!referral) {
+      return NextResponse.json(
+        { error: 'Referência não encontrada' },
+        { status: 404 }
+      );
+    }
+
+    // Obter IP e User-Agent
+    const ip = req.headers.get('x-forwarded-for') || 'unknown';
+    const userAgent = req.headers.get('user-agent') || 'unknown';
+
+    // Criar o lead
     const lead = await prisma.lead.create({
       data: {
         name,
         phone,
-        interest,
-        pipelineId,
-        userId: session.user.id,
-        status: 'Novo'
+        email,
+        userId: referral.patient.userId,
+        source: 'REFERRAL',
       }
     });
 
-    return NextResponse.json(lead);
+    // Incrementar contador de leads
+    await prisma.patientReferral.update({
+      where: { id: referralId },
+      data: { leads: { increment: 1 } }
+    });
+
+    // Registrar o evento de lead
+    await prisma.event.create({
+      data: {
+        type: 'REFERRAL_LEAD',
+        userId: referral.patient.userId,
+        ip: ip.toString(),
+        userAgent,
+      }
+    });
+
+    return NextResponse.json(lead, { status: 201 });
   } catch (error) {
     console.error('Erro ao criar lead:', error);
     return NextResponse.json(
-      { error: 'Erro ao criar lead' },
+      { error: 'Erro ao processar a solicitação' },
       { status: 500 }
     );
   }

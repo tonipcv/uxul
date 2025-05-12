@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   UserCircleIcon,
-  CalendarDaysIcon,
   ChartBarIcon,
   LinkIcon,
   UsersIcon,
@@ -12,6 +11,7 @@ import {
   FunnelIcon,
   HeartIcon,
   SparklesIcon,
+  ShoppingBagIcon,
 } from '@heroicons/react/24/outline';
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -40,7 +40,7 @@ export default function Navigation() {
     '/dashboard/indications',
     '/dashboard/leads',
     '/dashboard/pipeline',
-    '/agenda',
+    '/dashboard/services',
     '/profile',
     '/settings',
     '/IA',
@@ -62,6 +62,12 @@ export default function Navigation() {
           label: 'Dashboard',
           icon: ChartBarIcon,
           description: 'Visão geral'
+        },
+        {
+          href: '/dashboard/services',
+          label: 'Serviços',
+          icon: ShoppingBagIcon,
+          description: 'Gerenciar serviços'
         },
         {
           href: '/dashboard/indications',
@@ -94,12 +100,6 @@ export default function Navigation() {
           description: 'Gestão de status'
         },
         {
-          href: '/agenda',
-          label: 'Agenda',
-          icon: CalendarDaysIcon,
-          description: 'Google Calendar'
-        },
-        {
           href: '/IA',
           label: 'Assistente IA',
           icon: SparklesIcon,
@@ -124,16 +124,30 @@ export default function Navigation() {
     <Button
       variant="outline"
       className={cn(
-        "w-full h-10 flex items-center justify-start px-3 bg-transparent transition-colors border-transparent gap-2 rounded-xl",
+        "w-full h-9 flex items-center px-2.5 bg-transparent transition-all duration-200 border-transparent gap-2.5 rounded-lg group",
         pathname === item.href 
-          ? "bg-[#0070df] text-white border-[#0070df] hover:bg-[#0070df]/90" 
-          : "text-gray-400 hover:text-white hover:bg-[#0070df]",
+          ? "bg-white/90 text-[#2d5568] shadow-sm" 
+          : "text-[#2d5568] hover:bg-white/20",
         className
       )}
     >
-      <item.icon className="h-4 w-4 stroke-current flex-shrink-0" />
-      <span className="text-xs whitespace-nowrap overflow-hidden text-ellipsis">{item.label}</span>
+      <item.icon className={cn(
+        "h-[18px] w-[18px] stroke-[1.5] flex-shrink-0 transition-colors duration-200",
+        pathname === item.href ? "text-[#2d5568]" : "text-[#2d5568]/80"
+      )} />
+      <span className={cn(
+        "text-sm font-medium whitespace-nowrap transition-colors duration-200",
+        pathname === item.href ? "text-[#2d5568]" : "text-[#2d5568]/90"
+      )}>
+        {item.label}
+      </span>
     </Button>
+  );
+
+  const SectionTitle = ({ title }: { title: string }) => (
+    <h3 className="text-xs font-semibold text-[#2d5568]/70 uppercase tracking-wider px-3 mb-2">
+      {title}
+    </h3>
   );
 
   const UserAvatar = () => (
@@ -150,7 +164,7 @@ export default function Navigation() {
       </div>
     ) : (
       <div className="w-full h-full flex items-center justify-center">
-        <UserCircleIcon className="h-5 w-5 text-gray-400" />
+        <UserCircleIcon className="h-5 w-5 text-[#2d5568]" />
       </div>
     )
   );
@@ -158,86 +172,129 @@ export default function Navigation() {
   return (
     <>
       {/* Desktop Navigation */}
-      <nav className="fixed left-0 top-0 bottom-0 w-44 border-r border-gray-800 bg-[#2f3739] shadow-lg hidden lg:block z-40">
+      <nav className="fixed left-0 top-0 bottom-0 w-52 transition-all duration-300 border-r border-gray-200/50 bg-gradient-to-b from-gray-100 to-gray-200/80 shadow-[1px_0_5px_rgba(0,0,0,0.05)] hidden lg:block z-40">
         <div className="flex flex-col h-full">
-          <div className="p-4 border-b border-gray-800">
-            <Link href="/" className="flex items-center justify-center">
-              <span className="text-sm font-medium text-gray-100 tracking-wide">MED1</span>
+          <div className="h-14 flex items-center px-4 border-b border-gray-200/50 bg-white/10">
+            <Link href="/" className="flex items-center gap-2">
+              <div className="relative w-24 h-8">
+                <Image
+                  src="/logo.png"
+                  alt="MED1 Logo"
+                  fill
+                  className="object-contain"
+                  priority
+                />
+              </div>
+              <span className="font-semibold text-[#2d5568] text-lg">MED1</span>
             </Link>
           </div>
-          <div className="flex-1 py-4">
-            <nav className="space-y-4 px-2">
+          <div className="flex-1 py-4 overflow-y-auto scrollbar-thin scrollbar-thumb-white/30 scrollbar-track-transparent">
+            <nav className="space-y-6 px-2">
               {navSections.map((section) => (
-                <div key={section.title} className="space-y-1">
-                  {section.items.map((item) => (
-                    <Link key={item.href} href={item.href} className="block">
-                      <NavButton item={item} />
-                    </Link>
-                  ))}
+                <div key={section.title}>
+                  <SectionTitle title={section.title} />
+                  <div className="space-y-1">
+                    {section.items.map((item) => (
+                      <Link key={item.href} href={item.href} className="block">
+                        <NavButton item={item} />
+                      </Link>
+                    ))}
+                  </div>
                 </div>
               ))}
             </nav>
           </div>
-          <div className="p-4 border-t border-gray-800">
+          <div className="p-2 border-t border-gray-200/50 bg-white/10">
             <Link href="/profile">
-              <div className="flex items-center gap-2 cursor-pointer border border-gray-800 rounded-xl px-3 py-2 hover:border-gray-700 hover:bg-gray-800 transition-colors">
-                <div className="w-8 h-8 flex items-center justify-center rounded-full overflow-hidden flex-shrink-0 bg-gray-800">
+              <div className="w-full flex items-center gap-2.5 cursor-pointer px-2.5 py-2 hover:bg-white/20 rounded-lg transition-all duration-200 group">
+                <div className="w-[22px] h-[22px] flex items-center justify-center rounded-full overflow-hidden flex-shrink-0 bg-white/80 ring-1 ring-white/20">
                   <UserAvatar />
                 </div>
-                <span className="text-xs text-gray-100">Perfil</span>
+                <span className="text-sm font-medium text-[#2d5568] group-hover:text-[#2d5568]/90">Perfil</span>
               </div>
             </Link>
           </div>
         </div>
       </nav>
 
-      {/* Add a spacer for desktop to prevent content overlap */}
-      <div className="hidden lg:block w-44 flex-shrink-0"></div>
-
-      {/* Mobile Navigation */}
-      <div className="lg:hidden">
-        {/* Mobile Header */}
-        <div className="fixed top-0 left-0 right-0 border-b border-gray-800 bg-[#2f3739] shadow-lg z-40">
-          <div className="py-4 px-4 flex justify-between items-center">
-            <Link href="/" className="flex items-center">
-              <span className="text-sm font-medium text-gray-100 tracking-wide">MED1</span>
-            </Link>
-            <Link href="/profile">
-              <div className="h-8 w-8 flex items-center justify-center cursor-pointer border border-gray-800 rounded-xl hover:border-gray-700 hover:bg-gray-800 transition-colors">
-                <div className="w-7 h-7 rounded-full overflow-hidden">
-                  <UserAvatar />
-                </div>
-              </div>
-            </Link>
-          </div>
+      {/* Mobile Header */}
+      <header className="fixed top-0 left-0 right-0 h-14 border-b border-gray-200/50 bg-gradient-to-b from-gray-100 to-gray-200/80 shadow-[0_1px_5px_rgba(0,0,0,0.05)] z-40 lg:hidden">
+        <div className="h-full px-4 flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-2">
+            <div className="relative w-20 h-7">
+              <Image
+                src="/logo.png"
+                alt="MED1 Logo"
+                fill
+                className="object-contain"
+                priority
+              />
+            </div>
+            <span className="font-semibold text-[#2d5568] text-lg">MED1</span>
+          </Link>
+          <Link href="/profile">
+            <div className="w-8 h-8 flex items-center justify-center rounded-full overflow-hidden bg-white/80 ring-1 ring-white/20">
+              <UserAvatar />
+            </div>
+          </Link>
         </div>
+      </header>
 
-        {/* Mobile Navigation Bar */}
-        <nav className="fixed bottom-0 left-0 right-0 border-t border-gray-800 bg-[#2f3739] shadow-lg z-50">
-          <div className="py-2 px-3">
-            <div className="flex items-center justify-around gap-1">
-              {navSections
-                .filter(section => section.title !== "Configurações")
-                .flatMap(section => section.items)
-                .map((item) => (
+      {/* Mobile Bottom Navigation */}
+      <nav className="fixed bottom-0 left-0 right-0 border-t border-gray-200/50 bg-gradient-to-t from-gray-100 to-gray-200/80 shadow-[0_-1px_5px_rgba(0,0,0,0.05)] z-50 lg:hidden">
+        <div className="py-1.5 px-2">
+          <div className="flex items-center justify-around gap-1 max-w-md mx-auto">
+            {navSections
+              .filter(section => section.title !== "Configurações")
+              .flatMap(section => section.items)
+              .map((item) => (
                 <Link key={item.href} href={item.href} className="flex-1">
                   <Button
                     variant="outline"
                     className={cn(
-                      "w-full h-10 flex items-center justify-center bg-transparent transition-colors border-transparent rounded-xl",
+                      "w-full h-10 flex items-center justify-center bg-transparent transition-colors border-transparent rounded-lg",
                       pathname === item.href 
-                        ? "bg-[#0070df] text-white border-[#0070df] hover:bg-[#0070df]/90" 
-                        : "text-gray-400 hover:text-white hover:bg-[#0070df]"
+                        ? "bg-white/90 text-[#2d5568] shadow-sm" 
+                        : "text-[#2d5568] hover:bg-white/20"
                     )}
                   >
-                    <item.icon className="h-5 w-5 stroke-current" />
+                    <item.icon className={cn(
+                      "h-[18px] w-[18px] stroke-[1.5]",
+                      pathname === item.href ? "text-[#2d5568]" : "text-[#2d5568]/80"
+                    )} />
                   </Button>
                 </Link>
               ))}
-            </div>
           </div>
-        </nav>
-      </div>
+        </div>
+      </nav>
+
+      {/* Desktop Spacer */}
+      <div className="hidden lg:block w-52 flex-shrink-0" />
+
+      {/* WhatsApp Float Button */}
+      <a 
+        href="https://wa.me/5511976638147" 
+        target="_blank" 
+        rel="noopener noreferrer"
+        className="group fixed bottom-20 right-4 lg:bottom-8 lg:right-8 z-50"
+      >
+        <div className="relative">
+          {/* Profile Image */}
+          <div className="rounded-full overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 w-14 h-14 lg:w-16 lg:h-16 ring-2 ring-white bg-white">
+            <Image
+              src="/toni.jpeg"
+              alt="Contact Toni"
+              width={64}
+              height={64}
+              className="object-cover w-full h-full hover:scale-110 transition-transform duration-300"
+              priority
+            />
+            {/* Online Indicator */}
+            <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full ring-2 ring-white" />
+          </div>
+        </div>
+      </a>
     </>
   );
 } 

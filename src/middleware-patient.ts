@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { verify } from 'jsonwebtoken';
 import { prisma } from '@/lib/prisma';
 
-// Regex para detectar URLs no formato /{userSlug}/{indicador}
-const INDICATION_REGEX = /^\/([^\/]+)\/([^\/]+)$/;
+// Regex para detectar URLs no formato /{userSlug}/{referralSlug}
+const REFERRAL_REGEX = /^\/([^\/]+)\/([^\/]+)$/;
 
 // Verificar se o paciente está autenticado
 async function isPatientAuthenticated(req: NextRequest): Promise<{ isAuthenticated: boolean; patientId?: string }> {
@@ -67,11 +67,11 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  // Verificar se é uma rota de indicação para rastreamento
-  const match = pathname.match(INDICATION_REGEX);
+  // Verificar se é uma rota de referência para rastreamento
+  const match = pathname.match(REFERRAL_REGEX);
   if (match) {
     const userSlug = match[1];
-    const indicationSlug = match[2];
+    const referralSlug = match[2];
 
     // Ignorar rotas conhecidas como api, _next, etc.
     const isSystemRoute = userSlug.startsWith('api') || 
@@ -79,24 +79,41 @@ export async function middleware(req: NextRequest) {
                           userSlug.startsWith('static') || 
                           userSlug === 'favicon.ico';
     
-    if (!isSystemRoute && userSlug && indicationSlug) {
+    if (!isSystemRoute && userSlug && referralSlug) {
       try {
-        // Não aguardar a resposta para não atrasar o carregamento da página
-        fetch(`${req.nextUrl.origin}/api/track`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-Forwarded-For': req.headers.get('x-forwarded-for') || 'unknown',
-            'User-Agent': req.headers.get('user-agent') || 'unknown',
-          },
-          body: JSON.stringify({
-            type: 'click',
-            userSlug,
-            indicationSlug,
-          }),
-        }).catch(err => {
-          console.error('Erro ao rastrear clique:', err);
+        // Buscar o usuário e a referência
+        const user = await prisma.user.findUnique({
+          where: { slug: userSlug }
         });
+
+        if (user) {
+          const referral = await prisma.patientReferral.findFirst({
+            where: {
+              slug: referralSlug,
+              patient: {
+                userId: user.id
+              }
+            }
+          });
+
+          if (referral) {
+            // Incrementar contador de visitas
+            await prisma.patientReferral.update({
+              where: { id: referral.id },
+              data: { visits: { increment: 1 } }
+            });
+
+            // Registrar evento de visualização
+            await prisma.event.create({
+              data: {
+                type: 'REFERRAL_VIEW',
+                userId: user.id,
+                ip: req.headers.get('x-forwarded-for') || 'unknown',
+                userAgent: req.headers.get('user-agent') || 'unknown'
+              }
+            });
+          }
+        }
       } catch (error) {
         console.error('Erro no middleware:', error);
       }
@@ -111,7 +128,7 @@ export const config = {
   matcher: [
     // Rotas do paciente
     '/patient/:path*',
-    // Qualquer rota para capturar padrões de indicação
-    '/:userSlug/:indication',
+    // Qualquer rota para capturar padrões de referência
+    '/:userSlug/:referral',
   ],
 }; 

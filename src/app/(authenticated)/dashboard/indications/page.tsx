@@ -18,47 +18,55 @@ import {
   UserIcon,
   ArrowPathIcon,
   TrashIcon,
-  PencilIcon
+  PencilIcon,
+  GiftIcon
 } from "@heroicons/react/24/outline";
 import { toast } from "@/components/ui/use-toast";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Check, ChevronsUpDown, Edit, Share2, Copy, Trash } from "lucide-react";
+import { Check, ChevronsUpDown, Edit, Share2, Copy, Trash, Gift } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
+import { Progress } from "@/components/ui/progress";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
-interface IndicationCount {
-  events: number;
-  leads: number;
-  converted: number;
-}
-
-interface IndicationStats {
-  clicks: number;
-  leads: number;
-  conversionRate: number;
-  period: string;
-}
-
-interface Indication {
+interface PatientReferral {
   id: string;
   slug: string;
-  name?: string;
-  createdAt: string;
-  _count?: IndicationCount;
-  stats?: IndicationStats;
-  leads?: Array<{
+  patient: {
     id: string;
-    patient?: {
-      id: string;
-      name: string;
-      email: string;
-      phone: string;
-    };
+    name: string;
+    email: string;
+    phone: string;
+  };
+  page: {
+    id: string;
+    title: string;
+    slug: string;
+  };
+  stats: {
+    visits: number;
+    leads: number;
+    sales: number;
+  };
+  rewards?: Array<{
+    id: string;
+    title: string;
+    type: string;
+    unlockValue: number;
+    unlockType: string;
+    unlockedAt: Date | null;
+    progress: number;
   }>;
-  type: string;
-  chatbotFlowId?: string;
 }
 
 interface Patient {
@@ -68,49 +76,57 @@ interface Patient {
   phone: string;
 }
 
-export default function IndicationsPage() {
+interface Page {
+  id: string;
+  title: string;
+  slug: string;
+}
+
+interface ReferralsByPatient {
+  [key: string]: {
+    patient: Patient;
+    referrals: PatientReferral[];
+  }
+}
+
+interface DashboardData {
+  totalLeads: number;
+  totalIndications: number;
+  totalClicks: number;
+  totalRewards?: number;
+}
+
+export default function ReferralsPage() {
   const { data: session } = useSession();
-  const [newIndication, setNewIndication] = useState('');
-  const [patientName, setPatientName] = useState('');
-  const [patientEmail, setPatientEmail] = useState('');
-  const [patientPhone, setPatientPhone] = useState('');
-  const [generatedSlug, setGeneratedSlug] = useState('');
-  const [indications, setIndications] = useState<Indication[]>([]);
-  const [baseUrl, setBaseUrl] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [userSlug, setUserSlug] = useState('');
-  const [totalLeads, setTotalLeads] = useState(0);
-  const [totalClicks, setTotalClicks] = useState(0);
-  const [isClient, setIsClient] = useState(false);
-  const [dashboardData, setDashboardData] = useState<{ 
-    totalLeads: number;
-    totalIndications: number;
-    totalClicks: number;
-  } | null>(null);
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [deletingLinkId, setDeletingLinkId] = useState<string | null>(null);
+  const [referrals, setReferrals] = useState<PatientReferral[]>([]);
   const [patients, setPatients] = useState<Patient[]>([]);
-  const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
+  const [pages, setPages] = useState<Page[]>([]);
+  const [selectedPatient, setSelectedPatient] = useState<Patient | undefined>(undefined);
+  const [selectedPage, setSelectedPage] = useState<Page | undefined>(undefined);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [baseUrl, setBaseUrl] = useState('');
+  const [userSlug, setUserSlug] = useState('');
+  const [isClient, setIsClient] = useState(false);
   const [openCombobox, setOpenCombobox] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [filteredPatients, setFilteredPatients] = useState<Patient[]>([]);
-  const [currentIndication, setCurrentIndication] = useState<Indication | null>(null);
-
-  // Variáveis adicionais para chatbot
-  const [showCreateChatbotModal, setShowCreateChatbotModal] = useState(false);
-  const [chatbotName, setChatbotName] = useState('');
-  const [chatbotGreeting, setChatbotGreeting] = useState('');
-  const [chatbotWelcomeMessage, setChatbotWelcomeMessage] = useState('');
+  const [openPageCombobox, setOpenPageCombobox] = useState(false);
+  const [pageSearchQuery, setPageSearchQuery] = useState("");
+  const [filteredPages, setFilteredPages] = useState<Page[]>([]);
 
   const router = useRouter();
 
   useEffect(() => {
-    // Marcador de renderização client-side para evitar problemas de hidratação
     setIsClient(true);
   }, []);
+
+  useEffect(() => {
+    if (session?.user?.id) {
+      console.log('Fetching patients on session change');
+      fetchPatients();
+    }
+  }, [session?.user?.id]);
 
   useEffect(() => {
     if (isClient && typeof window !== 'undefined') {
@@ -118,10 +134,9 @@ export default function IndicationsPage() {
     }
     
     if (session?.user?.id) {
-      fetchIndications();
+      fetchReferrals();
       fetchUserProfile();
-      fetchDashboardData();
-      fetchPatients();
+      fetchPages();
     }
   }, [session, isClient]);
 
@@ -141,52 +156,97 @@ export default function IndicationsPage() {
     }
   };
 
-  const fetchIndications = async () => {
+  const fetchReferrals = async () => {
     if (!session?.user?.id) return;
 
     try {
-      const response = await fetch(`/api/indications?withStats=true`);
+      const response = await fetch('/api/doctor/referrals');
       if (response.ok) {
-        const data = await response.json();
-        setIndications(data);
-        
-        // Calcular totais diretamente dos dados
-        const totalLeads = data.reduce((acc: number, curr: any) => acc + (curr._count?.leads || 0), 0);
-        const totalClicks = data.reduce((acc: number, curr: any) => acc + (curr._count?.events || 0), 0);
-        
-        setTotalLeads(totalLeads);
-        setTotalClicks(totalClicks);
+        const { referrals } = await response.json();
+        setReferrals(referrals);
       }
     } catch (error) {
-      console.error('Erro ao buscar indicações:', error);
+      console.error('Erro ao buscar referências:', error);
       toast({
         title: "Erro",
-        description: "Não foi possível carregar as indicações",
+        description: "Não foi possível carregar as referências",
         variant: "destructive"
       });
     }
   };
 
-  const fetchDashboardData = async () => {
+  const fetchPages = async () => {
+    if (!session?.user?.id) {
+      console.log('No user session, skipping fetch');
+      return;
+    }
+    
     try {
-      const response = await fetch('/api/dashboard');
+      console.log('Fetching pages...');
+      const response = await fetch('/api/pages');
+      console.log('Response status:', response.status);
+      
       if (response.ok) {
         const data = await response.json();
-        setDashboardData(data);
+        console.log('Received pages data:', data);
+        if (Array.isArray(data) && data.length > 0) {
+          setPages(data);
+          setFilteredPages(data);
+        } else {
+          console.log('No pages data received or empty array');
+          toast({
+            title: "Aviso",
+            description: "Você precisa criar uma página antes de criar um link de referência",
+            variant: "destructive"
+          });
+        }
+      } else {
+        const errorText = await response.text();
+        console.error('Error response:', errorText);
+        toast({
+          title: "Erro",
+          description: "Erro ao carregar páginas: " + errorText,
+          variant: "destructive"
+        });
       }
     } catch (error) {
-      console.error('Erro ao buscar dados do dashboard:', error);
+      console.error('Erro ao buscar páginas:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível carregar a lista de páginas",
+        variant: "destructive"
+      });
     }
   };
 
   const fetchPatients = async () => {
-    if (!session?.user?.id) return;
+    if (!session?.user?.id) {
+      console.log('No user session, skipping fetch');
+      return;
+    }
     
     try {
+      console.log('Fetching patients...');
       const response = await fetch('/api/patients');
+      console.log('Response status:', response.status);
+      
       if (response.ok) {
         const { data } = await response.json();
-        setPatients(data);
+        console.log('Received patients data:', data);
+        if (Array.isArray(data) && data.length > 0) {
+          setPatients(data);
+          setFilteredPatients(data);
+        } else {
+          console.log('No patients data received or empty array');
+        }
+      } else {
+        const errorText = await response.text();
+        console.error('Error response:', errorText);
+        toast({
+          title: "Erro",
+          description: "Erro ao carregar pacientes: " + errorText,
+          variant: "destructive"
+        });
       }
     } catch (error) {
       console.error('Erro ao buscar pacientes:', error);
@@ -198,43 +258,27 @@ export default function IndicationsPage() {
     }
   };
 
-  const handleGenerateSlug = async () => {
-    if (!newIndication.trim() || !session?.user?.id) return;
-    
-    setIsGenerating(true);
-    try {
-      const response = await fetch('/api/slugify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: session.user.id,
-          name: newIndication
-        })
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setGeneratedSlug(data.slug);
-      } else {
-        toast({
-          title: "Erro",
-          description: "Não foi possível gerar o slug",
-          variant: "destructive"
-        });
-      }
-    } catch (error) {
-      console.error('Erro ao gerar slug:', error);
-    } finally {
-      setIsGenerating(false);
-    }
+  const patientHasPageAccess = (patientId: string, pageId: string) => {
+    return referrals.some(
+      referral => referral.patient.id === patientId && referral.page.id === pageId
+    );
   };
 
-  const handleCreateIndication = async (e: React.FormEvent) => {
+  const handleCreateReferral = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newIndication.trim() || !session?.user?.id || !selectedPatient) {
+    if (!session?.user?.id || !selectedPatient || !selectedPage) {
       toast({
         title: "Erro",
-        description: "Selecione um paciente e defina um nome para a indicação",
+        description: "Selecione um paciente e uma página para criar o link",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (patientHasPageAccess(selectedPatient.id, selectedPage.id)) {
+      toast({
+        title: "Erro",
+        description: "Este paciente já tem acesso a esta página",
         variant: "destructive"
       });
       return;
@@ -242,34 +286,33 @@ export default function IndicationsPage() {
     
     setIsLoading(true);
     try {
-      // Criar a indicação vinculada ao paciente selecionado
-      const indicationResponse = await fetch('/api/indications', {
+      const referralResponse = await fetch('/api/patient-referral', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name: newIndication,
-          patientId: selectedPatient.id
+          patientId: selectedPatient.id,
+          pageId: selectedPage.id
         })
       });
       
-      if (indicationResponse.ok) {
+      if (referralResponse.ok) {
         toast({
           title: "Sucesso",
-          description: "Link de indicação criado com sucesso",
+          description: "Link de referência criado com sucesso",
         });
-        setNewIndication('');
-        setSelectedPatient(null);
+        setSelectedPatient(undefined);
+        setSelectedPage(undefined);
         setShowCreateModal(false);
-        fetchIndications();
+        fetchReferrals();
       } else {
-        const errorData = await indicationResponse.json();
-        throw new Error(errorData.error || "Não foi possível criar a indicação");
+        const errorData = await referralResponse.json();
+        throw new Error(errorData.error || "Não foi possível criar a referência");
       }
     } catch (error) {
-      console.error('Erro ao criar indicação:', error);
+      console.error('Erro ao criar referência:', error);
       toast({
         title: "Erro",
-        description: error instanceof Error ? error.message : "Ocorreu um erro ao criar a indicação",
+        description: error instanceof Error ? error.message : "Ocorreu um erro ao criar a referência",
         variant: "destructive"
       });
     } finally {
@@ -287,618 +330,234 @@ export default function IndicationsPage() {
     }
   };
 
-  const shareOnWhatsApp = (link: string) => {
-    // Adicionar UTMs ao compartilhar via WhatsApp para rastreamento
-    const fullLink = `${baseUrl}/${userSlug}/${link.split('/').pop()}`;
-    const linkWithUtm = `${fullLink}?utm_source=whatsapp&utm_medium=share&utm_campaign=indication`;
-    // Garantir que só execute no cliente
-    if (isClient && typeof window !== 'undefined') {
-      window.open(`https://wa.me/?text=Olha esse link: ${encodeURIComponent(linkWithUtm)}`, '_blank');
+  // Agrupar referrals por paciente
+  const referralsByPatient: ReferralsByPatient = referrals.reduce((acc, referral) => {
+    const patientId = referral.patient.id;
+    if (!acc[patientId]) {
+      acc[patientId] = {
+        patient: referral.patient,
+        referrals: []
+      };
     }
-  };
+    acc[patientId].referrals.push(referral);
+    return acc;
+  }, {} as ReferralsByPatient);
 
-  // Formatar link sem https://
-  const formatLink = (url: string) => {
-    return url.replace(/^https?:\/\//, '');
-  };
-
-  // Carregar dados imediatamente após montagem do componente
-  useEffect(() => {
-    if (session?.user?.id) {
-      fetchIndications();
-      fetchUserProfile();
-      fetchDashboardData();
-    }
-  }, [session?.user?.id]);
-
-  // Atualizar dados periodicamente
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (session?.user?.id) {
-        fetchIndications();
-        fetchDashboardData();
-      }
-    }, 30000); // Atualizar a cada 30 segundos
-
-    return () => clearInterval(interval);
-  }, [session?.user?.id]);
-
-  // Adicionar useEffect para filtrar pacientes
-  useEffect(() => {
-    if (!searchQuery.trim()) {
-      setFilteredPatients(patients);
-      return;
-    }
-
-    const query = searchQuery.toLowerCase();
-    const filtered = patients.filter(
-      patient => 
-        patient.name.toLowerCase().includes(query) ||
-        patient.email.toLowerCase().includes(query) ||
-        patient.phone.toLowerCase().includes(query)
-    );
-    setFilteredPatients(filtered);
-  }, [searchQuery, patients]);
-
-  // Não renderizar nada no servidor para evitar erros de hidratação
-  if (!isClient) {
-    return null;
-  }
-  
-  const handleDeleteLink = async (indication: Indication) => {
-    if (!indication.slug) {
-      console.error('Slug da indicação não fornecido');
-      return;
-    }
-
-    console.log('Iniciando exclusão da indicação:', indication.slug);
-    
-    try {
-      const url = `/api/indications/${indication.slug}`;
-      console.log('Enviando requisição DELETE para:', url);
-      
-      const response = await fetch(url, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include'
-      });
-
-      console.log('Status da resposta:', response.status);
-      
-      let responseData;
-      try {
-        responseData = await response.json();
-        console.log('Dados da resposta:', responseData);
-      } catch (e) {
-        console.error('Erro ao parsear resposta:', e);
-        responseData = null;
-      }
-
-      if (response.ok) {
-        console.log('Exclusão bem-sucedida, atualizando estado local');
-        setIndications(prev => prev.filter(ind => ind.id !== indication.id));
-        setShowDeleteModal(false);
-        setDeletingLinkId(null);
-        
-        toast({
-          title: "Sucesso",
-          description: "Link de indicação excluído com sucesso",
-        });
-      } else {
-        const errorMessage = responseData?.error || 'Erro ao excluir link';
-        console.error('Erro na resposta:', errorMessage);
-        throw new Error(errorMessage);
-      }
-    } catch (error) {
-      console.error('Erro detalhado ao excluir link:', error);
-      toast({
-        title: "Erro",
-        description: error instanceof Error ? error.message : "Não foi possível excluir o link. Tente novamente.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const openDeleteModal = (indication: Indication) => {
-    setDeletingLinkId(indication.id);
-    setCurrentIndication(indication);
-    setShowDeleteModal(true);
-  };
-
-  const handleCreateChatbot = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!chatbotName.trim() || !session?.user?.id) {
-      toast({
-        title: "Erro",
-        description: "O nome do chatbot é obrigatório",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    setIsLoading(true);
-    try {
-      // Primeiro criar o fluxo de chatbot
-      const flowResponse = await fetch('/api/chatbot-flows', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: chatbotName,
-          description: 'Fluxo de chatbot criado através do painel'
-        })
-      });
-      
-      if (!flowResponse.ok) {
-        const errorData = await flowResponse.json();
-        throw new Error(errorData.error || "Não foi possível criar o fluxo de chatbot");
-      }
-      
-      const flowData = await flowResponse.json();
-      console.log("Fluxo criado com sucesso:", flowData);
-      
-      // Agora criar a indicação vinculada ao fluxo
-      const response = await fetch('/api/indications', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: chatbotName,
-          type: 'chatbot',
-          chatbotConfig: {
-            name: chatbotName,
-            greeting: chatbotGreeting || `Olá! Sou o assistente virtual do Dr. ${session?.user?.name}`,
-            welcomeMessage: chatbotWelcomeMessage || 'Como posso ajudar você hoje?',
-            collectDataInConversation: true,
-            flowId: flowData.id
-          },
-          chatbotFlowId: flowData.id
-        })
-      });
-      
-      if (response.ok) {
-        toast({
-          title: "Sucesso",
-          description: "Chatbot criado com sucesso! Acesse o editor de fluxo para personalizar as interações.",
-        });
-        setChatbotName('');
-        setChatbotGreeting('');
-        setChatbotWelcomeMessage('');
-        setShowCreateChatbotModal(false);
-        fetchIndications();
-      } else {
-        const errorData = await response.json();
-        console.error("Erro na resposta da API de indicações:", errorData);
-        throw new Error(errorData.error || "Não foi possível criar o chatbot");
-      }
-    } catch (error) {
-      console.error('Erro ao criar chatbot:', error);
-      toast({
-        title: "Erro",
-        description: error instanceof Error ? error.message : "Ocorreu um erro ao criar o chatbot",
-        variant: "destructive"
-      });
-    } finally {
-      setIsLoading(false);
+  const handleCreateModalChange = (open: boolean) => {
+    setShowCreateModal(open);
+    if (!open) {
+      setSelectedPatient(undefined);
+      setSelectedPage(undefined);
     }
   };
 
   return (
     <div className="min-h-[100dvh] bg-gray-100 pt-20 pb-24 md:pt-12 md:pb-16 px-2 sm:px-4">
       <div className="container mx-auto px-0 sm:pl-4 md:pl-8 lg:pl-16 max-w-full sm:max-w-[95%] md:max-w-[90%] lg:max-w-[85%]">
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6">
-          <div>
-            <h1 className="text-lg md:text-xl font-bold text-gray-900 tracking-[-0.03em] font-inter">Indicações</h1>
-            <p className="text-xs md:text-sm text-gray-600 tracking-[-0.03em] font-inter">Gerencie suas indicações</p>
-          </div>
-          <div className="w-full md:w-auto mt-2 md:mt-0 flex flex-col sm:flex-row gap-2">
+        <div className="flex flex-col gap-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-lg md:text-xl font-bold text-gray-900 tracking-[-0.03em] font-inter">Links de Referência</h2>
+              <p className="text-xs md:text-sm text-gray-600 tracking-[-0.03em] font-inter">Gerencie os links de referência dos seus pacientes</p>
+            </div>
             <Button 
               onClick={() => setShowCreateModal(true)}
-              className="w-full md:w-auto bg-gray-800/5 border-0 shadow-[0_4px_12px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.1)] transition-all duration-300 rounded-2xl text-gray-700 hover:bg-gray-800/10 text-xs"
+              className="w-full md:w-auto mt-2 md:mt-0 bg-gray-800/5 border-0 shadow-[0_4px_12px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.1)] transition-all duration-300 rounded-2xl text-gray-700 hover:bg-gray-800/10 text-xs"
             >
               <PlusIcon className="h-4 w-4 mr-2" />
-              Nova Indicação
-            </Button>
-            <Button 
-              onClick={() => setShowCreateChatbotModal(true)}
-              className="w-full md:w-auto bg-blue-600 border-0 shadow-[0_4px_12px_rgba(59,130,246,0.3)] hover:shadow-[0_8px_24px_rgba(59,130,246,0.4)] transition-all duration-300 rounded-2xl text-white hover:bg-blue-700 text-xs"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" className="h-4 w-4 mr-2">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-              </svg>
-              Criar Chatbot
+              Novo Link
             </Button>
           </div>
-        </div>
 
-        <Card className="bg-gray-800/5 border-0 shadow-[0_8px_30px_rgba(0,0,0,0.12)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.16)] transition-all duration-300 rounded-2xl">
-          <CardHeader className="pb-1 pt-3 px-4">
-            <CardTitle className="text-sm md:text-base font-bold text-gray-900 tracking-[-0.03em] font-inter">Links de Indicação</CardTitle>
-            <CardDescription className="text-xs text-gray-500 tracking-[-0.03em] font-inter">
-              Gerencie seus links de indicação
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="pb-3 px-4">
-            <div className="overflow-x-auto -mx-4 px-4">
-              {/* Mobile view for small screens */}
-              <div className="md:hidden space-y-4">
-                {indications.map((indication) => (
-                  <div key={indication.id} className="bg-white p-3 rounded-xl shadow-sm">
-                    <div className="font-medium text-sm text-gray-900 mb-1">{indication.name}</div>
-                    <div className="text-gray-600 text-xs mb-2 truncate">
-                      {`${baseUrl}/${userSlug}/${indication.slug}`}
+          <div className="space-y-4">
+            {Object.values(referralsByPatient).map(({ patient, referrals }) => (
+              <div key={patient.id} className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
+                      <UserIcon className="h-5 w-5 text-gray-600" />
                     </div>
-                    
-                    <div className="grid grid-cols-2 gap-2 mb-3">
-                      <div className="text-center">
-                        <div className="text-xs text-gray-500">Leads</div>
-                        <div className="text-gray-900 font-medium text-sm">
-                          {indication._count?.leads || 0}
-                        </div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-xs text-gray-500">Conversão</div>
-                        <div className="text-gray-900 font-medium text-sm">
-                          {indication._count?.events 
-                            ? `${Math.round((indication._count.converted / indication._count.events) * 100)}%`
-                            : '0%'}
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="flex justify-between gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="bg-white border-sky-300 text-sky-700 hover:bg-sky-50 hover:border-sky-400 hover:text-sky-800 transition-colors text-xs h-7 px-2 flex-1"
-                        onClick={() => copyToClipboard(`${baseUrl}/${userSlug}/${indication.slug}`)}
-                      >
-                        <ClipboardIcon className="h-3 w-3 mr-1" />
-                        Copiar
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="bg-white border-sky-300 text-sky-700 hover:bg-sky-50 hover:border-sky-400 hover:text-sky-800 transition-colors text-xs h-7 px-2 flex-1"
-                        onClick={() => shareOnWhatsApp(`${baseUrl}/${userSlug}/${indication.slug}`)}
-                      >
-                        <ShareIcon className="h-3 w-3 mr-1" />
-                        Compartilhar
-                      </Button>
-                      {indication.type === 'chatbot' && indication.chatbotFlowId && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="bg-white border-yellow-300 text-yellow-700 hover:bg-yellow-50 hover:border-yellow-400 hover:text-yellow-800 transition-colors text-xs h-7 px-2"
-                          onClick={() => router.push(`/dashboard/chatbot-editor/${indication.chatbotFlowId}`)}
-                        >
-                          <PencilIcon className="h-3 w-3 mr-1" />
-                          Editar Chatbot
-                        </Button>
-                      )}
-                      <Button
-                        onClick={() => openDeleteModal(indication)}
-                        variant="outline"
-                        size="sm"
-                        className="bg-white border-red-300 text-red-700 hover:bg-red-50 hover:border-red-400 hover:text-red-800 transition-colors text-xs h-7 px-2"
-                      >
-                        <Trash className="h-3 w-3" />
-                      </Button>
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-900">{patient.name}</h3>
+                      <p className="text-xs text-gray-500">{patient.email}</p>
                     </div>
                   </div>
-                ))}
-              </div>
-              
-              {/* Desktop table view */}
-              <table className="w-full hidden md:table">
-                <thead>
-                  <tr className="border-b border-gray-200">
-                    <th className="py-2 px-3 text-left text-xs font-medium text-gray-500">Nome</th>
-                    <th className="py-2 px-3 text-left text-xs font-medium text-gray-500">Link</th>
-                    <th className="py-2 px-3 text-left text-xs font-medium text-gray-500">Leads</th>
-                    <th className="py-2 px-3 text-left text-xs font-medium text-gray-500">Pacientes</th>
-                    <th className="py-2 px-3 text-left text-xs font-medium text-gray-500">Conversão</th>
-                    <th className="py-2 px-3 text-right text-xs font-medium text-gray-500">Ações</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {indications.map((indication) => (
-                    <tr key={indication.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="py-2 px-3">
-                        <div className="font-medium text-sm text-gray-900">{indication.name}</div>
-                      </td>
-                      <td className="py-2 px-3">
-                        <div className="text-gray-600 text-xs">
-                          {`${baseUrl}/${userSlug}/${indication.slug}`}
-                        </div>
-                      </td>
-                      <td className="py-2 px-3">
-                        <div className="text-gray-900 font-medium text-sm">
-                          {indication._count?.leads || 0}
-                        </div>
-                      </td>
-                      <td className="py-2 px-3">
-                        <div className="text-gray-900 font-medium text-sm">
-                          {indication._count?.converted || 0}
-                        </div>
-                      </td>
-                      <td className="py-2 px-3">
-                        <div className="text-gray-900 font-medium text-sm">
-                          {indication._count?.events 
-                            ? `${Math.round((indication._count.converted / indication._count.events) * 100)}%`
-                            : '0%'}
-                        </div>
-                      </td>
-                      <td className="py-2 px-3">
-                        <div className="flex justify-end gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="bg-white border-sky-300 text-sky-700 hover:bg-sky-50 hover:border-sky-400 hover:text-sky-800 transition-colors text-xs h-7 px-2"
-                            onClick={() => copyToClipboard(`${baseUrl}/${userSlug}/${indication.slug}`)}
-                          >
-                            <Copy className="h-3 w-3 mr-1" />
-                            Copiar
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="bg-white border-sky-300 text-sky-700 hover:bg-sky-50 hover:border-sky-400 hover:text-sky-800 transition-colors text-xs h-7 px-2"
-                            onClick={() => shareOnWhatsApp(`${baseUrl}/${userSlug}/${indication.slug}`)}
-                          >
-                            <Share2 className="h-3 w-3 mr-1" />
-                            Compartilhar
-                          </Button>
-                          {indication.type === 'chatbot' && indication.chatbotFlowId && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="bg-white border-yellow-300 text-yellow-700 hover:bg-yellow-50 hover:border-yellow-400 hover:text-yellow-800 transition-colors text-xs h-7 px-2"
-                              onClick={() => router.push(`/dashboard/chatbot-editor/${indication.chatbotFlowId}`)}
-                            >
-                              <PencilIcon className="h-3 w-3 mr-1" />
-                              Editar Chatbot
-                            </Button>
-                          )}
-                          <Button
-                            onClick={() => openDeleteModal(indication)}
-                            variant="ghost"
-                            size="sm"
-                            className="text-gray-500 hover:text-red-600 hover:bg-red-50 transition-colors text-xs h-7 w-7 p-0"
-                          >
-                            <TrashIcon className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
-          <DialogContent className="bg-white border-0 shadow-[0_8px_30px_rgba(0,0,0,0.12)] backdrop-blur-none rounded-3xl p-4 w-[95vw] max-w-md mx-auto">
-            <CardHeader className="p-0 mb-4">
-              <CardTitle className="text-sm md:text-base font-bold text-gray-900 tracking-[-0.03em] font-inter">Criar Novo Link</CardTitle>
-              <CardDescription className="text-xs text-gray-600 tracking-[-0.03em] font-inter">
-                Gere um novo link de indicação
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-0">
-              <form onSubmit={handleCreateIndication} className="space-y-4">
-                <div className="space-y-1">
-                  <Label htmlFor="name" className="text-xs font-medium text-gray-700 tracking-[-0.03em] font-inter">Nome do Link</Label>
-                  <Input
-                    id="name"
-                    value={newIndication}
-                    onChange={(e) => setNewIndication(e.target.value)}
-                    placeholder="Ex: Consulta de Check-up"
-                    className="bg-white/50 border-gray-200 focus:border-gray-300 text-gray-900 placeholder:text-gray-400 rounded-xl h-9 text-sm"
-                  />
                 </div>
 
-                <div className="space-y-1">
-                  <Label className="text-xs font-medium text-gray-700 tracking-[-0.03em] font-inter">Selecionar Paciente</Label>
-                  <Popover open={openCombobox} onOpenChange={setOpenCombobox}>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        role="combobox"
-                        aria-expanded={openCombobox}
-                        className="w-full justify-between bg-white/50 border-gray-200 focus:border-gray-300 text-gray-900 placeholder:text-gray-400 rounded-xl h-9 text-sm"
-                      >
-                        {selectedPatient ? selectedPatient.name : "Selecione um paciente..."}
-                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent 
-                      className="w-[var(--radix-popover-trigger-width)] p-0 bg-white shadow-lg border border-gray-200 rounded-xl z-[9999]" 
-                      align="start" 
-                      sideOffset={4}
-                    >
-                      <Command>
-                        <CommandInput 
-                          placeholder="Buscar paciente..." 
-                          value={searchQuery}
-                          onValueChange={setSearchQuery}
-                          className="h-9 border-0 focus:ring-0"
-                        />
-                        <CommandEmpty className="p-2 text-sm text-gray-500">
-                          Nenhum paciente encontrado.
-                        </CommandEmpty>
-                        <CommandGroup className="max-h-[200px] overflow-auto">
-                          {filteredPatients.map((patient) => (
-                            <CommandItem
-                              key={patient.id}
-                              value={patient.name}
-                              className="cursor-pointer hover:bg-gray-50 py-2 px-2 flex items-center gap-2"
-                              onSelect={() => {
-                                setSelectedPatient(patient);
-                                setOpenCombobox(false);
-                                setSearchQuery("");
-                              }}
-                            >
-                              <Check
-                                className={cn(
-                                  "h-4 w-4 flex-shrink-0",
-                                  selectedPatient?.id === patient.id ? "opacity-100" : "opacity-0"
-                                )}
-                              />
-                              <div className="flex flex-col flex-1">
-                                <span className="font-medium">{patient.name}</span>
-                                <span className="text-xs text-gray-500">{patient.email}</span>
+                <Card className="bg-gray-800/5 border-0 shadow-[0_8px_30px_rgba(0,0,0,0.12)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.16)] transition-all duration-300 rounded-2xl">
+                  <CardContent className="p-6">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-[300px]">Nome do Link</TableHead>
+                          <TableHead>URL</TableHead>
+                          <TableHead className="text-center">Visitas</TableHead>
+                          <TableHead className="text-center">Leads</TableHead>
+                          <TableHead className="text-center">Vendas</TableHead>
+                          <TableHead className="text-right">Ações</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {referrals.map((referral) => (
+                          <TableRow key={referral.id}>
+                            <TableCell className="font-medium">{referral.page.title}</TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm text-gray-500 truncate max-w-[200px]">
+                                  {`${baseUrl}/${userSlug}/${referral.slug}`}
+                                </span>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-gray-100">
+                                  <ClipboardIcon className="h-4 w-4 text-gray-500" />
+                                </Button>
                               </div>
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
-                  {selectedPatient && (
-                    <div className="mt-2 p-2 bg-gray-50 rounded-lg text-xs text-gray-600">
-                      <p><strong>Email:</strong> {selectedPatient.email}</p>
-                      <p><strong>Telefone:</strong> {selectedPatient.phone}</p>
-                    </div>
-                  )}
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <Badge variant="outline" className="bg-gray-50 text-gray-600 border-gray-200">
+                                {referral.stats.visits}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <Badge variant="outline" className="bg-blue-50 text-blue-600 border-blue-200">
+                                {referral.stats.leads}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <Badge variant="outline" className="bg-green-50 text-green-600 border-green-200">
+                                {referral.stats.sales}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex justify-end gap-2">
+                                <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-gray-100">
+                                  <QrCodeIcon className="h-4 w-4 text-gray-500" />
+                                </Button>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-gray-100">
+                                  <ShareIcon className="h-4 w-4 text-gray-500" />
+                                </Button>
+                                {referral.rewards && referral.rewards.length > 0 && (
+                                  <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-gray-100">
+                                    <GiftIcon className="h-4 w-4 text-gray-500" />
+                                  </Button>
+                                )}
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </CardContent>
+                </Card>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Create Modal */}
+      <Sheet 
+        open={showCreateModal} 
+        onOpenChange={handleCreateModalChange}
+      >
+        <SheetContent className="w-full sm:max-w-xl overflow-y-auto">
+          <div className="space-y-4">
+            <SheetHeader>
+              <SheetTitle className="text-lg font-bold text-gray-900">Nova Indicação</SheetTitle>
+            </SheetHeader>
+
+            <form onSubmit={handleCreateReferral} className="space-y-6">
+              {/* Informações Básicas */}
+              <div>
+                <h3 className="text-sm font-medium text-gray-500 mb-3">Informações Básicas</h3>
+                <div className="grid gap-4 bg-gray-50/50 p-4 rounded-lg">
+                  <div className="space-y-2">
+                    <Label htmlFor="patient" className="text-sm text-gray-700">Paciente</Label>
+                    <Select
+                      value={selectedPatient?.id || ''}
+                      onValueChange={(value) => {
+                        const patient = patients.find(p => p.id === value);
+                        setSelectedPatient(patient || undefined);
+                      }}
+                    >
+                      <SelectTrigger className="h-9 bg-white/50 border-gray-200 focus:border-gray-300 text-gray-900">
+                        <SelectValue placeholder="Selecione um paciente" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {patients.map((patient) => (
+                          <SelectItem key={patient.id} value={patient.id}>
+                            {patient.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="page" className="text-sm text-gray-700">Página</Label>
+                    <Select
+                      value={selectedPage?.id || ''}
+                      onValueChange={(value) => {
+                        const page = pages.find(p => p.id === value);
+                        setSelectedPage(page || undefined);
+                      }}
+                    >
+                      <SelectTrigger className="h-9 bg-white/50 border-gray-200 focus:border-gray-300 text-gray-900">
+                        <SelectValue placeholder="Selecione uma página" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {pages.map((page) => {
+                          const isDisabled = selectedPatient && patientHasPageAccess(selectedPatient.id, page.id);
+                          return (
+                            <SelectItem 
+                              key={page.id} 
+                              value={page.id}
+                              disabled={isDisabled}
+                              className={cn(
+                                isDisabled && "opacity-50 cursor-not-allowed"
+                              )}
+                            >
+                              {page.title}
+                              {isDisabled && " (Já tem acesso)"}
+                            </SelectItem>
+                          );
+                        })}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
+              </div>
 
-                <div className="flex flex-col sm:flex-row gap-3 pt-1">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={handleGenerateSlug}
-                    disabled={isGenerating}
-                    className="bg-white/50 border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300 rounded-xl h-9 flex-1 text-xs"
-                  >
-                    {isGenerating ? (
-                      <ArrowPathIcon className="h-3 w-3 animate-spin" />
-                    ) : (
-                      "Gerar Slug"
-                    )}
-                  </Button>
-
-                  <Button
-                    type="submit"
-                    disabled={isLoading}
-                    className="bg-gray-900 hover:bg-gray-800 text-white rounded-xl h-9 flex-1 text-xs mt-2 sm:mt-0"
-                  >
-                    {isLoading ? (
-                      <ArrowPathIcon className="h-3 w-3 animate-spin" />
-                    ) : (
-                      "Criar Link"
-                    )}
-                  </Button>
-                </div>
-              </form>
-            </CardContent>
-          </DialogContent>
-        </Dialog>
-
-        <Dialog open={showEditModal} onOpenChange={setShowEditModal}>
-          <DialogContent className="bg-gray-800/5 border-0 shadow-[0_8px_30px_rgba(0,0,0,0.12)] rounded-2xl p-4 w-[95vw] max-w-md mx-auto">
-            {/* Modal de edição */}
-          </DialogContent>
-        </Dialog>
-
-        <Dialog open={showDeleteModal} onOpenChange={setShowDeleteModal}>
-          <DialogContent className="bg-white border-0 shadow-[0_8px_30px_rgba(0,0,0,0.12)] backdrop-blur-none rounded-3xl p-4 w-[95vw] max-w-md mx-auto">
-            <CardHeader className="p-0 mb-4">
-              <CardTitle className="text-sm md:text-base font-bold text-gray-900 tracking-[-0.03em] font-inter">Confirmar Exclusão</CardTitle>
-              <CardDescription className="text-xs text-gray-600 tracking-[-0.03em] font-inter">
-                Tem certeza que deseja excluir este link de indicação?
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-0">
-              <div className="flex flex-col sm:flex-row gap-3 pt-1">
+              <div className="flex items-center justify-end gap-2 pt-4 border-t">
                 <Button
                   type="button"
                   variant="outline"
                   onClick={() => {
-                    setShowDeleteModal(false);
-                    setDeletingLinkId(null);
-                    setCurrentIndication(null);
+                    setShowCreateModal(false);
+                    setSelectedPatient(undefined);
+                    setSelectedPage(undefined);
                   }}
-                  className="bg-white/50 border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300 rounded-xl h-9 flex-1 text-xs"
+                  className="bg-white border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300"
                 >
                   Cancelar
                 </Button>
                 <Button
-                  type="button"
-                  onClick={() => {
-                    if (currentIndication) {
-                      handleDeleteLink(currentIndication);
-                    } else {
-                      console.error('Indicação não encontrada');
-                    }
-                  }}
-                  className="bg-red-600 hover:bg-red-700 text-white rounded-xl h-9 flex-1 text-xs"
-                >
-                  Excluir
-                </Button>
-              </div>
-            </CardContent>
-          </DialogContent>
-        </Dialog>
-
-        {/* Modal de criação de chatbot */}
-        <Dialog open={showCreateChatbotModal} onOpenChange={setShowCreateChatbotModal}>
-          <DialogContent className="sm:max-w-[425px]">
-            <h2 className="text-lg font-semibold mb-2">Criar Chatbot</h2>
-            <form onSubmit={handleCreateChatbot} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="chatbotName">Nome do Chatbot</Label>
-                <Input
-                  id="chatbotName"
-                  value={chatbotName}
-                  onChange={(e) => setChatbotName(e.target.value)}
-                  placeholder="Ex: Assistente Virtual"
-                  required
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="chatbotGreeting">Mensagem Inicial (opcional)</Label>
-                <Input
-                  id="chatbotGreeting"
-                  value={chatbotGreeting}
-                  onChange={(e) => setChatbotGreeting(e.target.value)}
-                  placeholder={`Olá! Sou o assistente virtual do Dr. ${session?.user?.name}`}
-                />
-                <p className="text-xs text-gray-500">Primeira mensagem exibida ao abrir o chat</p>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="chatbotWelcomeMessage">Mensagem de Boas-vindas (opcional)</Label>
-                <Input
-                  id="chatbotWelcomeMessage"
-                  value={chatbotWelcomeMessage}
-                  onChange={(e) => setChatbotWelcomeMessage(e.target.value)}
-                  placeholder="Como posso ajudar você hoje?"
-                />
-                <p className="text-xs text-gray-500">Mensagem exibida após o usuário se identificar</p>
-              </div>
-              
-              <div className="flex justify-end space-x-2 mt-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setShowCreateChatbotModal(false)}
-                >
-                  Cancelar
-                </Button>
-                <Button 
                   type="submit"
-                  disabled={isLoading || !chatbotName.trim()}
+                  disabled={!selectedPatient || !selectedPage || isLoading}
+                  className="bg-gray-900 hover:bg-gray-800 text-white"
                 >
-                  {isLoading ? "Criando..." : "Criar Chatbot"}
+                  {isLoading ? (
+                    <>
+                      <ArrowPathIcon className="h-4 w-4 mr-2 animate-spin" />
+                      Criando...
+                    </>
+                  ) : (
+                    'Criar Indicação'
+                  )}
                 </Button>
               </div>
             </form>
-          </DialogContent>
-        </Dialog>
-      </div>
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 } 

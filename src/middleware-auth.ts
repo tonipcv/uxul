@@ -116,7 +116,6 @@ export const config = {
     '/(authenticated)/:path*',
     '/dashboard/:path*',
     '/profile/:path*',
-    '/agenda/:path*',
     '/settings/:path*',
     '/reports/:path*',
     '/analytics/:path*',

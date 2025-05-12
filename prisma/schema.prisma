@@ -40,6 +40,7 @@ model User {
   sessions               Session[]
   pages                  Page[]
   pipelines             Pipeline[]
+  services               Service[]
 }
 
 model Indication {
@@ -82,10 +83,13 @@ model Lead {
   indication      Indication? @relation(fields: [indicationId], references: [id])
   pipeline        Pipeline?   @relation(fields: [pipelineId], references: [id])
   patient         Patient?
+  serviceId       String?
+  service         Service?    @relation(fields: [serviceId], references: [id])
 
   @@index([userId])
   @@index([indicationId])
   @@index([pipelineId])
+  @@index([serviceId])
 }
 
 model Event {
@@ -204,6 +208,7 @@ model Patient {
   resetToken        String?
   resetTokenExpiry  DateTime?
   indications       Indication[]
+  referrals        PatientReferral[]
   lead              Lead?        @relation(fields: [leadId], references: [id])
   user              User         @relation(fields: [userId], references: [id])
 }
@@ -239,8 +244,13 @@ model Page {
   blocks       PageBlock[]
   socialLinks  SocialLink[]
   user         User         @relation(fields: [userId], references: [id])
+  referrals    PatientReferral[]
+  rewards      ReferralReward[]
+  serviceId    String?
+  service      Service?     @relation(fields: [serviceId], references: [id])
 
   @@index([userId])
+  @@index([serviceId])
 }
 
 model PageBlock {
@@ -277,4 +287,67 @@ model Pipeline {
   leads       Lead[]
 
   @@index([userId])
+}
+
+model PatientReferral {
+  id            String          @id @default(cuid())
+  slug          String          @unique
+  pageId        String
+  patientId     String
+  visits        Int            @default(0)
+  leads         Int            @default(0)
+  sales         Int            @default(0)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  page          Page           @relation(fields: [pageId], references: [id])
+  patient       Patient        @relation(fields: [patientId], references: [id])
+  rewards       ReferralReward[]
+
+  @@index([pageId])
+  @@index([patientId])
+}
+
+model ReferralReward {
+  id              String          @id @default(cuid())
+  referralId      String
+  type            RewardType
+  title           String
+  description     String?
+  unlockValue     Int            // Número de leads ou vendas necessários
+  unlockType      String         // LEADS ou SALES
+  pageId          String?        // Se type for PAGE
+  textContent     String?        // Se type for TEXT
+  unlockedAt      DateTime?      // Quando foi desbloqueado
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  referral        PatientReferral @relation(fields: [referralId], references: [id])
+  page            Page?          @relation(fields: [pageId], references: [id])
+  serviceId       String?
+  service         Service?       @relation(fields: [serviceId], references: [id])
+
+  @@index([referralId])
+  @@index([pageId])
+  @@index([serviceId])
+}
+
+model Service {
+  id          String    @id @default(cuid())
+  name        String
+  description String?
+  price       Float
+  category    String?
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+  leads       Lead[]
+  rewards     ReferralReward[]
+  pageForms   Page[]
+
+  @@index([userId])
+}
+
+enum RewardType {
+  PAGE
+  TEXT
 }
