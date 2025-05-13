@@ -444,6 +444,7 @@ export default function LinksPage() {
                     <option value="classic">Clássico</option>
                     <option value="modern">Moderno</option>
                     <option value="minimal">Minimalista</option>
+                    <option value="collor">Collor</option>
                   </select>
                   <p className="text-xs text-gray-500">
                     Escolha o estilo visual da sua página

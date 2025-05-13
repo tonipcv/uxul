@@ -1,14 +1,15 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { PlusCircle, GripVertical, Trash2, Link2, FormInput, Loader2, CheckSquare, Square } from 'lucide-react';
+import { PlusCircle, GripVertical, Trash2, Link2, FormInput, Loader2, CheckSquare, Square, Save } from 'lucide-react';
 import { toast } from 'sonner';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
+import { useDebouncedCallback } from 'use-debounce';
 
 interface Block {
   id: string;
@@ -24,12 +25,26 @@ interface BlockEditorProps {
 }
 
 export function BlockEditor({ blocks, onBlocksChange, disabled = false }: BlockEditorProps) {
+  const [localBlocks, setLocalBlocks] = useState<Block[]>(blocks);
   const [draggedBlock, setDraggedBlock] = useState<Block | null>(null);
   const [deletingBlockId, setDeletingBlockId] = useState<string | null>(null);
   const [isAddingBlock, setIsAddingBlock] = useState(false);
   const [selectedBlocks, setSelectedBlocks] = useState<Set<string>>(new Set());
   const [isDeletingMultiple, setIsDeletingMultiple] = useState(false);
   const [pipelines, setPipelines] = useState<Array<{ id: string; name: string }>>([]);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    setLocalBlocks(blocks);
+  }, [blocks]);
+
+  const debouncedUpdateBlocks = useDebouncedCallback(
+    (newBlocks: Block[]) => {
+      onBlocksChange(newBlocks);
+    },
+    500
+  );
 
   useEffect(() => {
     const fetchPipelines = async () => {
@@ -49,6 +64,21 @@ export function BlockEditor({ blocks, onBlocksChange, disabled = false }: BlockE
     fetchPipelines();
   }, []);
 
+  const handleSaveChanges = async () => {
+    if (!hasUnsavedChanges) return;
+    
+    setIsSaving(true);
+    try {
+      await onBlocksChange(localBlocks);
+      setHasUnsavedChanges(false);
+      toast.success('Alterações salvas com sucesso!');
+    } catch (error) {
+      toast.error('Erro ao salvar alterações');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const handleAddBlock = async (type: 'BUTTON' | 'FORM') => {
     setIsAddingBlock(true);
     try {
@@ -64,9 +94,11 @@ export function BlockEditor({ blocks, onBlocksChange, disabled = false }: BlockE
               pipelineId: '',
               successPage: ''
             },
-        order: blocks.length,
+        order: localBlocks.length,
       };
-      await onBlocksChange([...blocks, newBlock]);
+      const updatedBlocks = [...localBlocks, newBlock];
+      setLocalBlocks(updatedBlocks);
+      setHasUnsavedChanges(true);
       toast.success('Block added');
     } finally {
       setIsAddingBlock(false);
@@ -76,17 +108,18 @@ export function BlockEditor({ blocks, onBlocksChange, disabled = false }: BlockE
   const handleDeleteBlock = async (blockId: string) => {
     setDeletingBlockId(blockId);
     try {
-      const blockToDelete = blocks.find(block => block.id === blockId);
+      const blockToDelete = localBlocks.find(block => block.id === blockId);
       if (!blockToDelete) return;
 
-      const newBlocks = blocks
+      const newBlocks = localBlocks
         .filter(block => block.id !== blockId)
         .map((block, index) => ({
           ...block,
           order: index
         }));
 
-      await onBlocksChange(newBlocks);
+      setLocalBlocks(newBlocks);
+      setHasUnsavedChanges(true);
       
       toast.success('Bloco removido!', {
         description: `O ${blockToDelete.type === 'BUTTON' ? 'botão' : 'formulário'} foi excluído com sucesso.`,
@@ -118,14 +151,15 @@ export function BlockEditor({ blocks, onBlocksChange, disabled = false }: BlockE
 
     setIsDeletingMultiple(true);
     try {
-      const newBlocks = blocks
+      const newBlocks = localBlocks
         .filter(block => !selectedBlocks.has(block.id))
         .map((block, index) => ({
           ...block,
           order: index
         }));
 
-      await onBlocksChange(newBlocks);
+      setLocalBlocks(newBlocks);
+      setHasUnsavedChanges(true);
       
       toast.success('Blocos removidos!', {
         description: `${selectedBlocks.size} ${selectedBlocks.size === 1 ? 'bloco foi removido' : 'blocos foram removidos'} com sucesso.`,
@@ -144,12 +178,15 @@ export function BlockEditor({ blocks, onBlocksChange, disabled = false }: BlockE
     }
   };
 
-  const handleBlockContentChange = (blockId: string, content: any) => {
-    const newBlocks = blocks.map((block) =>
+  const handleBlockContentChange = useCallback((blockId: string, content: any) => {
+    setLocalBlocks(prevBlocks => {
+      const newBlocks = prevBlocks.map(block =>
       block.id === blockId ? { ...block, content } : block
     );
-    onBlocksChange(newBlocks);
-  };
+      setHasUnsavedChanges(true);
+      return newBlocks;
+    });
+  }, []);
 
   const handleDragStart = (block: Block) => {
     if (disabled) return;
@@ -161,9 +198,10 @@ export function BlockEditor({ blocks, onBlocksChange, disabled = false }: BlockE
     e.preventDefault();
     if (!draggedBlock || draggedBlock.id === targetBlock.id) return;
 
-    const newBlocks = [...blocks];
-    const draggedIndex = blocks.findIndex((b) => b.id === draggedBlock.id);
-    const targetIndex = blocks.findIndex((b) => b.id === targetBlock.id);
+    setLocalBlocks(prevBlocks => {
+      const newBlocks = [...prevBlocks];
+      const draggedIndex = prevBlocks.findIndex((b) => b.id === draggedBlock.id);
+      const targetIndex = prevBlocks.findIndex((b) => b.id === targetBlock.id);
 
     newBlocks.splice(draggedIndex, 1);
     newBlocks.splice(targetIndex, 0, draggedBlock);
@@ -172,7 +210,10 @@ export function BlockEditor({ blocks, onBlocksChange, disabled = false }: BlockE
       ...block,
       order: index,
     }));
-    onBlocksChange(reorderedBlocks);
+
+      setHasUnsavedChanges(true);
+      return reorderedBlocks;
+    });
   };
 
   const handleDragEnd = () => {
@@ -210,8 +251,9 @@ export function BlockEditor({ blocks, onBlocksChange, disabled = false }: BlockE
           </Button>
         </div>
 
+        <div className="flex items-center gap-2">
         {selectedBlocks.size > 0 && (
-          <div className="flex items-center gap-2">
+            <>
             <span className="text-sm text-gray-500">
               {selectedBlocks.size} {selectedBlocks.size === 1 ? 'bloco selecionado' : 'blocos selecionados'}
             </span>
@@ -228,12 +270,28 @@ export function BlockEditor({ blocks, onBlocksChange, disabled = false }: BlockE
               )}
               Excluir Selecionados
             </Button>
+            </>
+          )}
+
+          {hasUnsavedChanges && (
+            <Button
+              onClick={handleSaveChanges}
+              disabled={isSaving || disabled}
+              className="bg-green-600 hover:bg-green-700 text-white"
+            >
+              {isSaving ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Save className="h-4 w-4 mr-2" />
+              )}
+              Salvar Alterações
+            </Button>
+          )}
           </div>
-        )}
       </div>
 
       <div className="space-y-4">
-        {blocks.map((block) => (
+        {localBlocks.map((block) => (
           <Card
             key={block.id}
             draggable={!disabled}
@@ -407,7 +465,6 @@ export function BlockEditor({ blocks, onBlocksChange, disabled = false }: BlockE
                           URL para onde o usuário será redirecionado após enviar o formulário.
                         </p>
                       </div>
-
                     </div>
                   )}
                 </div>

@@ -79,7 +79,7 @@ export async function POST(
           
           <p>Olá ${patient.name},</p>
           
-          <p>Seu médico, Dr(a). ${patient.user.name}, configurou seu acesso ao portal do paciente.</p>
+          <p>Seu médico, Dr(a). ${patient.user?.name || 'Médico'}, configurou seu acesso ao portal do paciente.</p>
           
           <p>Para acessar o portal e definir sua senha, clique no botão abaixo:</p>
           

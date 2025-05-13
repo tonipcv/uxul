@@ -1,13 +1,13 @@
 import { useState } from 'react';
-import { Service, CreateServiceInput, UpdateServiceInput } from '@/types/service';
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Service } from '@/types/service';
 
 interface ServiceFormProps {
   service?: Service;
-  onSubmit: (data: CreateServiceInput | UpdateServiceInput) => Promise<void>;
+  onSubmit: (data: any) => Promise<void>;
   onCancel: () => void;
 }
 
@@ -15,9 +15,9 @@ export default function ServiceForm({ service, onSubmit, onCancel }: ServiceForm
   const [formData, setFormData] = useState({
     name: service?.name || '',
     description: service?.description || '',
-    price: service?.price || 0,
+    price: service?.price || '',
     category: service?.category || '',
-    isActive: service?.isActive ?? true
+    isActive: service?.isActive ?? true,
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -27,111 +27,98 @@ export default function ServiceForm({ service, onSubmit, onCancel }: ServiceForm
     setIsSubmitting(true);
     try {
       await onSubmit(formData);
-    } catch (error) {
-      console.error('Error submitting service:', error);
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-6">
+      {/* Informações Básicas */}
+      <div>
+        <h3 className="text-sm font-medium text-gray-500 mb-3">Informações Básicas</h3>
+        <div className="grid gap-4 bg-gray-50/50 p-4 rounded-lg">
       <div className="space-y-2">
-        <Label htmlFor="name" className="text-sm font-medium text-gray-700 tracking-[-0.03em] font-inter">
-          Nome do Serviço
-        </Label>
+            <Label htmlFor="name" className="text-sm text-gray-700">Nome do Serviço</Label>
         <Input
-          type="text"
           id="name"
+              name="name"
           value={formData.name}
-          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-          placeholder="Ex: Consulta Médica, Exame de Sangue..."
-          className="bg-white/50 border-gray-200 focus:border-gray-300 text-gray-900 placeholder:text-gray-400 rounded-xl h-9 text-sm"
-          required
+              onChange={handleInputChange}
+              placeholder="Ex: Consulta Inicial"
+              className="bg-white/50 border-gray-200 focus:border-gray-300 text-gray-900"
         />
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="description" className="text-sm font-medium text-gray-700 tracking-[-0.03em] font-inter">
-          Descrição
-        </Label>
+            <Label htmlFor="description" className="text-sm text-gray-700">Descrição</Label>
         <Textarea
           id="description"
+              name="description"
           value={formData.description}
-          onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-          placeholder="Descreva os detalhes do serviço..."
-          className="bg-white/50 border-gray-200 focus:border-gray-300 text-gray-900 placeholder:text-gray-400 rounded-xl text-sm min-h-[100px]"
-          rows={3}
+              onChange={handleInputChange}
+              placeholder="Descreva o serviço..."
+              className="bg-white/50 border-gray-200 focus:border-gray-300 text-gray-900 min-h-[100px]"
         />
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="price" className="text-sm font-medium text-gray-700 tracking-[-0.03em] font-inter">
-          Preço
-        </Label>
-        <div className="relative">
-          <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-            <span className="text-gray-500 text-sm">R$</span>
           </div>
-          <Input
-            type="number"
-            id="price"
-            value={formData.price}
-            onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) })}
-            placeholder="0,00"
-            className="bg-white/50 border-gray-200 focus:border-gray-300 text-gray-900 placeholder:text-gray-400 rounded-xl h-9 text-sm pl-10"
-            required
-            min="0"
-            step="0.01"
-          />
         </div>
       </div>
 
+      {/* Informações Comerciais */}
+      <div>
+        <h3 className="text-sm font-medium text-gray-500 mb-3">Informações Comerciais</h3>
+        <div className="grid gap-4 bg-gray-50/50 p-4 rounded-lg">
       <div className="space-y-2">
-        <Label htmlFor="category" className="text-sm font-medium text-gray-700 tracking-[-0.03em] font-inter">
-          Categoria
-        </Label>
+            <Label htmlFor="price" className="text-sm text-gray-700">Preço</Label>
         <Input
-          type="text"
-          id="category"
-          value={formData.category}
-          onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-          placeholder="Ex: Consultas, Exames, Procedimentos..."
-          className="bg-white/50 border-gray-200 focus:border-gray-300 text-gray-900 placeholder:text-gray-400 rounded-xl h-9 text-sm"
+              id="price"
+              name="price"
+              type="number"
+              value={formData.price}
+              onChange={handleInputChange}
+              placeholder="0,00"
+              className="bg-white/50 border-gray-200 focus:border-gray-300 text-gray-900"
         />
       </div>
 
-      {service && (
-        <div className="flex items-center space-x-2 pt-2">
-          <input
-            type="checkbox"
-            id="isActive"
-            checked={formData.isActive}
-            onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
-            className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-          />
-          <Label htmlFor="isActive" className="text-sm text-gray-700">
-            Serviço Ativo
-          </Label>
+          <div className="space-y-2">
+            <Label htmlFor="category" className="text-sm text-gray-700">Categoria</Label>
+            <Input
+              id="category"
+              name="category"
+              value={formData.category}
+              onChange={handleInputChange}
+              placeholder="Ex: Consultas"
+              className="bg-white/50 border-gray-200 focus:border-gray-300 text-gray-900"
+            />
+          </div>
         </div>
-      )}
+      </div>
 
-      <div className="flex justify-end space-x-3 pt-6">
+      <div className="flex items-center justify-end gap-2 pt-4">
         <Button
           type="button"
           variant="outline"
           onClick={onCancel}
-          className="bg-white border-gray-200 text-gray-700 hover:bg-gray-50 hover:text-gray-800"
           disabled={isSubmitting}
+          className="bg-white"
         >
           Cancelar
         </Button>
         <Button
           type="submit"
-          disabled={isSubmitting}
-          className="bg-blue-600 text-white hover:bg-blue-700"
+          disabled={isSubmitting || !formData.name || !formData.price}
+          className="bg-[#0070df] hover:bg-[#0070df]/90"
         >
-          {isSubmitting ? 'Salvando...' : service ? 'Atualizar' : 'Criar'}
+          {isSubmitting ? 'Salvando...' : service ? 'Salvar Alterações' : 'Criar Serviço'}
         </Button>
       </div>
     </form>

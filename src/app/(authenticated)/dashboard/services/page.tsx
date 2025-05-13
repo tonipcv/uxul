@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { 
   PlusIcon,
   ArrowTrendingUpIcon,
@@ -23,7 +24,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import ServiceModal from '@/components/services/ServiceModal';
+import ServiceForm from '@/components/services/ServiceForm';
 import { Service } from '@/types/service';
 import { cn } from "@/lib/utils";
 
@@ -216,15 +217,27 @@ export default function ServicesPage() {
         </div>
       </div>
 
-      <ServiceModal
-        isOpen={isModalOpen}
-        onClose={() => {
+      <Sheet open={isModalOpen} onOpenChange={setIsModalOpen}>
+        <SheetContent className="w-full sm:max-w-xl overflow-y-auto">
+          <div className="space-y-4">
+            <SheetHeader>
+              <SheetTitle className="text-lg font-bold text-gray-900">
+                {selectedService ? 'Editar Serviço' : 'Novo Serviço'}
+              </SheetTitle>
+            </SheetHeader>
+            <div className="mt-2">
+              <ServiceForm
+                service={selectedService}
+                onSubmit={handleSubmit}
+                onCancel={() => {
           setIsModalOpen(false);
           setSelectedService(undefined);
         }}
-        onSubmit={handleSubmit}
-        service={selectedService}
       />
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 } 

@@ -362,6 +362,11 @@ export async function POST(req: NextRequest) {
     const referral = await prisma.patientReferral.findUnique({
       where: { id: referralId },
       include: {
+        page: {
+          select: {
+            userId: true
+          }
+        },
         patient: {
           include: {
             user: true
@@ -381,13 +386,13 @@ export async function POST(req: NextRequest) {
     const ip = req.headers.get('x-forwarded-for') || 'unknown';
     const userAgent = req.headers.get('user-agent') || 'unknown';
 
-    // Criar o lead
+    // Criar o lead usando o userId da página
     const lead = await prisma.lead.create({
       data: {
         name,
         phone,
         email,
-        userId: referral.patient.userId,
+        userId: referral.page.userId,
         source: 'REFERRAL',
       }
     });
@@ -402,7 +407,7 @@ export async function POST(req: NextRequest) {
     await prisma.event.create({
       data: {
         type: 'REFERRAL_LEAD',
-        userId: referral.patient.userId,
+        userId: referral.page.userId,
         ip: ip.toString(),
         userAgent,
       }

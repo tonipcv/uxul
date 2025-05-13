@@ -433,8 +433,13 @@ export function PageEditor({ pageId }: PageEditorProps) {
                       <SelectItem value="classic">Clássico</SelectItem>
                       <SelectItem value="modern">Moderno</SelectItem>
                       <SelectItem value="minimal">Minimalista</SelectItem>
+                      <SelectItem value="collor">Collor</SelectItem>
+                      <SelectItem value="bentodark">Bento Dark</SelectItem>
                     </SelectContent>
                   </Select>
+                  <p className="text-xs text-gray-500">
+                    Escolha o estilo visual da sua página
+                  </p>
                 </div>
 
                 <div className="space-y-2">

@@ -4,9 +4,10 @@ import GoogleProvider from "next-auth/providers/google";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "@/lib/prisma";
 import { compare } from "bcryptjs";
-import { NextRequest } from 'next/server';
 import { getToken } from 'next-auth/jwt';
 import crypto from 'crypto';
+import { hash } from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 
 declare module 'next-auth' {
   interface User {
@@ -155,21 +156,32 @@ export const authOptions: AuthOptions = {
   }
 };
 
-export async function isAuthenticated(req: NextRequest): Promise<boolean> {
-  const session = await getToken({ 
-    req, 
-    secret: process.env.NEXTAUTH_SECRET 
-  });
-  
-  return !!session;
+interface AuthTokenPayload {
+  id: string;
+  email: string;
+  type: 'patient';
 }
 
+/**
+ * Creates an authentication token for a patient
+ */
+export async function createAuthToken(payload: AuthTokenPayload): Promise<string> {
+  return jwt.sign(
+    payload,
+    process.env.JWT_SECRET || 'fallback-secret-for-development',
+    { expiresIn: '7d' }
+  );
+}
+
+/**
+ * Gera um token de acesso temporário para o paciente
+ */
 export async function generatePatientAccessToken() {
+  // Gerar token aleatório
   const token = crypto.randomBytes(32).toString('hex');
-  const hashedToken = crypto
-    .createHash('sha256')
-    .update(token)
-    .digest('hex');
+  
+  // Hash do token para armazenar no banco
+  const hashedToken = await hash(token, 10);
 
   return { token, hashedToken };
 } 

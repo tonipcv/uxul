@@ -39,7 +39,7 @@ model User {
   paymentLinks           PaymentLink[]
   sessions               Session[]
   pages                  Page[]
-  pipelines             Pipeline[]
+  pipelines              Pipeline[]
   services               Service[]
 }
 
@@ -62,7 +62,6 @@ model Lead {
   id              String      @id @default(cuid())
   name            String
   phone           String
-  email           String?
   interest        String?
   userId          String
   indicationId    String?
@@ -79,17 +78,15 @@ model Lead {
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @default(now()) @updatedAt
   pipelineId      String?
+  email           String?
+  serviceId       String?
   user            User        @relation(fields: [userId], references: [id])
   indication      Indication? @relation(fields: [indicationId], references: [id])
   pipeline        Pipeline?   @relation(fields: [pipelineId], references: [id])
   patient         Patient?
-  serviceId       String?
   service         Service?    @relation(fields: [serviceId], references: [id])
 
-  @@index([userId])
-  @@index([indicationId])
   @@index([pipelineId])
-  @@index([serviceId])
 }
 
 model Event {
@@ -190,27 +187,28 @@ model InterestOption {
 }
 
 model Patient {
-  id                String       @id @default(cuid())
+  id                String            @id @default(cuid())
   name              String
-  email             String
+  email             String            @unique
   phone             String
-  userId            String
-  leadId            String?      @unique
-  createdAt         DateTime     @default(now())
-  updatedAt         DateTime     @updatedAt
+  userId            String?
+  leadId            String?           @unique
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
   accessToken       String?
   accessTokenExpiry DateTime?
-  hasPassword       Boolean      @default(false)
+  hasPassword       Boolean           @default(false)
   password          String?
-  firstAccess       Boolean      @default(true)
-  hasPortalAccess   Boolean      @default(false)
-  welcomeEmailSent  Boolean      @default(false)
+  firstAccess       Boolean           @default(true)
+  hasPortalAccess   Boolean           @default(false)
+  welcomeEmailSent  Boolean           @default(false)
   resetToken        String?
   resetTokenExpiry  DateTime?
+  hasActiveProducts Boolean           @default(false)
   indications       Indication[]
-  referrals        PatientReferral[]
-  lead              Lead?        @relation(fields: [leadId], references: [id])
-  user              User         @relation(fields: [userId], references: [id])
+  referrals         PatientReferral[]
+  lead              Lead?             @relation(fields: [leadId], references: [id])
+  user              User?             @relation(fields: [userId], references: [id])
 }
 
 model PaymentLink {
@@ -229,28 +227,27 @@ model PaymentLink {
 }
 
 model Page {
-  id           String       @id @default(cuid())
+  id           String            @id @default(cuid())
   userId       String
-  slug         String       @unique
+  slug         String            @unique
   title        String
   subtitle     String?
   avatarUrl    String?
-  primaryColor String       @default("#0070df")
-  layout       String       @default("classic")
+  primaryColor String            @default("#0070df")
+  layout       String            @default("classic")
   formId       String?
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
-  isModal      Boolean      @default(false)
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  isModal      Boolean           @default(false)
+  serviceId    String?
   blocks       PageBlock[]
   socialLinks  SocialLink[]
-  user         User         @relation(fields: [userId], references: [id])
+  user         User              @relation(fields: [userId], references: [id])
   referrals    PatientReferral[]
   rewards      ReferralReward[]
-  serviceId    String?
-  service      Service?     @relation(fields: [serviceId], references: [id])
+  service      Service?          @relation(fields: [serviceId], references: [id])
 
   @@index([userId])
-  @@index([serviceId])
 }
 
 model PageBlock {
@@ -276,13 +273,13 @@ model SocialLink {
 }
 
 model Pipeline {
-  id          String   @id @default(cuid())
+  id          String   @id @default(dbgenerated("gen_random_uuid()"))
   name        String
   description String?
   userId      String
   columns     Json     @default("[{\"id\": \"novos\", \"title\": \"Novos\"}, {\"id\": \"agendados\", \"title\": \"Agendados\"}, {\"id\": \"compareceram\", \"title\": \"Compareceram\"}, {\"id\": \"fechados\", \"title\": \"Fechados\"}, {\"id\": \"naoVieram\", \"title\": \"Não vieram\"}]")
   createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  updatedAt   DateTime @default(now()) @updatedAt
   user        User     @relation(fields: [userId], references: [id])
   leads       Lead[]
 
@@ -290,56 +287,55 @@ model Pipeline {
 }
 
 model PatientReferral {
-  id            String          @id @default(cuid())
-  slug          String          @unique
-  pageId        String
-  patientId     String
-  visits        Int            @default(0)
-  leads         Int            @default(0)
-  sales         Int            @default(0)
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  page          Page           @relation(fields: [pageId], references: [id])
-  patient       Patient        @relation(fields: [patientId], references: [id])
-  rewards       ReferralReward[]
+  id        String           @id @default(cuid())
+  slug      String           @unique
+  pageId    String
+  patientId String
+  visits    Int              @default(0)
+  leads     Int              @default(0)
+  sales     Int              @default(0)
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+  page      Page             @relation(fields: [pageId], references: [id])
+  patient   Patient          @relation(fields: [patientId], references: [id])
+  rewards   ReferralReward[]
 
   @@index([pageId])
   @@index([patientId])
 }
 
 model ReferralReward {
-  id              String          @id @default(cuid())
-  referralId      String
-  type            RewardType
-  title           String
-  description     String?
-  unlockValue     Int            // Número de leads ou vendas necessários
-  unlockType      String         // LEADS ou SALES
-  pageId          String?        // Se type for PAGE
-  textContent     String?        // Se type for TEXT
-  unlockedAt      DateTime?      // Quando foi desbloqueado
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
-  referral        PatientReferral @relation(fields: [referralId], references: [id])
-  page            Page?          @relation(fields: [pageId], references: [id])
-  serviceId       String?
-  service         Service?       @relation(fields: [serviceId], references: [id])
+  id          String          @id @default(cuid())
+  referralId  String
+  type        RewardType
+  title       String
+  description String?
+  unlockValue Int
+  unlockType  String
+  pageId      String?
+  textContent String?
+  unlockedAt  DateTime?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  serviceId   String?
+  referral    PatientReferral @relation(fields: [referralId], references: [id])
+  page        Page?           @relation(fields: [pageId], references: [id])
+  service     Service?        @relation(fields: [serviceId], references: [id])
 
   @@index([referralId])
   @@index([pageId])
-  @@index([serviceId])
 }
 
 model Service {
-  id          String    @id @default(cuid())
+  id          String           @id @default(cuid())
   name        String
   description String?
   price       Float
   category    String?
-  isActive    Boolean   @default(true)
-  createdAt   DateTime  @default(now())
+  isActive    Boolean          @default(true)
+  createdAt   DateTime         @default(now())
   userId      String
-  user        User      @relation(fields: [userId], references: [id])
+  user        User             @relation(fields: [userId], references: [id])
   leads       Lead[]
   rewards     ReferralReward[]
   pageForms   Page[]
@@ -348,6 +344,11 @@ model Service {
 }
 
 enum RewardType {
+  PAGE
+  TEXT
+}
+
+enum reward_type {
   PAGE
   TEXT
 }

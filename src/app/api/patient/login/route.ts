@@ -1,23 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { compare } from 'bcryptjs';
-import { sign } from 'jsonwebtoken';
+import { createAuthToken } from '@/lib/auth';
+
+export const runtime = 'nodejs';
 
 // Verificar se a variável de ambiente JWT_SECRET está definida
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-for-development';
 
 export async function POST(request: NextRequest) {
   try {
+    console.log('1. Iniciando login de paciente');
+    
     const body = await request.json();
+    console.log('2. Body recebido:', { email: body.email });
+    
     const { email, password } = body;
 
     if (!email || !password) {
+      console.log('3. Campos obrigatórios faltando');
       return NextResponse.json(
         { error: 'Email e senha são obrigatórios' },
         { status: 400 }
       );
     }
 
+    console.log('4. Buscando paciente');
     // Buscar paciente pelo email
     const patient = await prisma.patient.findFirst({
       where: { email },
@@ -34,72 +42,56 @@ export async function POST(request: NextRequest) {
       }
     });
 
-    if (!patient) {
-      console.log('Login attempt failed: Email not found', { email });
+    console.log('5. Resultado da busca:', { 
+      found: !!patient,
+      hasPassword: patient?.hasPassword,
+      hasPasswordField: !!patient?.password 
+    });
+
+    if (!patient || !patient.hasPassword || !patient.password) {
       return NextResponse.json(
         { error: 'Email ou senha inválidos' },
         { status: 401 }
       );
     }
 
-    // Verificar se o paciente tem senha definida
-    if (!patient.hasPassword || !patient.password) {
-      console.log('Login attempt failed: No password set', { email });
-      return NextResponse.json(
-        { error: 'Senha não definida. Por favor, use o link de primeiro acesso.' },
-        { status: 401 }
-      );
-    }
-
-    // Verificar se o paciente tem acesso ao portal
-    if (!patient.hasPortalAccess) {
-      console.log('Login attempt failed: No portal access', { email });
-      return NextResponse.json(
-        { error: 'Acesso ao portal não autorizado. Entre em contato com seu médico.' },
-        { status: 401 }
-      );
-    }
-
+    console.log('6. Verificando senha');
     // Verificar senha
     const isValidPassword = await compare(password, patient.password);
+    console.log('7. Senha válida:', isValidPassword);
+    
     if (!isValidPassword) {
-      console.log('Login attempt failed: Invalid password', { email });
       return NextResponse.json(
         { error: 'Email ou senha inválidos' },
         { status: 401 }
       );
     }
 
-    // Gerar token JWT
-    const token = sign(
-      { 
+    console.log('8. Gerando token');
+    const token = await createAuthToken({ 
         id: patient.id,
         email: patient.email,
         type: 'patient'
-      },
-      process.env.JWT_SECRET || 'your-secret-key',
-      { expiresIn: '7d' }
-    );
+    });
 
-    // Criar resposta com cookie
+    console.log('9. Criando resposta');
     const response = NextResponse.json({
-      patientId: patient.id,
+      success: true,
+      data: {
+        id: patient.id,
       name: patient.name,
       email: patient.email,
-      hasPassword: patient.hasPassword,
-      hasPortalAccess: patient.hasPortalAccess,
-      firstAccess: patient.firstAccess,
-      doctorName: patient.user?.name,
-      user: {
-        name: patient.user?.name || 'Médico',
-        specialty: patient.user?.specialty || 'Especialidade não informada',
-        phone: patient.user?.phone || '',
-        image: patient.user?.image || null,
-        slug: patient.user?.slug || patient.id
+        doctor: patient.user ? {
+          name: patient.user.name,
+          specialty: patient.user.specialty,
+          phone: patient.user.phone,
+          image: patient.user.image,
+          slug: patient.user.slug
+        } : null
       }
     });
 
-    // Configurar cookie de autenticação
+    console.log('10. Configurando cookie');
     response.cookies.set('auth_token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -107,6 +99,7 @@ export async function POST(request: NextRequest) {
       maxAge: 7 * 24 * 60 * 60 // 7 dias
     });
 
+    console.log('11. Retornando resposta');
     return response;
 
   } catch (error) {

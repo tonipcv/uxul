@@ -36,9 +36,10 @@ const VerifiedBadge = () => (
 
 interface ClassicTemplateProps {
   page: {
+    id: string;
     title: string;
-    subtitle?: string;
-    avatarUrl?: string;
+    subtitle: string | null;
+    avatarUrl: string | null;
     primaryColor: string;
     blocks: Array<{
       id: string;
@@ -60,8 +61,10 @@ interface ClassicTemplateProps {
       url: string;
     }>;
     user: {
-      image: string;
+      id: string;
       name: string;
+      image: string | null;
+      specialty: string | null;
     };
   };
 }
@@ -102,40 +105,32 @@ export default function ClassicTemplate({ page }: ClassicTemplateProps) {
   };
 
   return (
-    <div className="min-h-screen py-12 px-4 bg-gray-50">
-      <div className="max-w-2xl mx-auto space-y-8">
+    <div 
+      className="min-h-screen py-16 px-4 sm:px-6"
+      style={{ backgroundColor: page.primaryColor + '05' }}
+    >
+      <div className="max-w-lg mx-auto space-y-8">
         {/* Header */}
         <div className="text-center space-y-4">
-          <div className="relative w-28 h-28 mx-auto mb-6">
-            <div 
-              className="absolute -inset-2 rounded-full opacity-10"
-              style={{ 
-                background: `radial-gradient(circle, ${page.primaryColor} 0%, transparent 70%)` 
-              }}
-            />
+          <div className="relative w-24 h-24 mx-auto mb-6">
             <img
               src={page.avatarUrl || page.user.image || '/default-avatar.png'}
-              alt={page.title}
-              className="w-full h-full rounded-full object-cover shadow-lg ring-4 ring-white/50 backdrop-blur-sm"
-              style={{ backgroundColor: page.primaryColor + '10' }}
-            />
-            <div 
-              className="absolute inset-0 rounded-full shadow-inner"
-              style={{ boxShadow: `inset 0 0 20px ${page.primaryColor}20` }}
+              alt={page.user.name}
+              className="w-full h-full object-cover rounded-full shadow-lg"
+              style={{ borderColor: page.primaryColor, borderWidth: '4px' }}
             />
           </div>
           <h1 
-            className="text-2xl font-bold flex items-center justify-center gap-1.5"
+            className="text-3xl font-bold"
             style={{ color: page.primaryColor }}
           >
             {page.user.name}
-            <div className="rounded-full drop-shadow-[0_2px_4px_rgba(0,149,246,0.2)]">
-              <BsPatchCheckFill size={20} className="text-[#0095F6]" />
-            </div>
           </h1>
-          <p className="text-gray-600 text-base">{page.title}</p>
+          {page.user.specialty && (
+            <p className="text-gray-600 text-lg">{page.user.specialty}</p>
+          )}
           {page.subtitle && (
-            <p className="text-gray-600 text-sm">{page.subtitle}</p>
+            <p className="text-gray-600 text-base">{page.subtitle}</p>
           )}
         </div>
 

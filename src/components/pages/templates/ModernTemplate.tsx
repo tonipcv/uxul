@@ -36,9 +36,10 @@ const VerifiedBadge = () => (
 
 interface ModernTemplateProps {
   page: {
+    id: string;
     title: string;
-    subtitle?: string;
-    avatarUrl?: string;
+    subtitle: string | null;
+    avatarUrl: string | null;
     primaryColor: string;
     blocks: Array<{
       id: string;
@@ -60,8 +61,10 @@ interface ModernTemplateProps {
       url: string;
     }>;
     user: {
-      image: string;
+      id: string;
       name: string;
+      image: string | null;
+      specialty: string | null;
     };
   };
 }
@@ -102,45 +105,29 @@ export default function ModernTemplate({ page }: ModernTemplateProps) {
   };
 
   return (
-    <div
-      className="min-h-screen py-12 px-4 bg-gray-50"
-      style={{ 
-        background: `linear-gradient(180deg, ${page.primaryColor}05 0%, ${page.primaryColor}10 100%)` 
-      }}
-    >
-      <div className="max-w-2xl mx-auto space-y-8">
+    <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black text-white py-16 px-4 sm:px-6">
+      <div className="max-w-lg mx-auto space-y-8">
         {/* Header */}
         <div className="text-center space-y-4">
-          <div className="relative w-32 h-32 mx-auto mb-8">
-            <div 
-              className="absolute -inset-4 rounded-full opacity-10"
-              style={{ 
-                background: `radial-gradient(circle, ${page.primaryColor} 0%, transparent 70%)` 
-              }}
-            />
+          <div className="relative w-24 h-24 mx-auto mb-6">
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full animate-pulse" />
             <img
               src={page.avatarUrl || page.user.image || '/default-avatar.png'}
-              alt={page.title}
-              className="w-full h-full rounded-full object-cover shadow-xl ring-8 ring-white/50 backdrop-blur-sm"
-              style={{ backgroundColor: page.primaryColor + '10' }}
-            />
-            <div 
-              className="absolute inset-0 rounded-full shadow-inner"
-              style={{ boxShadow: `inset 0 0 30px ${page.primaryColor}20` }}
+              alt={page.user.name}
+              className="relative w-full h-full object-cover rounded-full border-4 border-gray-800"
             />
           </div>
-          <h1 
-            className="text-3xl font-bold flex items-center justify-center gap-2"
-            style={{ color: page.primaryColor }}
-          >
+          <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent flex items-center justify-center gap-2">
             {page.user.name}
             <div className="rounded-full drop-shadow-[0_2px_4px_rgba(0,149,246,0.2)]">
               <BsPatchCheckFill size={24} className="text-[#0095F6]" />
             </div>
           </h1>
-          <p className="text-gray-600 text-lg">{page.title}</p>
+          {page.user.specialty && (
+            <p className="text-gray-400 text-lg">{page.user.specialty}</p>
+          )}
           {page.subtitle && (
-            <p className="text-gray-600 text-base">{page.subtitle}</p>
+            <p className="text-gray-400 text-base">{page.subtitle}</p>
           )}
         </div>
 

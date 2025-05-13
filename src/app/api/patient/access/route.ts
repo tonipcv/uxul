@@ -54,7 +54,7 @@ export async function POST(request: Request) {
       await sendPatientConfirmationEmail({
         to: patient.email,
         patientName: patient.name,
-        doctorName: patient.user.name,
+        doctorName: patient.user?.name || 'Médico',
         accessLink
       });
     } catch (error) {

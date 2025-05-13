@@ -36,9 +36,10 @@ const VerifiedBadge = () => (
 
 interface MinimalTemplateProps {
   page: {
+    id: string;
     title: string;
-    subtitle?: string;
-    avatarUrl?: string;
+    subtitle: string | null;
+    avatarUrl: string | null;
     primaryColor: string;
     blocks: Array<{
       id: string;
@@ -60,8 +61,10 @@ interface MinimalTemplateProps {
       url: string;
     }>;
     user: {
-      image: string;
+      id: string;
       name: string;
+      image: string | null;
+      specialty: string | null;
     };
   };
 }
@@ -102,30 +105,28 @@ export default function MinimalTemplate({ page }: MinimalTemplateProps) {
   };
 
   return (
-    <div className="min-h-screen py-12 px-4 bg-white">
-      <div className="max-w-xl mx-auto space-y-8">
+    <div className="min-h-screen bg-white py-16 px-4 sm:px-6">
+      <div className="max-w-lg mx-auto space-y-8">
         {/* Header */}
         <div className="text-center space-y-4">
-          <div className="relative w-20 h-20 mx-auto mb-4">
+          <div className="relative w-24 h-24 mx-auto mb-6">
             <img
               src={page.avatarUrl || page.user.image || '/default-avatar.png'}
-              alt={page.title}
-              className="w-full h-full rounded-full object-cover shadow-sm"
-              style={{ backgroundColor: page.primaryColor + '10' }}
+              alt={page.user.name}
+              className="w-full h-full object-cover rounded-full shadow-lg"
             />
           </div>
-          <h1 
-            className="text-xl font-medium flex items-center justify-center gap-1"
-            style={{ color: page.primaryColor }}
-          >
+          <h1 className="text-3xl font-bold text-gray-900 flex items-center justify-center gap-2">
             {page.user.name}
             <div className="rounded-full drop-shadow-[0_2px_4px_rgba(0,149,246,0.2)]">
-              <BsPatchCheckFill size={18} className="text-[#0095F6]" />
+              <BsPatchCheckFill size={24} className="text-[#0095F6]" />
             </div>
           </h1>
-          <p className="text-gray-600 text-sm">{page.title}</p>
+          {page.user.specialty && (
+            <p className="text-gray-600 text-lg">{page.user.specialty}</p>
+          )}
           {page.subtitle && (
-            <p className="text-gray-600 text-sm">{page.subtitle}</p>
+            <p className="text-gray-600 text-base">{page.subtitle}</p>
           )}
         </div>
 

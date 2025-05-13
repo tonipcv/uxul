@@ -5,6 +5,8 @@ import { trackPageView } from '@/lib/analytics';
 import ClassicTemplate from '@/components/pages/templates/ClassicTemplate';
 import ModernTemplate from '@/components/pages/templates/ModernTemplate';
 import MinimalTemplate from '@/components/pages/templates/MinimalTemplate';
+import CollorTemplate from '@/components/pages/templates/CollorTemplate';
+import BentoDarkTemplate from '@/components/pages/templates/BentoDarkTemplate';
 import { ReferralPage } from '@/components/pages';
 
 interface PageProps {
@@ -17,9 +19,10 @@ interface PageProps {
 interface PageContent {
   type: 'page';
   content: {
+    id: string;
     title: string;
-    subtitle?: string;
-    avatarUrl?: string;
+    subtitle: string | null;
+    avatarUrl: string | null;
     primaryColor: string;
     layout: string;
     blocks: Array<{
@@ -37,7 +40,8 @@ interface PageContent {
       id: string;
       name: string;
       image: string | null;
-    };
+      specialty: string | null;
+    } | null;
   };
 }
 
@@ -47,9 +51,10 @@ interface ReferralContent {
     id: string;
     slug: string;
     page: {
+      id: string;
       title: string;
-      subtitle?: string;
-      avatarUrl?: string;
+      subtitle: string | null;
+      avatarUrl: string | null;
       primaryColor: string;
       layout: string;
       blocks: Array<{
@@ -63,6 +68,12 @@ interface ReferralContent {
         platform: SocialPlatform;
         url: string;
       }>;
+      user: {
+        id: string;
+        name: string;
+        image: string | null;
+        specialty: string | null;
+      } | null;
     };
     patient: {
       id: string;
@@ -72,13 +83,110 @@ interface ReferralContent {
       id: string;
       name: string;
       image: string | null;
-    };
+      specialty: string | null;
+    } | null;
   };
 }
 
-type ContentResponse = (PageContent | ReferralContent) | null;
+type ContentResponse = PageContent | ReferralContent | null;
 
 type SocialPlatform = 'INSTAGRAM' | 'WHATSAPP' | 'YOUTUBE' | 'FACEBOOK' | 'LINKEDIN' | 'TIKTOK' | 'TWITTER';
+
+// Add type for template page props
+interface TemplatePageProps {
+  id: string;
+  title: string;
+  subtitle: string | null;
+  avatarUrl: string | null;
+  primaryColor: string;
+  blocks: Array<{
+    id: string;
+    type: 'BUTTON' | 'FORM';
+    content: {
+      title?: string;
+      label?: string;
+      url?: string;
+      pipelineId?: string;
+      isModal?: boolean;
+      modalTitle?: string;
+      successPage?: string;
+    };
+    order: number;
+  }>;
+  socialLinks: Array<{
+    platform: 'INSTAGRAM' | 'WHATSAPP' | 'YOUTUBE' | 'FACEBOOK' | 'LINKEDIN' | 'TWITTER';
+    url: string;
+  }>;
+  user: {
+    id: string;
+    name: string;
+    image: string | null;
+    specialty: string | null;
+  };
+}
+
+// Transform page content to match template props
+function transformPageContent(page: any, templateType: string): any {
+  const baseContent = {
+    id: page.id,
+    title: page.title,
+    subtitle: page.subtitle || null,
+    avatarUrl: page.avatarUrl || null,
+    primaryColor: page.primaryColor,
+    blocks: page.blocks.map((block: any) => ({
+      id: block.id,
+      type: block.type as 'BUTTON' | 'FORM',
+      content: {
+        title: block.content.title,
+        label: block.content.label,
+        url: block.content.url,
+        pipelineId: block.content.pipelineId,
+        isModal: block.content.isModal,
+        modalTitle: block.content.modalTitle,
+        successPage: block.content.successPage
+      },
+      order: block.order
+    })),
+    user: page.user ? {
+      id: page.user.id,
+      name: page.user.name,
+      image: page.user.image || null,
+      specialty: page.user.specialty || null
+    } : null
+  };
+
+  // Handle social links based on template type
+  switch (templateType.toLowerCase()) {
+    case 'collor':
+    case 'bentodark':
+      return {
+        ...baseContent,
+        socialLinks: page.socialLinks
+          .filter((link: any) => {
+            const platform = link.platform as 'INSTAGRAM' | 'WHATSAPP' | 'YOUTUBE' | 'FACEBOOK' | 'LINKEDIN' | 'TWITTER';
+            return ['INSTAGRAM', 'WHATSAPP', 'YOUTUBE', 'FACEBOOK', 'LINKEDIN', 'TWITTER'].includes(platform);
+          })
+          .map((link: any) => ({
+            platform: link.platform as 'INSTAGRAM' | 'WHATSAPP' | 'YOUTUBE' | 'FACEBOOK' | 'LINKEDIN' | 'TWITTER',
+            url: link.url
+          }))
+      };
+    default:
+      return {
+        ...baseContent,
+        socialLinks: page.socialLinks
+          .filter((link: any) => {
+            const platform = link.platform as 'INSTAGRAM' | 'WHATSAPP' | 'YOUTUBE' | 'FACEBOOK' | 'LINKEDIN' | 'TWITTER';
+            return ['INSTAGRAM', 'WHATSAPP', 'YOUTUBE', 'FACEBOOK', 'LINKEDIN', 'TWITTER'].includes(platform);
+          })
+          .map((link: any) => ({
+            id: link.id,
+            platform: link.platform as 'INSTAGRAM' | 'WHATSAPP' | 'YOUTUBE' | 'FACEBOOK' | 'LINKEDIN' | 'TWITTER',
+            url: link.url
+          }))
+      };
+  }
+}
 
 async function getContent(userSlug: string, slug: string): Promise<ContentResponse> {
   try {
@@ -88,7 +196,7 @@ async function getContent(userSlug: string, slug: string): Promise<ContentRespon
     const user = await withRetry(() => 
       prisma.user.findUnique({
         where: { slug: userSlug },
-        select: { id: true, name: true, image: true },
+        select: { id: true, name: true, image: true, specialty: true },
       })
     );
 
@@ -113,6 +221,14 @@ async function getContent(userSlug: string, slug: string): Promise<ContentRespon
             },
           },
           socialLinks: true,
+          user: {
+            select: {
+              id: true,
+              name: true,
+              image: true,
+              specialty: true,
+            },
+          },
         },
       })
     );
@@ -123,14 +239,15 @@ async function getContent(userSlug: string, slug: string): Promise<ContentRespon
       const transformedContent = {
         type: 'page' as const,
         content: {
+          id: page.id,
           title: page.title,
-          subtitle: page.subtitle || undefined,
-          avatarUrl: page.avatarUrl || undefined,
+          subtitle: page.subtitle,
+          avatarUrl: page.avatarUrl,
           primaryColor: page.primaryColor,
           layout: page.layout,
           blocks: page.blocks.map(block => ({
             id: block.id,
-            type: block.type,
+            type: block.type as 'BUTTON' | 'FORM',
             content: block.content,
             order: block.order,
           })),
@@ -139,7 +256,12 @@ async function getContent(userSlug: string, slug: string): Promise<ContentRespon
             platform: link.platform as SocialPlatform,
             url: link.url,
           })),
-          user,
+          user: page.user ? {
+            id: page.user.id,
+            name: page.user.name,
+            image: page.user.image,
+            specialty: page.user.specialty,
+          } : null,
         },
       };
 
@@ -147,16 +269,11 @@ async function getContent(userSlug: string, slug: string): Promise<ContentRespon
       return transformedContent;
     }
 
-    // If no page found, try to find a patient referral with retry logic
+    // Try to find a referral with retry logic
     const referral = await withRetry(() =>
       prisma.patientReferral.findFirst({
         where: {
           slug,
-          patient: {
-            user: {
-              slug: userSlug
-            }
-          }
         },
         include: {
           page: {
@@ -167,6 +284,14 @@ async function getContent(userSlug: string, slug: string): Promise<ContentRespon
                 },
               },
               socialLinks: true,
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                  image: true,
+                  specialty: true,
+                },
+              },
             },
           },
           patient: {
@@ -179,8 +304,6 @@ async function getContent(userSlug: string, slug: string): Promise<ContentRespon
       })
     );
 
-    console.log('Found referral:', referral);
-
     if (referral) {
       const transformedContent = {
         type: 'referral' as const,
@@ -188,9 +311,10 @@ async function getContent(userSlug: string, slug: string): Promise<ContentRespon
           id: referral.id,
           slug: referral.slug,
           page: {
+            id: referral.page.id,
             title: referral.page.title,
-            subtitle: referral.page.subtitle || undefined,
-            avatarUrl: referral.page.avatarUrl || undefined,
+            subtitle: referral.page.subtitle,
+            avatarUrl: referral.page.avatarUrl,
             primaryColor: referral.page.primaryColor,
             layout: referral.page.layout,
             blocks: referral.page.blocks.map(block => ({
@@ -204,9 +328,20 @@ async function getContent(userSlug: string, slug: string): Promise<ContentRespon
               platform: link.platform as SocialPlatform,
               url: link.url,
             })),
+            user: referral.page.user ? {
+              id: referral.page.user.id,
+              name: referral.page.user.name,
+              image: referral.page.user.image,
+              specialty: referral.page.user.specialty,
+            } : null,
           },
           patient: referral.patient,
-          user,
+          user: referral.page.user ? {
+            id: referral.page.user.id,
+            name: referral.page.user.name,
+            image: referral.page.user.image,
+            specialty: referral.page.user.specialty,
+          } : null,
         },
       };
 
@@ -222,6 +357,9 @@ async function getContent(userSlug: string, slug: string): Promise<ContentRespon
   }
 }
 
+// Add dynamic route configuration
+export const dynamic = 'force-dynamic';
+
 export default async function DynamicPage({ params }: PageProps) {
   try {
     console.log('Loading page for params:', params);
@@ -236,11 +374,13 @@ export default async function DynamicPage({ params }: PageProps) {
     
     // Track page view
     try {
+      if (content.content.user) {
       await trackPageView(
         content.content.user.id,
         headersList.get('user-agent') || undefined,
         headersList.get('x-forwarded-for') || undefined
       );
+      }
     } catch (error) {
       console.error('Error tracking page view:', error);
       // Continue even if tracking fails
@@ -250,26 +390,40 @@ export default async function DynamicPage({ params }: PageProps) {
 
     // Render appropriate component based on content type
     if (content.type === 'page') {
-      // Choose template based on layout
-      const pageContent = {
-        ...content.content,
-        user: {
-          ...content.content.user,
-          image: content.content.user.image || '',
-        },
-      };
+      const layout = content.content.layout.toLowerCase();
+      const pageContent = transformPageContent(content.content, layout);
 
-      switch (content.content.layout) {
+      switch (layout) {
         case 'modern':
           return <ModernTemplate page={pageContent} />;
         case 'minimal':
           return <MinimalTemplate page={pageContent} />;
+        case 'collor':
+          return <CollorTemplate page={pageContent} />;
+        case 'bentodark':
+          return <BentoDarkTemplate page={pageContent} />;
         case 'classic':
         default:
           return <ClassicTemplate page={pageContent} />;
       }
     } else {
-      return <ReferralPage referral={content.content} />;
+      // Handle referral content
+      const layout = content.content.page.layout.toLowerCase();
+      const pageContent = transformPageContent(content.content.page, layout);
+
+      switch (layout) {
+        case 'modern':
+          return <ModernTemplate page={pageContent} />;
+        case 'minimal':
+          return <MinimalTemplate page={pageContent} />;
+        case 'collor':
+          return <CollorTemplate page={pageContent} />;
+        case 'bentodark':
+          return <BentoDarkTemplate page={pageContent} />;
+        case 'classic':
+        default:
+          return <ClassicTemplate page={pageContent} />;
+      }
     }
   } catch (error) {
     console.error('Error in DynamicPage:', error);

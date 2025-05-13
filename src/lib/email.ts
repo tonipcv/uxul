@@ -7,11 +7,23 @@ if (!process.env.SMTP_HOST || !process.env.SMTP_PORT || !process.env.SMTP_USER |
 const transporter = createTransport({
   host: process.env.SMTP_HOST,
   port: Number(process.env.SMTP_PORT),
-  secure: true,
+  secure: false, // Port 2525 is not secure by default
   auth: {
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASSWORD
   },
+  tls: {
+    rejectUnauthorized: false // Accept self-signed certificates
+  }
+});
+
+// Verificar a conexão antes de exportar
+transporter.verify((error, success) => {
+  if (error) {
+    console.error('Erro na configuração do SMTP:', error);
+  } else {
+    console.log('Servidor SMTP está pronto para enviar emails');
+  }
 });
 
 interface SendPatientConfirmationEmailParams {

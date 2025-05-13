@@ -19,7 +19,8 @@ import {
   ArrowPathIcon,
   TrashIcon,
   PencilIcon,
-  GiftIcon
+  GiftIcon,
+  ArrowDownIcon
 } from "@heroicons/react/24/outline";
 import { toast } from "@/components/ui/use-toast";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -38,6 +39,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { QRCodeCanvas } from 'qrcode.react';
 
 interface PatientReferral {
   id: string;
@@ -114,6 +117,13 @@ export default function ReferralsPage() {
   const [openPageCombobox, setOpenPageCombobox] = useState(false);
   const [pageSearchQuery, setPageSearchQuery] = useState("");
   const [filteredPages, setFilteredPages] = useState<Page[]>([]);
+  const [selectedReferral, setSelectedReferral] = useState<PatientReferral | undefined>(undefined);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [referralToDelete, setReferralToDelete] = useState<string | null>(null);
+  const [showQRCode, setShowQRCode] = useState(false);
+  const [selectedQRUrl, setSelectedQRUrl] = useState('');
+  const [selectedQRTitle, setSelectedQRTitle] = useState('');
 
   const router = useRouter();
 
@@ -264,55 +274,99 @@ export default function ReferralsPage() {
     );
   };
 
-  const handleCreateReferral = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!session?.user?.id || !selectedPatient || !selectedPage) {
-      toast({
-        title: "Erro",
-        description: "Selecione um paciente e uma página para criar o link",
-        variant: "destructive"
-      });
-      return;
-    }
+  const handleEdit = (referral: PatientReferral) => {
+    setSelectedReferral(referral);
+    setSelectedPatient(referral.patient);
+    setSelectedPage(referral.page);
+    setIsEditMode(true);
+    setShowCreateModal(true);
+  };
 
-    if (patientHasPageAccess(selectedPatient.id, selectedPage.id)) {
+  const handleDelete = async (referralId: string) => {
+    try {
+      setIsLoading(true);
+      const response = await fetch(`/api/doctor/referrals/${referralId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Não foi possível excluir a referência");
+      }
+
+      // Atualizar o estado local removendo a referência excluída
+      setReferrals(prevReferrals => 
+        prevReferrals.filter(ref => ref.id !== referralId)
+      );
+      
+      toast({
+        title: "Sucesso",
+        description: "Link de referência excluído com sucesso",
+      });
+    } catch (error) {
+      console.error('Erro ao excluir referência:', error);
       toast({
         title: "Erro",
-        description: "Este paciente já tem acesso a esta página",
+        description: error instanceof Error ? error.message : "Ocorreu um erro ao excluir a referência",
         variant: "destructive"
       });
-      return;
+    } finally {
+      setIsLoading(false);
     }
+  };
     
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     setIsLoading(true);
+
     try {
-      const referralResponse = await fetch('/api/patient-referral', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      if (!selectedPatient || !selectedPage) {
+        throw new Error("Selecione um paciente e uma página");
+      }
+
+      const endpoint = isEditMode && selectedReferral
+        ? `/api/doctor/referrals/${selectedReferral.id}`
+        : '/api/doctor/referrals';
+
+      const method = isEditMode ? 'PUT' : 'POST';
+
+      const referralResponse = await fetch(endpoint, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({
           patientId: selectedPatient.id,
-          pageId: selectedPage.id
-        })
+          pageId: selectedPage.id,
+        }),
       });
       
       if (referralResponse.ok) {
         toast({
           title: "Sucesso",
-          description: "Link de referência criado com sucesso",
+          description: isEditMode 
+            ? "Link de referência atualizado com sucesso"
+            : "Link de referência criado com sucesso",
         });
         setSelectedPatient(undefined);
         setSelectedPage(undefined);
+        setSelectedReferral(undefined);
+        setIsEditMode(false);
         setShowCreateModal(false);
         fetchReferrals();
       } else {
         const errorData = await referralResponse.json();
-        throw new Error(errorData.error || "Não foi possível criar a referência");
+        throw new Error(errorData.error || "Não foi possível processar a operação");
       }
     } catch (error) {
-      console.error('Erro ao criar referência:', error);
+      console.error('Erro:', error);
       toast({
         title: "Erro",
-        description: error instanceof Error ? error.message : "Ocorreu um erro ao criar a referência",
+        description: error instanceof Error ? error.message : "Ocorreu um erro ao processar a operação",
         variant: "destructive"
       });
     } finally {
@@ -348,6 +402,29 @@ export default function ReferralsPage() {
     if (!open) {
       setSelectedPatient(undefined);
       setSelectedPage(undefined);
+      setSelectedReferral(undefined);
+      setIsEditMode(false);
+    }
+  };
+
+  const handleShowQRCode = (url: string, title: string) => {
+    setSelectedQRUrl(url);
+    setSelectedQRTitle(title);
+    setShowQRCode(true);
+  };
+
+  const downloadQRCode = () => {
+    const canvas = document.getElementById('qr-code') as HTMLCanvasElement;
+    if (canvas) {
+      const pngUrl = canvas
+        .toDataURL('image/png')
+        .replace('image/png', 'image/octet-stream');
+      const downloadLink = document.createElement('a');
+      downloadLink.href = pngUrl;
+      downloadLink.download = `qrcode-${selectedQRTitle.toLowerCase().replace(/\s+/g, '-')}.png`;
+      document.body.appendChild(downloadLink);
+      downloadLink.click();
+      document.body.removeChild(downloadLink);
     }
   };
 
@@ -406,7 +483,12 @@ export default function ReferralsPage() {
                                 <span className="text-sm text-gray-500 truncate max-w-[200px]">
                                   {`${baseUrl}/${userSlug}/${referral.slug}`}
                                 </span>
-                                <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-gray-100">
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon" 
+                                  className="h-8 w-8 hover:bg-gray-100"
+                                  onClick={() => copyToClipboard(`${baseUrl}/${userSlug}/${referral.slug}`)}
+                                >
                                   <ClipboardIcon className="h-4 w-4 text-gray-500" />
                                 </Button>
                               </div>
@@ -428,7 +510,56 @@ export default function ReferralsPage() {
                             </TableCell>
                             <TableCell className="text-right">
                               <div className="flex justify-end gap-2">
-                                <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-gray-100">
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon" 
+                                  className="h-8 w-8 hover:bg-gray-100"
+                                  onClick={() => handleEdit(referral)}
+                                >
+                                  <PencilIcon className="h-4 w-4 text-gray-500" />
+                                </Button>
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button 
+                                      variant="ghost" 
+                                      size="icon" 
+                                      className="h-8 w-8 hover:bg-gray-100 hover:text-red-500"
+                                    >
+                                      <TrashIcon className="h-4 w-4 text-gray-500" />
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        Tem certeza que deseja excluir este link de referência? Esta ação não pode ser desfeita.
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                      <AlertDialogAction
+                                        onClick={() => handleDelete(referral.id)}
+                                        className="bg-red-600 hover:bg-red-700 text-white"
+                                        disabled={isLoading}
+                                      >
+                                        {isLoading ? (
+                                          <>
+                                            <ArrowPathIcon className="h-4 w-4 mr-2 animate-spin" />
+                                            Excluindo...
+                                          </>
+                                        ) : (
+                                          'Excluir'
+                                        )}
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon" 
+                                  className="h-8 w-8 hover:bg-gray-100"
+                                  onClick={() => handleShowQRCode(`${baseUrl}/${userSlug}/${referral.slug}`, referral.page.title)}
+                                >
                                   <QrCodeIcon className="h-4 w-4 text-gray-500" />
                                 </Button>
                                 <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-gray-100">
@@ -461,10 +592,12 @@ export default function ReferralsPage() {
         <SheetContent className="w-full sm:max-w-xl overflow-y-auto">
           <div className="space-y-4">
             <SheetHeader>
-              <SheetTitle className="text-lg font-bold text-gray-900">Nova Indicação</SheetTitle>
+              <SheetTitle className="text-lg font-bold text-gray-900">
+                {isEditMode ? 'Editar Link de Referência' : 'Novo Link de Referência'}
+              </SheetTitle>
             </SheetHeader>
 
-            <form onSubmit={handleCreateReferral} className="space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-6">
               {/* Informações Básicas */}
               <div>
                 <h3 className="text-sm font-medium text-gray-500 mb-3">Informações Básicas</h3>
@@ -547,14 +680,57 @@ export default function ReferralsPage() {
                   {isLoading ? (
                     <>
                       <ArrowPathIcon className="h-4 w-4 mr-2 animate-spin" />
-                      Criando...
+                      {isEditMode ? 'Atualizando...' : 'Criando...'}
                     </>
                   ) : (
-                    'Criar Indicação'
+                    'Salvar'
                   )}
                 </Button>
               </div>
             </form>
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      {/* Add QR Code Sheet */}
+      <Sheet
+        open={showQRCode}
+        onOpenChange={setShowQRCode}
+      >
+        <SheetContent className="w-full sm:max-w-md">
+          <SheetHeader>
+            <SheetTitle>QR Code - {selectedQRTitle}</SheetTitle>
+          </SheetHeader>
+          <div className="flex flex-col items-center justify-center space-y-6 pt-8">
+            <div className="bg-white p-4 rounded-xl shadow-sm">
+              <QRCodeCanvas
+                id="qr-code"
+                value={selectedQRUrl}
+                size={200}
+                level="H"
+                includeMargin={true}
+              />
+            </div>
+            <div className="text-sm text-gray-500 text-center break-all px-4">
+              {selectedQRUrl}
+            </div>
+            <div className="flex gap-3">
+              <Button
+                onClick={() => copyToClipboard(selectedQRUrl)}
+                variant="outline"
+                className="w-full"
+              >
+                <ClipboardIcon className="h-4 w-4 mr-2" />
+                Copiar Link
+              </Button>
+              <Button
+                onClick={downloadQRCode}
+                className="w-full bg-gray-900"
+              >
+                <ArrowDownIcon className="h-4 w-4 mr-2" />
+                Baixar QR Code
+              </Button>
+            </div>
           </div>
         </SheetContent>
       </Sheet>

@@ -20,7 +20,8 @@ import {
   EnvelopeIcon,
   ChevronDownIcon,
   ClipboardDocumentIcon,
-  DocumentTextIcon
+  DocumentTextIcon,
+  TableCellsIcon
 } from "@heroicons/react/24/outline";
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -36,6 +37,13 @@ import { toast } from "@/components/ui/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
+import { CSVImportModal } from "@/components/patients/csv-import-modal";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface Patient {
   id: string;
@@ -86,42 +94,53 @@ export default function PacientesPage() {
   const [patientToDelete, setPatientToDelete] = useState<Patient | null>(null);
   const [isStatusOpen, setIsStatusOpen] = useState(false);
   const [isCreateStatusOpen, setIsCreateStatusOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const router = useRouter();
+
+  const fetchPatients = async () => {
+    if (!session?.user?.id) return;
+
+    try {
+      setLoading(true);
+      const response = await fetch('/api/patients');
+      
+      if (response.ok) {
+        const data = await response.json();
+        setPatients(data.data || []);
+      } else {
+        console.error('Erro ao buscar pacientes:', response.statusText);
+        setPatients([]);
+      }
+    } catch (error) {
+      console.error('Erro ao buscar pacientes:', error);
+      setPatients([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Buscar dados reais de pacientes da API
   useEffect(() => {
-    const fetchPatients = async () => {
-      if (!session?.user?.id) return;
-
-      try {
-        setLoading(true);
-        const response = await fetch('/api/patients');
-        
-        if (response.ok) {
-          const data = await response.json();
-          setPatients(data.data || []);
-        } else {
-          console.error('Erro ao buscar pacientes:', response.statusText);
-          setPatients([]);
-        }
-      } catch (error) {
-        console.error('Erro ao buscar pacientes:', error);
-        setPatients([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchPatients();
   }, [session]);
 
-  // Add click outside handler for both dropdowns
+  // Cleanup effect for dropdowns
+  useEffect(() => {
+    if (!isViewModalOpen && !isEditModalOpen && !isCreateModalOpen) {
+      setIsStatusOpen(false);
+      setIsCreateStatusOpen(false);
+    }
+  }, [isViewModalOpen, isEditModalOpen, isCreateModalOpen]);
+
+  // Click outside handler for dropdowns
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as HTMLElement;
-      if (!target.closest('.status-dropdown')) {
-        setIsStatusOpen(false);
-        setIsCreateStatusOpen(false);
+      if (isStatusOpen || isCreateStatusOpen) {
+        const target = event.target as HTMLElement;
+        if (!target.closest('[role="combobox"]')) {
+          setIsStatusOpen(false);
+          setIsCreateStatusOpen(false);
+        }
       }
     };
 
@@ -129,7 +148,7 @@ export default function PacientesPage() {
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, []);
+  }, [isStatusOpen, isCreateStatusOpen]);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -476,13 +495,25 @@ export default function PacientesPage() {
                 <h1 className="text-lg md:text-xl font-bold text-gray-900 tracking-[-0.03em] font-inter">Pacientes</h1>
                 <p className="text-xs md:text-sm text-gray-600 tracking-[-0.03em] font-inter">Gerencie seus pacientes</p>
               </div>
-              <Button 
-                onClick={() => setIsCreateModalOpen(true)}
-                className="w-full md:w-auto mt-4 md:mt-0 bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 rounded-2xl h-11"
-              >
-                <PlusIcon className="h-4 w-4 mr-2" />
-                Novo Paciente
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="h-9 bg-white text-gray-700 border-gray-200 hover:bg-gray-100">
+                    <PlusIcon className="h-4 w-4 mr-2" />
+                    <span>Adicionar</span>
+                    <ChevronDownIcon className="h-4 w-4 ml-2" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-[200px]">
+                  <DropdownMenuItem onClick={handleCreatePatient} className="cursor-pointer">
+                    <DocumentTextIcon className="h-4 w-4 mr-2" />
+                    <span>Novo Paciente</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setIsImportModalOpen(true)} className="cursor-pointer">
+                    <TableCellsIcon className="h-4 w-4 mr-2" />
+                    <span>Import CSV</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
 
             {/* Search and Filters */}
@@ -679,16 +710,24 @@ export default function PacientesPage() {
         if (!open) {
           setIsViewModalOpen(false);
           setIsEditModalOpen(false);
+          // Reset form data when closing
+          setEditFormData({
+            name: "",
+            email: "",
+            phone: "",
+            status: "novo",
+            appointmentDate: "",
+            medicalNotes: "",
+          });
+          // Reset viewing patient
+          setViewingPatient(null);
         }
       }}>
         <SheetContent side="right" className="w-full sm:max-w-[900px] p-0 bg-gray-50">
           <div className="flex h-full flex-col">
             <div className="px-6 py-4 border-b border-gray-200 bg-white">
               <SheetHeader className="space-y-3">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                    <UserIcon className="h-6 w-6 text-blue-600" />
-                    </div>
+                <div className="flex items-center justify-between">
                   <div className="flex-1 min-w-0">
                     <SheetTitle className="text-xl font-semibold text-gray-900 truncate">
                       {isEditModalOpen ? 'Editar Paciente' : viewingPatient?.name}
@@ -698,10 +737,10 @@ export default function PacientesPage() {
                         {getStatusBadge(viewingPatient.lead.status)}
                       </div>
                     )}
-                        </div>
-                      </div>
-              </SheetHeader>
                   </div>
+                </div>
+              </SheetHeader>
+            </div>
 
             <ScrollArea className="flex-1">
               {isEditModalOpen ? (
@@ -740,30 +779,32 @@ export default function PacientesPage() {
                         onChange={handleFormChange}
                         className="mt-1.5"
                       />
-                  </div>
-                  
+                    </div>
+
                     <div>
                       <Label>Status</Label>
                       <div className="relative mt-1.5">
-                        <Button
+                        <button
                           type="button"
-                          variant="outline"
-                          role="combobox"
-                          className="w-full justify-between"
+                          className={cn(
+                            "w-full flex items-center justify-between rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500",
+                            isStatusOpen && "ring-2 ring-gray-500"
+                          )}
                           onClick={() => setIsStatusOpen(!isStatusOpen)}
                         >
-                          <span>{editFormData.status || 'Selecione um status'}</span>
-                          <ChevronDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                        </Button>
+                          <span>{editFormData.status || "Selecione um status"}</span>
+                          <ChevronDownIcon className="h-4 w-4 text-gray-500" />
+                        </button>
                         {isStatusOpen && (
-                          <div className="absolute top-full left-0 w-full z-50 mt-1 bg-white rounded-lg border border-gray-200 shadow-lg">
-                            <div className="p-1">
-                              {['novo', 'contato', 'agendado', 'concluído'].map((status) => (
+                          <div className="absolute z-10 mt-1 w-full rounded-md border border-gray-200 bg-white shadow-lg">
+                            <div className="py-1">
+                              {["novo", "contato", "agendado", "concluído"].map((status) => (
                                 <button
                                   key={status}
+                                  type="button"
                                   className={cn(
-                                    'w-full flex items-center px-3 py-2 rounded-md text-sm',
-                                    editFormData.status === status ? 'bg-gray-100' : 'hover:bg-gray-50'
+                                    "w-full px-3 py-2 text-left text-sm hover:bg-gray-50",
+                                    editFormData.status === status && "bg-gray-50"
                                   )}
                                   onClick={() => {
                                     handleStatusChange(status);
@@ -773,7 +814,7 @@ export default function PacientesPage() {
                                   {status}
                                 </button>
                               ))}
-                    </div>
+                            </div>
                           </div>
                         )}
                       </div>
@@ -781,8 +822,8 @@ export default function PacientesPage() {
 
                     <div>
                       <Label htmlFor="appointmentDate">Data da Consulta</Label>
-                      <Input
-                        id="appointmentDate"
+                      <Input 
+                        id="appointmentDate" 
                         name="appointmentDate"
                         type="datetime-local"
                         value={editFormData.appointmentDate}
@@ -792,152 +833,73 @@ export default function PacientesPage() {
                     </div>
 
                     <div>
-                      <Label htmlFor="medicalNotes">Prontuário Médico</Label>
+                      <Label htmlFor="medicalNotes">Anotações Médicas</Label>
                       <Textarea 
                         id="medicalNotes" 
                         name="medicalNotes"
                         value={editFormData.medicalNotes}
                         onChange={handleFormChange}
-                        className="mt-1.5 min-h-[150px]"
+                        className="mt-1.5 min-h-[100px]"
                       />
                     </div>
                   </div>
                 </div>
               ) : (
                 // View Content
-                <div className="grid grid-cols-1 lg:grid-cols-3 h-full">
-                  {/* Sidebar Info */}
-                  <div className="lg:col-span-1 bg-white lg:border-r border-gray-200 p-6">
-                    <div className="space-y-6">
-                      <div>
-                        <Label className="text-sm font-medium text-gray-500">Email</Label>
-                        <div className="flex items-center gap-2 group mt-1.5">
-                          <p className="text-base text-gray-900 truncate flex-1 min-w-0">{viewingPatient?.email}</p>
-                          <button 
-                            onClick={() => {
-                              navigator.clipboard.writeText(viewingPatient?.email || '');
-                              toast({
-                                title: "Email copiado",
-                                description: "O email foi copiado para a área de transferência.",
-                              });
-                            }}
-                            className="text-gray-400 hover:text-gray-600 transition-colors opacity-0 group-hover:opacity-100"
-                            title="Copiar email"
-                          >
-                            <ClipboardDocumentIcon className="h-4 w-4" />
-                          </button>
+                <div className="p-6">
+                  <div className="space-y-6">
+                    {/* Informações Básicas */}
+                    <div className="bg-white rounded-lg border border-gray-200 p-6">
+                      <h3 className="text-base font-medium text-gray-900 mb-4">Informações Básicas</h3>
+                      
+                      <div className="grid gap-4">
+                        <div>
+                          <p className="text-xs text-gray-500">Nome completo</p>
+                          <p className="text-sm text-gray-900">{viewingPatient?.name}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500">Email</p>
+                          <p className="text-sm text-gray-900">{viewingPatient?.email}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500">Telefone</p>
+                          <p className="text-sm text-gray-900">{viewingPatient?.phone}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500">Data de cadastro</p>
+                          <p className="text-sm text-gray-900">
+                            {viewingPatient?.createdAt && format(new Date(viewingPatient.createdAt), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+                          </p>
                         </div>
                       </div>
+                    </div>
 
-                      <div>
-                        <Label className="text-sm font-medium text-gray-500">Telefone</Label>
-                        <div className="flex items-center gap-2 group mt-1.5">
-                          <p className="text-base text-gray-900 flex-1 min-w-0">{viewingPatient?.phone}</p>
-                          <button 
-                            onClick={() => {
-                              navigator.clipboard.writeText(viewingPatient?.phone || '');
-                              toast({
-                                title: "Telefone copiado",
-                                description: "O telefone foi copiado para a área de transferência.",
-                              });
-                            }}
-                            className="text-gray-400 hover:text-gray-600 transition-colors opacity-0 group-hover:opacity-100"
-                            title="Copiar telefone"
-                          >
-                            <ClipboardDocumentIcon className="h-4 w-4" />
-                          </button>
+                    {/* Status e Consulta */}
+                    <div className="bg-white rounded-lg border border-gray-200 p-6">
+                      <h3 className="text-base font-medium text-gray-900 mb-4">Status e Consulta</h3>
+                      
+                      <div className="grid gap-4">
+                        <div>
+                          <p className="text-xs text-gray-500 mb-1">Status atual</p>
+                          {getStatusBadge(viewingPatient?.lead?.status || 'novo')}
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500 mb-1">Próxima consulta</p>
+                          {viewingPatient?.lead?.appointmentDate ? (
+                            <p className="text-sm text-gray-900">
+                              {format(new Date(viewingPatient.lead.appointmentDate), "dd 'de' MMMM 'de' yyyy 'às' HH:mm", { locale: ptBR })}
+                            </p>
+                          ) : (
+                            <p className="text-sm text-gray-500">Nenhuma consulta agendada</p>
+                          )}
                         </div>
                       </div>
+                    </div>
 
-                      <div>
-                        <Label className="text-sm font-medium text-gray-500">Data de cadastro</Label>
-                        <p className="text-base text-gray-900 mt-1.5">
-                          {viewingPatient && format(new Date(viewingPatient.createdAt), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
-                        </p>
-                      </div>
-
-                      <Separator className="my-6" />
-
-              <Button 
-                variant="outline" 
-                        onClick={() => handleSendPortalConfig(viewingPatient!)}
-                        disabled={sendingPortalConfig[viewingPatient?.id || '']}
-                        className="w-full h-10"
-                      >
-                        {sendingPortalConfig[viewingPatient?.id || ''] ? (
-                          <>
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-700 mr-2" />
-                            Enviando...
-                          </>
-                        ) : portalConfigSent[viewingPatient?.id || ''] ? (
-                          <>
-                            <CheckCircleIcon className="h-4 w-4 mr-2 text-green-600" />
-                            Acesso enviado
-                          </>
-                        ) : (
-                          <>
-                            <EnvelopeIcon className="h-4 w-4 mr-2" />
-                            Enviar acesso ao portal
-                          </>
-                        )}
-              </Button>
-            </div>
-                  </div>
-
-                  {/* Main Content */}
-                  <div className="lg:col-span-2 p-6 space-y-6">
-                    {/* Próxima Consulta */}
-                    {viewingPatient?.lead?.appointmentDate ? (
-                      <div className="bg-white rounded-lg border border-gray-200 p-6">
-                        <div className="flex items-center gap-3 mb-4">
-                          <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
-                            <CalendarIcon className="h-5 w-5 text-purple-600" />
-                    </div>
-                          <h3 className="text-base font-medium text-gray-900">Próxima Consulta</h3>
-                    </div>
-                        <div className="flex items-center gap-2 px-4 py-2.5 bg-purple-50 text-purple-700 rounded-lg w-fit">
-                          <CalendarIcon className="h-5 w-5" />
-                          <time className="text-base">
-                            {format(new Date(viewingPatient.lead.appointmentDate), "dd 'de' MMMM 'de' yyyy 'às' HH:mm", { locale: ptBR })}
-                          </time>
-                    </div>
-                    </div>
-                    ) : (
-                      <div className="bg-white rounded-lg border border-gray-200 p-6">
-                        <div className="flex items-center gap-3 mb-4">
-                          <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
-                            <CalendarIcon className="h-5 w-5 text-purple-600" />
-                  </div>
-                          <h3 className="text-base font-medium text-gray-900">Próxima Consulta</h3>
-                </div>
-                        <div className="flex flex-col sm:flex-row sm:items-center gap-3 p-4 bg-gray-50 rounded-lg text-base text-gray-600">
-                          <div className="flex items-center gap-3">
-                            <CalendarIcon className="h-6 w-6 text-gray-400 shrink-0" />
-                            <p>Nenhuma consulta agendada</p>
-                          </div>
-                          <Button
-                            variant="link"
-                            className="h-auto p-0 text-blue-600 hover:text-blue-700"
-                            onClick={() => {
-                              setIsViewModalOpen(false);
-                              setIsEditModalOpen(true);
-                            }}
-                          >
-                            Agendar consulta
-                          </Button>
-                    </div>
-                    </div>
-                    )}
-
-                    {/* Prontuário */}
+                    {/* Prontuário Médico */}
                     <div className="bg-white rounded-lg border border-gray-200 p-6">
                       <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                            <ClipboardDocumentIcon className="h-5 w-5 text-green-600" />
-                    </div>
-                          <h3 className="text-base font-medium text-gray-900">Prontuário Médico</h3>
-                  </div>
+                        <h3 className="text-base font-medium text-gray-900">Prontuário Médico</h3>
                         {!viewingPatient?.lead?.medicalNotes && (
                           <Button
                             variant="link"
@@ -957,12 +919,11 @@ export default function PacientesPage() {
                           <p className="text-base text-gray-700 whitespace-pre-wrap leading-relaxed">{viewingPatient.lead.medicalNotes}</p>
                         </div>
                       ) : (
-                        <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg text-base text-gray-600">
-                          <DocumentTextIcon className="h-6 w-6 text-gray-400" />
-                          <p>Nenhuma anotação disponível</p>
-                </div>
-              )}
-            </div>
+                        <div className="bg-gray-50 rounded-lg p-4 text-sm text-gray-500">
+                          Nenhuma anotação disponível
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               )}
@@ -995,15 +956,232 @@ export default function PacientesPage() {
                     }}
                     className="h-10"
                   >
-                    <PencilIcon className="h-4 w-4 mr-2" />
                     Editar
-                </Button>
+                  </Button>
                 )}
               </div>
-      </div>
-    </div>
+            </div>
+          </div>
         </SheetContent>
       </Sheet>
+
+      {/* Create Modal */}
+      <Sheet
+        open={isCreateModalOpen}
+        onOpenChange={(open) => {
+          if (open !== isCreateModalOpen) {
+            setIsCreateModalOpen(open);
+            if (!open) {
+              setCreateStep('personal');
+              setCreateFormData({
+                name: "",
+                email: "",
+                phone: "",
+                status: "novo",
+                appointmentDate: "",
+                medicalNotes: "",
+                hasPortalAccess: false
+              });
+              // Ensure dropdowns are closed
+              setIsCreateStatusOpen(false);
+              setIsStatusOpen(false);
+            }
+          }
+        }}
+      >
+        <SheetContent side="right" className="w-full sm:max-w-[900px] p-0 bg-gray-50">
+          <div className="flex h-full flex-col">
+            <div className="px-6 py-4 border-b border-gray-200 bg-white">
+              <SheetHeader>
+                <SheetTitle className="text-xl font-semibold text-gray-900">
+                  Novo Paciente
+                </SheetTitle>
+                <SheetDescription>
+                  Preencha as informações do paciente
+                </SheetDescription>
+              </SheetHeader>
+            </div>
+
+            <ScrollArea className="flex-1">
+              <div className="p-6">
+                <div className="space-y-6">
+                  {createStep === 'personal' ? (
+                    <>
+                      <div>
+                        <Label htmlFor="name">Nome completo</Label>
+                        <Input 
+                          id="name" 
+                          name="name"
+                          value={createFormData.name}
+                          onChange={handleCreateFormChange}
+                          className="mt-1.5"
+                          placeholder="Digite o nome completo do paciente"
+                        />
+                      </div>
+
+                      <div>
+                        <Label htmlFor="email">Email</Label>
+                        <Input 
+                          id="email" 
+                          name="email"
+                          type="email" 
+                          value={createFormData.email}
+                          onChange={handleCreateFormChange}
+                          className="mt-1.5"
+                          placeholder="Digite o email do paciente"
+                        />
+                      </div>
+
+                      <div>
+                        <Label htmlFor="phone">Telefone</Label>
+                        <Input 
+                          id="phone" 
+                          name="phone"
+                          value={createFormData.phone}
+                          onChange={handleCreateFormChange}
+                          className="mt-1.5"
+                          placeholder="Digite o telefone do paciente"
+                        />
+                      </div>
+
+                      <div>
+                        <Label>Status</Label>
+                        <div className="relative mt-1.5">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            role="combobox"
+                            className="w-full justify-between"
+                            onClick={() => setIsCreateStatusOpen(!isCreateStatusOpen)}
+                          >
+                            <span>{createFormData.status || 'Selecione um status'}</span>
+                            <ChevronDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                          </Button>
+                          {isCreateStatusOpen && (
+                            <div className="absolute top-full left-0 w-full z-50 mt-1 bg-white rounded-lg border border-gray-200 shadow-lg">
+                              <div className="p-1">
+                                {['novo', 'contato', 'agendado', 'concluído'].map((status) => (
+                                  <button
+                                    key={status}
+                                    className={cn(
+                                      'w-full flex items-center px-3 py-2 rounded-md text-sm',
+                                      createFormData.status === status ? 'bg-gray-100' : 'hover:bg-gray-50'
+                                    )}
+                                    onClick={() => {
+                                      handleCreateStatusChange(status);
+                                      setIsCreateStatusOpen(false);
+                                    }}
+                                  >
+                                    {status}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="hasPortalAccess"
+                          checked={createFormData.hasPortalAccess}
+                          onCheckedChange={(checked) => 
+                            setCreateFormData(prev => ({ ...prev, hasPortalAccess: checked as boolean }))
+                          }
+                        />
+                        <label
+                          htmlFor="hasPortalAccess"
+                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                        >
+                          Enviar acesso ao portal do paciente
+                        </label>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div>
+                        <Label htmlFor="appointmentDate">Data da Consulta</Label>
+                        <Input
+                          id="appointmentDate"
+                          name="appointmentDate"
+                          type="datetime-local"
+                          value={createFormData.appointmentDate}
+                          onChange={handleCreateFormChange}
+                          className="mt-1.5"
+                        />
+                      </div>
+
+                      <div>
+                        <Label htmlFor="medicalNotes">Prontuário Médico</Label>
+                        <Textarea 
+                          id="medicalNotes" 
+                          name="medicalNotes"
+                          value={createFormData.medicalNotes}
+                          onChange={handleCreateFormChange}
+                          className="mt-1.5 min-h-[150px]"
+                          placeholder="Digite as informações do prontuário médico"
+                        />
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+            </ScrollArea>
+
+            <div className="px-6 py-4 border-t border-gray-200 bg-white">
+              <div className="flex justify-end gap-3">
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    if (createStep === 'clinical') {
+                      setCreateStep('personal');
+                    } else {
+                      setIsCreateModalOpen(false);
+                      setCreateStep('personal');
+                    }
+                  }}
+                  className="h-10"
+                >
+                  {createStep === 'clinical' ? 'Voltar' : 'Cancelar'}
+                </Button>
+                <Button 
+                  onClick={() => {
+                    if (createStep === 'personal') {
+                      if (!createFormData.name || !createFormData.email || !createFormData.phone) {
+                        toast({
+                          title: "Campos obrigatórios",
+                          description: "Por favor, preencha todos os campos obrigatórios.",
+                          variant: "destructive",
+                        });
+                        return;
+                      }
+                      setCreateStep('clinical');
+                    } else {
+                      handleCreateNewPatient();
+                    }
+                  }}
+                  className="h-10"
+                >
+                  {createStep === 'personal' ? 'Próximo' : 'Criar Paciente'}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      {/* Add CSV Import Modal */}
+      <CSVImportModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        onImportComplete={() => {
+          setIsImportModalOpen(false);
+          // Refresh patients list
+          if (session?.user?.id) {
+            fetchPatients();
+          }
+        }}
+      />
     </>
   );
 } 
