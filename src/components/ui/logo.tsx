@@ -1,3 +1,5 @@
+import Image from 'next/image';
+
 interface LogoProps {
   className?: string;
   variant?: 'light' | 'dark';
@@ -5,8 +7,14 @@ interface LogoProps {
 
 export function Logo({ className, variant = 'dark' }: LogoProps) {
   return (
-    <div className={`relative group ${className || ''}`}>
-      <span className={`text-2xl font-light tracking-widest ${variant === 'light' ? 'text-white' : 'text-black'}`}>MED1</span>
+    <div className={`relative w-32 h-10 ${className || ''}`}>
+      <Image
+        src="/logo.png"
+        alt="MED1 Logo"
+        fill
+        priority
+        className="object-contain"
+      />
     </div>
   );
 } 

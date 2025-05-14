@@ -17,6 +17,10 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useSession } from "next-auth/react";
 import Image from "next/image";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface NavItem {
   href: string;
@@ -41,8 +45,8 @@ export default function Navigation() {
     '/dashboard/leads',
     '/dashboard/pipeline',
     '/dashboard/services',
+    '/dashboard/pacientes',
     '/profile',
-    '/settings',
     '/IA',
     '/links'
   ];
@@ -106,67 +110,48 @@ export default function Navigation() {
           description: 'Análise de pacientes'
         },
       ]
-    },
-    {
-      title: "Configurações",
-      items: [
-        {
-          href: '/settings/interest-options',
-          label: 'Configurações',
-          icon: Cog6ToothIcon,
-          description: 'Opções do sistema'
-        }
-      ]
     }
   ];
 
-  const NavButton = ({ item, className }: { item: typeof navSections[0]['items'][0], className?: string }) => (
-    <Button
-      variant="outline"
-      className={cn(
-        "w-full h-9 flex items-center px-2.5 bg-transparent transition-all duration-200 border-transparent gap-2.5 rounded-lg group",
-        pathname === item.href 
-          ? "bg-white/90 text-[#2d5568] shadow-sm" 
-          : "text-[#2d5568] hover:bg-white/20",
-        className
-      )}
-    >
-      <item.icon className={cn(
-        "h-[18px] w-[18px] stroke-[1.5] flex-shrink-0 transition-colors duration-200",
-        pathname === item.href ? "text-[#2d5568]" : "text-[#2d5568]/80"
-      )} />
-      <span className={cn(
-        "text-sm font-medium whitespace-nowrap transition-colors duration-200",
-        pathname === item.href ? "text-[#2d5568]" : "text-[#2d5568]/90"
-      )}>
-        {item.label}
-      </span>
-    </Button>
+  const NavItemComponent = ({ item, className }: { item: NavItem, className?: string }) => (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Link href={item.href} className="block">
+            <Button
+              variant="ghost"
+              className={cn(
+                "w-full h-9 flex items-center px-2.5 transition-all duration-200 gap-2.5 rounded-lg group",
+                pathname === item.href 
+                  ? "bg-white/90 text-[#2d5568] shadow-sm" 
+                  : "text-[#2d5568] hover:bg-white/20",
+                className
+              )}
+            >
+              <item.icon className={cn(
+                "h-[18px] w-[18px] stroke-[1.5] flex-shrink-0 transition-colors duration-200",
+                pathname === item.href ? "text-[#2d5568]" : "text-[#2d5568]/80"
+              )} />
+              <span className={cn(
+                "text-sm font-medium whitespace-nowrap transition-colors duration-200",
+                pathname === item.href ? "text-[#2d5568]" : "text-[#2d5568]/90"
+              )}>
+                {item.label}
+              </span>
+            </Button>
+          </Link>
+        </TooltipTrigger>
+        <TooltipContent side="right" className="hidden lg:block">
+          <p>{item.description}</p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 
   const SectionTitle = ({ title }: { title: string }) => (
     <h3 className="text-xs font-semibold text-[#2d5568]/70 uppercase tracking-wider px-3 mb-2">
       {title}
     </h3>
-  );
-
-  const UserAvatar = () => (
-    session?.user?.image ? (
-      <div className="relative w-full h-full rounded-full overflow-hidden bg-gray-800">
-        <Image
-          src={session.user.image}
-          alt={session.user.name || 'Profile'}
-          fill
-          sizes="100%"
-          priority
-          className="object-cover"
-        />
-      </div>
-    ) : (
-      <div className="w-full h-full flex items-center justify-center">
-        <UserCircleIcon className="h-5 w-5 text-[#2d5568]" />
-      </div>
-    )
   );
 
   return (
@@ -188,30 +173,35 @@ export default function Navigation() {
               <span className="font-semibold text-[#2d5568] text-lg">MED1</span>
             </Link>
           </div>
-          <div className="flex-1 py-4 overflow-y-auto scrollbar-thin scrollbar-thumb-white/30 scrollbar-track-transparent">
+          <ScrollArea className="flex-1 py-4">
             <nav className="space-y-6 px-2">
               {navSections.map((section) => (
                 <div key={section.title}>
                   <SectionTitle title={section.title} />
                   <div className="space-y-1">
                     {section.items.map((item) => (
-                      <Link key={item.href} href={item.href} className="block">
-                        <NavButton item={item} />
-                      </Link>
+                      <NavItemComponent key={item.href} item={item} />
                     ))}
                   </div>
                 </div>
               ))}
             </nav>
-          </div>
-          <div className="p-2 border-t border-gray-200/50 bg-white/10">
+          </ScrollArea>
+          <Separator />
+          <div className="p-2">
             <Link href="/profile">
-              <div className="w-full flex items-center gap-2.5 cursor-pointer px-2.5 py-2 hover:bg-white/20 rounded-lg transition-all duration-200 group">
-                <div className="w-[22px] h-[22px] flex items-center justify-center rounded-full overflow-hidden flex-shrink-0 bg-white/80 ring-1 ring-white/20">
-                  <UserAvatar />
-                </div>
-                <span className="text-sm font-medium text-[#2d5568] group-hover:text-[#2d5568]/90">Perfil</span>
-              </div>
+              <Button variant="ghost" className="w-full justify-start gap-2 h-auto py-2">
+                <Avatar className="h-8 w-8 ring-1 ring-white/20 bg-white/80">
+                  {session?.user?.image ? (
+                    <AvatarImage src={session.user.image} alt={session.user.name || "Profile"} className="object-cover" />
+                  ) : (
+                    <AvatarFallback className="bg-white">
+                      <UserCircleIcon className="h-5 w-5 text-[#2d5568]" />
+                    </AvatarFallback>
+                  )}
+                </Avatar>
+                <span className="text-sm font-medium text-[#2d5568]">Perfil</span>
+              </Button>
             </Link>
           </div>
         </div>
@@ -233,9 +223,15 @@ export default function Navigation() {
             <span className="font-semibold text-[#2d5568] text-lg">MED1</span>
           </Link>
           <Link href="/profile">
-            <div className="w-8 h-8 flex items-center justify-center rounded-full overflow-hidden bg-white/80 ring-1 ring-white/20">
-              <UserAvatar />
-            </div>
+            <Avatar className="h-8 w-8 ring-1 ring-white/20 bg-white/80">
+              {session?.user?.image ? (
+                <AvatarImage src={session.user.image} alt={session.user.name || "Profile"} className="object-cover" />
+              ) : (
+                <AvatarFallback className="bg-white">
+                  <UserCircleIcon className="h-5 w-5 text-[#2d5568]" />
+                </AvatarFallback>
+              )}
+            </Avatar>
           </Link>
         </div>
       </header>
@@ -244,27 +240,24 @@ export default function Navigation() {
       <nav className="fixed bottom-0 left-0 right-0 border-t border-gray-200/50 bg-gradient-to-t from-gray-100 to-gray-200/80 shadow-[0_-1px_5px_rgba(0,0,0,0.05)] z-50 lg:hidden">
         <div className="py-1.5 px-2">
           <div className="flex items-center justify-around gap-1 max-w-md mx-auto">
-            {navSections
-              .filter(section => section.title !== "Configurações")
-              .flatMap(section => section.items)
-              .map((item) => (
-                <Link key={item.href} href={item.href} className="flex-1">
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full h-10 flex items-center justify-center bg-transparent transition-colors border-transparent rounded-lg",
-                      pathname === item.href 
-                        ? "bg-white/90 text-[#2d5568] shadow-sm" 
-                        : "text-[#2d5568] hover:bg-white/20"
-                    )}
-                  >
-                    <item.icon className={cn(
-                      "h-[18px] w-[18px] stroke-[1.5]",
-                      pathname === item.href ? "text-[#2d5568]" : "text-[#2d5568]/80"
-                    )} />
-                  </Button>
-                </Link>
-              ))}
+            {navSections.flatMap(section => section.items).map((item) => (
+              <Link key={item.href} href={item.href} className="flex-1">
+                <Button
+                  variant="ghost"
+                  className={cn(
+                    "w-full h-10 flex items-center justify-center transition-colors rounded-lg",
+                    pathname === item.href 
+                      ? "bg-white/90 text-[#2d5568] shadow-sm" 
+                      : "text-[#2d5568] hover:bg-white/20"
+                  )}
+                >
+                  <item.icon className={cn(
+                    "h-[18px] w-[18px] stroke-[1.5]",
+                    pathname === item.href ? "text-[#2d5568]" : "text-[#2d5568]/80"
+                  )} />
+                </Button>
+              </Link>
+            ))}
           </div>
         </div>
       </nav>

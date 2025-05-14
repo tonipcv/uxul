@@ -28,6 +28,14 @@ export async function GET() {
         name: true,
         email: true,
         phone: true,
+        createdAt: true,
+        lead: {
+          select: {
+            status: true,
+            appointmentDate: true,
+            medicalNotes: true
+          }
+        }
       },
       orderBy: {
         createdAt: 'desc',

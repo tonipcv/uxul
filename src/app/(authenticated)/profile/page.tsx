@@ -192,8 +192,8 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-[100dvh] bg-gray-100 pt-20 pb-16 md:pt-12 md:pb-12 px-4">
-      <div className="container mx-auto pl-1 sm:pl-4 md:pl-8 lg:pl-16 max-w-[98%] sm:max-w-[95%] md:max-w-[90%] lg:max-w-[85%]">
+    <div className="min-h-screen bg-gray-100 px-4 pt-6 pb-8 lg:ml-52">
+      <div className="max-w-5xl mx-auto">
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-4 sm:mb-3">
           <div>
             <h1 className="text-lg md:text-xl font-bold text-gray-900 tracking-[-0.03em] font-inter">Seu Perfil</h1>

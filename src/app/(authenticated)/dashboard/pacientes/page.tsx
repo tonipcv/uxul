@@ -106,7 +106,7 @@ export default function PacientesPage() {
       
       if (response.ok) {
         const data = await response.json();
-        setPatients(data.data || []);
+        setPatients(data || []);
       } else {
         console.error('Erro ao buscar pacientes:', response.statusText);
         setPatients([]);

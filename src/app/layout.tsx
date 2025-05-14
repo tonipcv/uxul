@@ -13,8 +13,8 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: {
-    default: 'MED1 - Be the TOP1',
-    template: '%s | MED1 - Be the TOP1'
+    default: 'MED1',
+    template: '%s | MED1'
   },
   description: 'MED1 - Be the TOP1. The platform that helps doctors reach the top of their profession. Transform your medical practice with our innovative management solution.',
   manifest: '/manifest.json',

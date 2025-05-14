@@ -4,6 +4,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import Navigation from '@/components/Navigation';
+import { Logo } from '@/components/ui/logo';
 
 export default function AuthenticatedLayout({
   children,
@@ -21,8 +22,11 @@ export default function AuthenticatedLayout({
 
   if (status === 'loading') {
     return (
-      <div className="min-h-[100dvh] h-full bg-[#2b2a2c] flex items-center justify-center">
-        <div className="text-white">Carregando...</div>
+      <div className="min-h-[100dvh] h-full bg-gray-50 flex flex-col items-center justify-center">
+        <div className="mb-8">
+          <Logo className="scale-100" variant="dark" />
+        </div>
+        <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-blue-500 border-t-transparent"></div>
       </div>
     );
   }
