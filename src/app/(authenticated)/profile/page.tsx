@@ -43,12 +43,12 @@ export default function ProfilePage() {
   // Estado para garantir renderização no cliente
   const [isClient, setIsClient] = useState(false);
 
-  // Marcar que estamos no cliente
+  // Efeito para marcar que estamos no cliente
   useEffect(() => {
     setIsClient(true);
-    if (typeof window !== 'undefined') {
-      setBaseUrl(window.location.origin);
-    }
+    // Use environment variable instead of window.location.origin
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://med1.app';
+    setBaseUrl(appUrl);
   }, []);
 
   // Efeito para carregar os dados do perfil quando a sessão estiver pronta

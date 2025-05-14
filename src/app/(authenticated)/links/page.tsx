@@ -20,8 +20,8 @@ import {
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { PlusCircle, Link as LinkIcon, ExternalLink, Instagram, Youtube, Facebook, Linkedin, Twitter, Trash2 } from 'lucide-react';
 
-// Get the base URL from environment variable, fallback to localhost if not available
-const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+// Get the base URL from environment variable, fallback to production URL if not available
+const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://med1.app';
 
 interface PageBlock {
   id: string;

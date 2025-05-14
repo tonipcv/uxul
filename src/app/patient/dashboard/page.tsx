@@ -53,12 +53,15 @@ export default function PatientDashboard() {
   const [loading, setLoading] = useState(true);
   const [baseUrl, setBaseUrl] = useState('');
   const router = useRouter();
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
     fetchPatientData();
-    if (typeof window !== 'undefined') {
-      setBaseUrl(window.location.origin);
-    }
+    setIsClient(true);
+    
+    // Use environment variable for base URL
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://med1.app';
+    setBaseUrl(appUrl);
   }, []);
 
   const copyToClipboard = (text: string) => {

@@ -137,14 +137,12 @@ export default function ReferralsPage() {
       fetchPages();
       fetchReferrals();
       fetchUserProfile();
+      
+      // Use environment variable for base URL
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://med1.app';
+      setBaseUrl(appUrl);
     }
-  }, [session?.user?.id]);
-
-  useEffect(() => {
-    if (isClient && typeof window !== 'undefined') {
-      setBaseUrl(window.location.origin);
-    }
-  }, [isClient]);
+  }, [session]);
 
   useEffect(() => {
     if (searchQuery) {
