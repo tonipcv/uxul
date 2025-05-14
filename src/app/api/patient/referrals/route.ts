@@ -3,6 +3,9 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
+// Forçar rota dinâmica
+export const dynamic = 'force-dynamic';
+
 // GET - Buscar referrals do paciente
 export async function GET(req: NextRequest) {
   try {

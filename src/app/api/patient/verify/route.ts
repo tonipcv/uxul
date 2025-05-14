@@ -1,9 +1,12 @@
+import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { NextResponse } from 'next/server'
 import { verify, sign } from 'jsonwebtoken'
 import { cookies } from 'next/headers'
 
 const JWT_SECRET = process.env.NEXTAUTH_SECRET || 'your-jwt-secret'
+
+// Forçar rota dinâmica
+export const dynamic = 'force-dynamic'
 
 export async function POST(request: Request) {
   try {

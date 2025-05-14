@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { compare } from 'bcryptjs';
-import { createAuthToken } from '@/lib/auth';
+import bcrypt from 'bcryptjs';
+import { sign } from 'jsonwebtoken';
 
-export const runtime = 'nodejs';
+const JWT_SECRET = process.env.NEXTAUTH_SECRET || 'your-jwt-secret';
 
-// Verificar se a variável de ambiente JWT_SECRET está definida
-const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-for-development';
+// Forçar rota dinâmica
+export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
   try {
@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
 
     console.log('6. Verificando senha');
     // Verificar senha
-    const isValidPassword = await compare(password, patient.password);
+    const isValidPassword = await bcrypt.compare(password, patient.password);
     console.log('7. Senha válida:', isValidPassword);
     
     if (!isValidPassword) {
@@ -68,11 +68,15 @@ export async function POST(request: NextRequest) {
     }
 
     console.log('8. Gerando token');
-    const token = await createAuthToken({ 
+    const token = await sign(
+      {
         id: patient.id,
         email: patient.email,
         type: 'patient'
-    });
+      },
+      JWT_SECRET,
+      { expiresIn: '7d' }
+    );
 
     console.log('9. Criando resposta');
     const response = NextResponse.json({

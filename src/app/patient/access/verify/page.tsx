@@ -1,114 +1,115 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import Image from 'next/image';
+import { toast } from 'sonner';
+import { Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
-export default function VerifyAccess() {
-  const router = useRouter();
+function VerifyContent() {
   const searchParams = useSearchParams();
-  const [error, setError] = useState('');
-  const [isVerifying, setIsVerifying] = useState(true);
+  const router = useRouter();
+  const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
+  const [message, setMessage] = useState('Verificando seu acesso...');
 
   useEffect(() => {
-    async function verifyToken() {
+    const verifyAccess = async () => {
       try {
         const token = searchParams.get('token');
         
         if (!token) {
-          setError('Token não encontrado');
-          setIsVerifying(false);
+          setStatus('error');
+          setMessage('Token de verificação inválido ou ausente.');
           return;
         }
-
-        const response = await fetch('/api/patient/verify', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ token })
-        });
-
+        
+        const response = await fetch(`/api/patient/verify?token=${token}`);
         const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(data.error || 'Erro ao verificar token');
+        
+        if (response.ok) {
+          setStatus('success');
+          setMessage('Acesso verificado com sucesso! Você será redirecionado...');
+          
+          // Redirecionar após um curto delay
+          setTimeout(() => {
+            router.push('/patient/dashboard');
+          }, 2000);
+        } else {
+          setStatus('error');
+          setMessage(data.error || 'Erro ao verificar acesso.');
         }
-
-        // Redirecionar para a URL retornada pela API ou fallback para dashboard
-        router.push(data.redirectUrl || '/patient/dashboard');
-
       } catch (error) {
-        console.error('Erro na verificação:', error);
-        setError(error instanceof Error ? error.message : 'Erro ao verificar acesso');
-        setIsVerifying(false);
+        console.error('Erro ao verificar acesso:', error);
+        setStatus('error');
+        setMessage('Ocorreu um erro ao verificar seu acesso.');
       }
-    }
-
-    verifyToken();
-  }, [router, searchParams]);
+    };
+    
+    verifyAccess();
+  }, [searchParams, router]);
 
   return (
-    <div className="min-h-screen bg-white relative flex items-center justify-center">
-      <div className="w-full max-w-[480px] mx-auto px-4">
-        <div className="flex justify-center mb-8 items-center gap-3">
-          <Image
-            src="/logo.png"
-            alt="MED1 Logo"
-            width={48}
-            height={48}
-            priority
-            className="h-12 w-12"
-          />
-          <span className="text-3xl font-semibold text-[#5c5b60]">MED1</span>
-        </div>
-        
-        <div className="bg-white rounded-xl p-8 border border-gray-200 shadow-sm">
-          <div className="text-center space-y-6">
-            {isVerifying ? (
-              <>
-                <div className="w-16 h-16 border-4 border-blue-200 border-t-blue-500 rounded-full animate-spin mx-auto"></div>
-                <h1 className="text-2xl font-semibold text-gray-800">
-                  Verificando acesso...
-                </h1>
-                <p className="text-gray-600">
-                  Aguarde enquanto validamos seu token de acesso.
-                </p>
-              </>
-            ) : error ? (
-              <>
-                <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto">
-                  <svg 
-                    className="w-8 h-8 text-red-500" 
-                    fill="none" 
-                    stroke="currentColor" 
-                    viewBox="0 0 24 24"
-                  >
-                    <path 
-                      strokeLinecap="round" 
-                      strokeLinejoin="round" 
-                      strokeWidth={2} 
-                      d="M6 18L18 6M6 6l12 12" 
-                    />
-                  </svg>
-                </div>
-                <h1 className="text-2xl font-semibold text-gray-800">
-                  Erro na verificação
-                </h1>
-                <p className="text-gray-600">
-                  {error}
-                </p>
-                <button
-                  onClick={() => router.push('/patient/login')}
-                  className="text-blue-600 hover:text-blue-800 font-medium"
-                >
-                  Voltar para o login
-                </button>
-              </>
-            ) : null}
-          </div>
+    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-4">
+      <div className="w-full max-w-md p-8 bg-white rounded-xl shadow-lg">
+        <div className="text-center">
+          <h1 className="text-xl font-medium text-gray-900 mb-2">Verificação de Acesso</h1>
+          
+          {status === 'loading' && (
+            <div className="flex flex-col items-center mt-6">
+              <Loader2 className="h-8 w-8 text-blue-500 animate-spin mb-4" />
+              <p className="text-gray-600">{message}</p>
+            </div>
+          )}
+          
+          {status === 'success' && (
+            <div className="mt-6">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="h-8 w-8 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <p className="text-gray-600 mb-4">{message}</p>
+            </div>
+          )}
+          
+          {status === 'error' && (
+            <div className="mt-6">
+              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="h-8 w-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </div>
+              <p className="text-gray-600 mb-4">{message}</p>
+              <Button 
+                onClick={() => router.push('/patient/login')}
+                className="w-full"
+              >
+                Voltar para o Login
+              </Button>
+            </div>
+          )}
         </div>
       </div>
     </div>
+  );
+}
+
+export default function VerifyPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-4">
+        <div className="w-full max-w-md p-8 bg-white rounded-xl shadow-lg">
+          <div className="text-center">
+            <h1 className="text-xl font-medium text-gray-900 mb-2">Verificação de Acesso</h1>
+            <div className="flex flex-col items-center mt-6">
+              <Loader2 className="h-8 w-8 text-blue-500 animate-spin mb-4" />
+              <p className="text-gray-600">Carregando...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    }>
+      <VerifyContent />
+    </Suspense>
   );
 } 

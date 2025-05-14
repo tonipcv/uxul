@@ -3,6 +3,9 @@ import { prisma } from '@/lib/prisma'
 import { NextResponse } from 'next/server'
 import { authOptions } from '@/lib/auth'
 
+// Forçar rota dinâmica
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: Request) {
   try {
     const session = await getServerSession(authOptions)

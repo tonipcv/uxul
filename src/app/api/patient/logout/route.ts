@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server';
 
+// Forçar rota dinâmica
+export const dynamic = 'force-dynamic';
+
 export async function POST() {
   try {
     // Criar resposta para limpar o cookie
