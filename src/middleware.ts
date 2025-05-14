@@ -1,48 +1,67 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { getToken } from 'next-auth/jwt';
+import { verify } from 'jsonwebtoken';
 
-export const runtime = 'nodejs';
+const JWT_SECRET = process.env.NEXTAUTH_SECRET || 'your-jwt-secret';
 
-const PUBLIC_PATHS = [
-  '/patient/login',
-  '/patient/register',
-  '/patient/reset-password',
-  '/patient/setup-password',
-  '/patient/access',
+// Rotas que não precisam de autenticação
+const publicRoutes = [
   '/auth/signin',
   '/auth/register',
-  '/auth/reset-password',
-  '/api/patient/register',
-  '/api/patient/login',
-  '/api/patient/reset-password',
+  '/auth/forgot-password',
+  '/api/auth',
+  '/api/patient/magic-link',
+  '/api/patient/verify',
+  '/patient/access/verify'
 ];
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Allow public paths
-  if (PUBLIC_PATHS.some(path => pathname.startsWith(path))) {
+  // Verificar se é uma rota pública
+  if (publicRoutes.some(route => pathname.startsWith(route))) {
     return NextResponse.next();
   }
 
-  // Check for authentication token
-  const token = await getToken({ req: request });
+  // Verificar se é uma rota do portal do paciente
+  if (pathname.startsWith('/portal')) {
+    const patientSession = request.cookies.get('patient_session');
 
-  if (!token) {
-    // Redirect to appropriate login page based on path
-    const loginPath = pathname.startsWith('/patient/') ? '/patient/login' : '/auth/signin';
-    return NextResponse.redirect(new URL(loginPath, request.url));
+    if (!patientSession?.value) {
+      return NextResponse.redirect(new URL('/auth/signin', request.url));
+    }
+
+    try {
+      // Verificar o token de sessão
+      const decoded = verify(patientSession.value, JWT_SECRET) as {
+        patientId: string;
+        email: string;
+        type: string;
+      };
+
+      if (decoded.type !== 'session') {
+        throw new Error('Token inválido');
+      }
+
+      return NextResponse.next();
+    } catch (error) {
+      // Se o token for inválido, redirecionar para login
+      return NextResponse.redirect(new URL('/auth/signin', request.url));
+    }
   }
 
   return NextResponse.next();
-} 
+}
 
 export const config = {
   matcher: [
-    '/patient/:path*',
-    '/api/patient/:path*',
-    '/dashboard/:path*',
-    '/api/dashboard/:path*'
+    /*
+     * Match all request paths except for the ones starting with:
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * - public (public files)
+     */
+    '/((?!_next/static|_next/image|favicon.ico|public).*)',
   ],
 }; 

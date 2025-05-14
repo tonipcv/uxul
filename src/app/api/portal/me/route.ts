@@ -53,4 +53,36 @@ export async function GET(request: Request) {
     console.error('Erro ao buscar perfil do paciente:', error)
     return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 })
   }
+}
+
+export async function POST(request: Request) {
+  try {
+    const { email } = await request.json()
+
+    if (!email) {
+      return NextResponse.json({ error: 'Email is required' }, { status: 400 })
+    }
+
+    const patient = await prisma.patient.findUnique({
+      where: { email },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        hasPortalAccess: true,
+        hasActiveProducts: true,
+        createdAt: true
+      }
+    })
+
+    if (!patient) {
+      return NextResponse.json({ error: 'Patient not found' }, { status: 404 })
+    }
+
+    return NextResponse.json(patient)
+  } catch (error) {
+    console.error('Profile error:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
 } 

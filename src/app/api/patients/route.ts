@@ -6,36 +6,40 @@ import { db } from '@/lib/db';
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
+    console.log('[GET /api/patients] Session:', session);
 
     if (!session?.user?.id) {
+      console.log('[GET /api/patients] No user session');
       return NextResponse.json(
         { error: 'Não autorizado' },
         { status: 401 }
       );
     }
 
-    // Buscar pacientes com seus leads relacionados ao médico atual
+    console.log('[GET /api/patients] Fetching patients for user:', session.user.id);
+    
+    // Buscar pacientes com dados mínimos necessários
     const patients = await db.patient.findMany({
       where: {
         userId: session.user.id,
       },
-      include: {
-        lead: {
-          select: {
-            status: true,
-            appointmentDate: true,
-            medicalNotes: true,
-          }
-        }
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
       },
       orderBy: {
         createdAt: 'desc',
       },
     });
 
-    return NextResponse.json({ data: patients }, { status: 200 });
+    console.log('[GET /api/patients] Found patients:', patients);
+
+    // Retornar array diretamente, sem wrapper
+    return NextResponse.json(patients);
   } catch (error) {
-    console.error('Erro ao buscar pacientes:', error);
+    console.error('[GET /api/patients] Error:', error);
     return NextResponse.json(
       { error: 'Erro ao buscar pacientes' },
       { status: 500 }

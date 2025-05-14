@@ -1,91 +1,79 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { generatePatientAccessToken } from '@/lib/auth';
-import { sendPatientConfirmationEmail } from '@/lib/email';
+import { prisma } from '@/lib/prisma'
+import { NextResponse } from 'next/server'
+import { sign } from 'jsonwebtoken'
+import { sendPatientConfirmationEmail } from '@/lib/email'
 
-export async function POST(request: NextRequest) {
+const JWT_SECRET = process.env.NEXTAUTH_SECRET || 'your-jwt-secret'
+
+export async function POST(request: Request) {
   try {
-    const { email } = await request.json();
+    const { email } = await request.json()
 
     if (!email) {
-      return NextResponse.json(
-        { error: 'Email é obrigatório' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Email é obrigatório' }, { status: 400 })
     }
 
-    console.log('Buscando paciente pelo email:', email);
-    // Buscar paciente pelo email
-    const patient = await prisma.patient.findFirst({
+    const patient = await prisma.patient.findUnique({
       where: { email },
-      include: {
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        hasPortalAccess: true,
         user: {
           select: {
-            name: true,
+            name: true
           }
         }
       }
-    });
+    })
 
     if (!patient) {
-      console.log('Paciente não encontrado:', email);
-      return NextResponse.json(
-        { error: 'E-mail não encontrado. Verifique se este é o email cadastrado pelo seu médico.' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Paciente não encontrado' }, { status: 404 })
     }
 
-    console.log('Paciente encontrado, gerando token de acesso');
-    // Gerar token de acesso
-    const { token, hashedToken } = await generatePatientAccessToken();
-    
-    console.log('Salvando token no banco');
-    // Salvar token no banco
+    if (!patient.hasPortalAccess) {
+      return NextResponse.json({ error: 'Acesso ao portal não liberado' }, { status: 403 })
+    }
+
+    // Gerar token JWT com expiração de 15 minutos
+    const token = sign(
+      { 
+        patientId: patient.id,
+        email: patient.email,
+        type: 'magic-link'
+      },
+      JWT_SECRET,
+      { expiresIn: '15m' }
+    )
+
+    // Atualizar o token de acesso no banco
     await prisma.patient.update({
       where: { id: patient.id },
       data: {
-        accessToken: hashedToken,
-        accessTokenExpiry: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 horas
-        hasPortalAccess: true
+        accessToken: token,
+        accessTokenExpiry: new Date(Date.now() + 15 * 60 * 1000) // 15 minutos
       }
-    });
+    })
 
     // Gerar link de acesso
-    const accessLink = `${process.env.NEXT_PUBLIC_APP_URL}/patient/access/verify?token=${encodeURIComponent(token)}&id=${encodeURIComponent(patient.id)}`;
+    const accessLink = `${process.env.NEXT_PUBLIC_APP_URL}/patient/access/verify?token=${token}`
 
-    console.log('Enviando email de confirmação');
-    // Enviar email
-    try {
-      await sendPatientConfirmationEmail({
-        to: patient.email,
-        patientName: patient.name,
-        doctorName: patient.user?.name || 'Médico',
-        accessLink
-      });
-      console.log('Email enviado com sucesso');
-    } catch (emailError) {
-      console.error('Erro ao enviar email:', emailError);
-      // Reverter as alterações no banco de dados
-      await prisma.patient.update({
-        where: { id: patient.id },
-        data: {
-          accessToken: null,
-          accessTokenExpiry: null,
-          hasPortalAccess: false
-        }
-      });
-      throw emailError;
-    }
+    // Enviar email com o magic link
+    await sendPatientConfirmationEmail({
+      to: patient.email,
+      patientName: patient.name,
+      doctorName: patient.user?.name || 'Médico',
+      accessLink
+    })
 
     return NextResponse.json({ 
-      message: 'Link de acesso enviado com sucesso',
-      success: true 
-    });
+      success: true,
+      message: 'Link de acesso enviado com sucesso'
+    })
+
   } catch (error) {
-    console.error('Erro ao processar solicitação:', error);
-    return NextResponse.json(
-      { error: 'Erro ao processar solicitação. Por favor, tente novamente mais tarde.' },
-      { status: 500 }
-    );
+    console.error('Erro ao gerar magic link:', error)
+    return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 })
   }
 } 

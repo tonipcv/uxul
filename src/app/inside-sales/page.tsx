@@ -3,10 +3,11 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Logo } from '@/components/ui/logo';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronRightIcon, CheckIcon, XMarkIcon, CalendarIcon } from '@heroicons/react/24/outline';
+import { ChevronRightIcon, CalendarIcon } from '@heroicons/react/24/outline';
 import { useRouter } from 'next/navigation';
+import Image from "next/image";
+import Link from "next/link";
 
 export default function InsideSalesPage() {
   const [step, setStep] = useState(0);
@@ -22,40 +23,7 @@ export default function InsideSalesPage() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
-  const [timeRemaining, setTimeRemaining] = useState(3 * 60); // 3 minutes in seconds
-  const [showCountdown, setShowCountdown] = useState(false);
   const router = useRouter();
-
-  // Countdown timer effect
-  useEffect(() => {
-    if (!showCountdown || timeRemaining <= 0) return;
-    
-    const interval = setInterval(() => {
-      setTimeRemaining(prev => {
-        if (prev <= 1) {
-          clearInterval(interval);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-    
-    return () => clearInterval(interval);
-  }, [showCountdown, timeRemaining]);
-
-  // Format time as MM:SS
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  const toggleCountdown = () => {
-    if (!showCountdown) {
-      setTimeRemaining(3 * 60); // Reset to 3 minutes
-    }
-    setShowCountdown(!showCountdown);
-  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -104,8 +72,6 @@ export default function InsideSalesPage() {
     } else if (step === 7 && formData.revenue !== '') {
       setStep(8);
     } else if (step === 8 && formData.useTechnology !== '') {
-      setStep(9);
-    } else if (step === 9) {
       submitFormData();
     }
   };
@@ -115,10 +81,7 @@ export default function InsideSalesPage() {
       setIsSubmitting(true);
       setSubmitError('');
       
-      console.log('Enviando dados do formulário:', formData);
-      
-      // Abordagem simplificada para depuração
-      const rawResponse = await fetch('/api/form-submission', {
+      const response = await fetch('/api/form-submission', {
         method: 'POST',
         headers: {
           'Accept': 'application/json',
@@ -127,17 +90,11 @@ export default function InsideSalesPage() {
         body: JSON.stringify(formData)
       });
       
-      console.log('Status da resposta:', rawResponse.status, rawResponse.statusText);
-      
-      if (!rawResponse.ok) {
-        const errorData = await rawResponse.json();
+      if (!response.ok) {
+        const errorData = await response.json();
         throw new Error(errorData.error || 'Falha ao enviar dados');
       }
       
-      const content = await rawResponse.json();
-      console.log('Resposta completa:', content);
-      
-      // Avançar para a tela de confirmação
       setStep(9);
       
     } catch (error) {
@@ -154,444 +111,362 @@ export default function InsideSalesPage() {
     }
   };
 
-  const steps = [
-    // Step 0: Headline e botão inicial
-    <motion.div 
-      key="intro" 
-      initial={{ opacity: 0, y: 20 }} 
-      animate={{ opacity: 1, y: 0 }} 
-      exit={{ opacity: 0, y: -20 }}
-      className="text-center max-w-3xl mx-auto"
-    >
-      <h1 className="text-4xl md:text-5xl font-bold text-white mb-4 leading-tight">
-        Agende sua demonstração gratuita
-      </h1>
-      <p className="text-xl text-white/90 mb-10 leading-relaxed">
-        Conheça como o Med1 pode aumentar em até 3x o número de pacientes do seu consultório
-      </p>
-      <Button 
-        className="bg-blue-600 text-white hover:bg-blue-700 hover:scale-105 active:scale-95 transition-all border-none shadow-lg px-8 py-6 text-lg rounded-xl group"
-        variant="default"
-        onClick={handleNext}
-      >
-        Agendar agora
-        <span className="ml-2 bg-white/20 rounded-full p-1.5 group-hover:bg-white/30 transition-all">
-          <ChevronRightIcon className="h-4 w-4 text-white" />
-        </span>
-      </Button>
-    </motion.div>,
+  const renderStep = () => {
+    const commonInputClasses = "bg-white text-black w-full";
+    const commonButtonClasses = "w-full bg-[#0070df] text-white hover:bg-[#0070df]/90 transition-colors border-none rounded-full mt-6";
 
-    // Step 1: Qual seu nome
-    <motion.div 
-      key="name" 
-      initial={{ opacity: 0, y: 20 }} 
-      animate={{ opacity: 1, y: 0 }} 
-      exit={{ opacity: 0, y: -20 }}
-      className="text-center w-full max-w-2xl mx-auto"
-    >
-      <h2 className="text-3xl font-semibold text-white mb-4">
-        Qual é o seu nome?
-      </h2>
-      <p className="text-white/80 mb-8">Nos diga como devemos te chamar</p>
-      <div className="mb-10 px-4">
-        <Input 
-          type="text" 
-          name="name"
-          value={formData.name} 
-          onChange={handleInputChange}
-          onKeyDown={handleKeyDown}
-          className="bg-white/5 backdrop-blur-sm border border-white/20 text-blue-900 text-2xl py-6 px-4 placeholder:text-white/40 w-full focus:ring-1 focus:ring-blue-400/50 focus:border-transparent rounded-lg appearance-none"
-          placeholder="Digite seu nome"
-          autoFocus
-        />
-      </div>
-      <Button 
-        className="bg-blue-600 text-white hover:bg-blue-700 hover:scale-105 active:scale-95 transition-all border-none shadow-lg mt-6 px-8 py-6 text-lg rounded-xl group"
-        variant="default"
-        onClick={handleNext}
-        disabled={formData.name.trim() === ''}
-      >
-        Continuar
-        <span className="ml-2 bg-white/20 rounded-full p-1.5 group-hover:bg-white/30 transition-all">
-          <ChevronRightIcon className="h-4 w-4 text-white" />
-        </span>
-      </Button>
-    </motion.div>,
-
-    // Step 2: Qual seu e-mail
-    <motion.div 
-      key="email" 
-      initial={{ opacity: 0, y: 20 }} 
-      animate={{ opacity: 1, y: 0 }} 
-      exit={{ opacity: 0, y: -20 }}
-      className="text-center w-full max-w-2xl mx-auto"
-    >
-      <h2 className="text-3xl font-semibold text-white mb-4">
-        Qual seu e-mail?
-      </h2>
-      <p className="text-white/80 mb-8">Enviaremos informações importantes por aqui</p>
-      <div className="mb-10 px-4">
-        <Input 
-          type="email" 
-          name="email"
-          value={formData.email} 
-          onChange={handleInputChange}
-          onKeyDown={handleKeyDown}
-          className="bg-white/5 backdrop-blur-sm border border-white/20 text-blue-900 text-2xl py-6 px-4 placeholder:text-white/40 w-full focus:ring-1 focus:ring-blue-400/50 focus:border-transparent rounded-lg appearance-none"
-          placeholder="Digite seu e-mail"
-          autoFocus
-        />
-      </div>
-      <Button 
-        className="bg-blue-600 text-white hover:bg-blue-700 hover:scale-105 active:scale-95 transition-all border-none shadow-lg mt-6 px-8 py-6 text-lg rounded-xl group"
-        variant="default"
-        onClick={handleNext}
-        disabled={formData.email.trim() === ''}
-      >
-        Continuar
-        <span className="ml-2 bg-white/20 rounded-full p-1.5 group-hover:bg-white/30 transition-all">
-          <ChevronRightIcon className="h-4 w-4 text-white" />
-        </span>
-      </Button>
-    </motion.div>,
-
-    // Step 3: Qual seu WhatsApp
-    <motion.div 
-      key="whatsapp" 
-      initial={{ opacity: 0, y: 20 }} 
-      animate={{ opacity: 1, y: 0 }} 
-      exit={{ opacity: 0, y: -20 }}
-      className="text-center w-full max-w-2xl mx-auto"
-    >
-      <h2 className="text-3xl font-semibold text-white mb-4">
-        Qual seu WhatsApp?
-      </h2>
-      <p className="text-white/80 mb-8">Nosso consultor entrará em contato por este número</p>
-      <div className="mb-10 px-4">
-        <Input 
-          type="tel" 
-          name="whatsapp"
-          value={formData.whatsapp} 
-          onChange={handleInputChange}
-          onKeyDown={handleKeyDown}
-          className="bg-white/5 backdrop-blur-sm border border-white/20 text-blue-900 text-2xl py-6 px-4 placeholder:text-white/40 w-full focus:ring-1 focus:ring-blue-400/50 focus:border-transparent rounded-lg appearance-none"
-          placeholder="Ex: (11) 98765-4321"
-        />
-      </div>
-      <Button 
-        className="bg-blue-600 text-white hover:bg-blue-700 hover:scale-105 active:scale-95 transition-all border-none shadow-lg mt-6 px-8 py-6 text-lg rounded-xl group"
-        variant="default"
-        onClick={handleNext}
-        disabled={formData.whatsapp.trim() === '' || formData.whatsapp.trim() === '+55' || formData.whatsapp.trim() === '+55 '}
-      >
-        Continuar
-        <span className="ml-2 bg-white/20 rounded-full p-1.5 group-hover:bg-white/30 transition-all">
-          <ChevronRightIcon className="h-4 w-4 text-white" />
-        </span>
-      </Button>
-    </motion.div>,
-
-    // Step 4: Qual seu Instagram
-    <motion.div 
-      key="instagram" 
-      initial={{ opacity: 0, y: 20 }} 
-      animate={{ opacity: 1, y: 0 }} 
-      exit={{ opacity: 0, y: -20 }}
-      className="text-center w-full max-w-2xl mx-auto"
-    >
-      <h2 className="text-3xl font-semibold text-white mb-4">
-        Qual seu Instagram?
-      </h2>
-      <p className="text-white/80 mb-8">Vamos personalizar a demonstração para seu perfil</p>
-      <div className="mb-10 px-4">
-        <Input 
-          type="text" 
-          name="instagram"
-          value={formData.instagram} 
-          onChange={handleInputChange}
-          onKeyDown={handleKeyDown}
-          className="bg-white/5 backdrop-blur-sm border border-white/20 text-blue-900 text-2xl py-6 px-4 placeholder:text-white/40 w-full focus:ring-1 focus:ring-blue-400/50 focus:border-transparent rounded-lg appearance-none"
-          placeholder="@seuinstagram"
-          autoFocus
-        />
-      </div>
-      <Button 
-        className="bg-blue-600 text-white hover:bg-blue-700 hover:scale-105 active:scale-95 transition-all border-none shadow-lg mt-6 px-8 py-6 text-lg rounded-xl group"
-        variant="default"
-        onClick={handleNext}
-        disabled={formData.instagram.trim() === ''}
-      >
-        Continuar
-        <span className="ml-2 bg-white/20 rounded-full p-1.5 group-hover:bg-white/30 transition-all">
-          <ChevronRightIcon className="h-4 w-4 text-white" />
-        </span>
-      </Button>
-    </motion.div>,
-
-    // Step 5: Qual sua área
-    <motion.div 
-      key="area" 
-      initial={{ opacity: 0, y: 20 }} 
-      animate={{ opacity: 1, y: 0 }} 
-      exit={{ opacity: 0, y: -20 }}
-      className="text-center w-full max-w-2xl mx-auto"
-    >
-      <h2 className="text-3xl font-semibold text-white mb-4">
-        Qual sua área?
-      </h2>
-      <p className="text-white/80 mb-8">A demonstração será personalizada para sua especialidade</p>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 px-4 mb-10">
-        {['Odontologia', 'Medicina', 'Psicologia', 'Outra'].map((option) => (
-          <button
-            key={option}
-            onClick={() => handleSelectChange(option, 'area')}
-            className={`text-left text-2xl py-6 px-6 rounded-xl backdrop-blur-sm border-2 transition-all hover:border-white/60 ${
-              formData.area === option
-                ? 'bg-blue-600 border-blue-400 text-white'
-                : 'bg-white/10 border-white/30 text-white'
-            }`}
+    switch (step) {
+      case 0:
+        return (
+          <motion.div 
+            key="intro" 
+            initial={{ opacity: 0, y: 20 }} 
+            animate={{ opacity: 1, y: 0 }} 
+            exit={{ opacity: 0, y: -20 }}
+            className="text-center space-y-6"
           >
-            <div className="flex items-center">
-              <div className={`w-6 h-6 rounded-full flex items-center justify-center mr-3 ${
-                formData.area === option ? 'bg-white text-blue-700' : 'border-2 border-white/60'
-              }`}>
-                {formData.area === option && <CheckIcon className="h-4 w-4" />}
-              </div>
-              {option}
+            <h1 className="text-2xl font-semibold text-gray-800">
+              Agende sua demonstração gratuita
+            </h1>
+            <p className="text-gray-600">
+              Conheça como o Med1 pode aumentar em até 3x o número de pacientes do seu consultório
+            </p>
+            <Button 
+              className={commonButtonClasses}
+              onClick={handleNext}
+            >
+              Agendar agora
+              <ChevronRightIcon className="h-5 w-5 ml-2" />
+            </Button>
+          </motion.div>
+        );
+
+      case 1:
+        return (
+          <motion.div 
+            key="name" 
+            initial={{ opacity: 0, y: 20 }} 
+            animate={{ opacity: 1, y: 0 }} 
+            exit={{ opacity: 0, y: -20 }}
+            className="space-y-6"
+          >
+            <div className="text-center">
+              <h2 className="text-2xl font-semibold text-gray-800 mb-4">
+                Qual é o seu nome?
+              </h2>
+              <p className="text-gray-600">Nos diga como devemos te chamar</p>
             </div>
-          </button>
-        ))}
-      </div>
-    </motion.div>,
+            <Input 
+              type="text" 
+              name="name"
+              value={formData.name} 
+              onChange={handleInputChange}
+              onKeyDown={handleKeyDown}
+              placeholder="Digite seu nome completo"
+              className={commonInputClasses}
+              autoFocus
+            />
+            <Button 
+              className={commonButtonClasses}
+              onClick={handleNext}
+              disabled={!formData.name.trim()}
+            >
+              Continuar
+              <ChevronRightIcon className="h-5 w-5 ml-2" />
+            </Button>
+          </motion.div>
+        );
 
-    // Step 6: Quantos funcionários
-    <motion.div 
-      key="employees" 
-      initial={{ opacity: 0, y: 20 }} 
-      animate={{ opacity: 1, y: 0 }} 
-      exit={{ opacity: 0, y: -20 }}
-      className="text-center w-full max-w-2xl mx-auto"
-    >
-      <h2 className="text-3xl font-semibold text-white mb-4">
-        Quantos funcionários?
-      </h2>
-      <p className="text-white/80 mb-8">Vamos oferecer a solução ideal para o tamanho do seu negócio</p>
-      <div className="grid grid-cols-1 gap-4 px-4 mb-10">
-        {[
-          'Somente eu',
-          '1-10',
-          '10-50',
-          'Mais de 50'
-        ].map((option) => (
-          <button
-            key={option}
-            onClick={() => handleSelectChange(option, 'employees')}
-            className={`text-left text-2xl py-6 px-6 rounded-xl backdrop-blur-sm border-2 transition-all hover:border-white/60 ${
-              formData.employees === option
-                ? 'bg-blue-600 border-blue-400 text-white'
-                : 'bg-white/10 border-white/30 text-white'
-            }`}
+      case 2:
+        return (
+          <motion.div 
+            key="email" 
+            initial={{ opacity: 0, y: 20 }} 
+            animate={{ opacity: 1, y: 0 }} 
+            exit={{ opacity: 0, y: -20 }}
+            className="space-y-6"
           >
-            <div className="flex items-center">
-              <div className={`w-6 h-6 rounded-full flex items-center justify-center mr-3 ${
-                formData.employees === option ? 'bg-white text-blue-700' : 'border-2 border-white/60'
-              }`}>
-                {formData.employees === option && <CheckIcon className="h-4 w-4" />}
-              </div>
-              {option}
+            <div className="text-center">
+              <h2 className="text-2xl font-semibold text-gray-800 mb-4">
+                Qual é o seu email?
+              </h2>
+              <p className="text-gray-600">Para enviarmos informações importantes</p>
             </div>
-          </button>
-        ))}
-      </div>
-    </motion.div>,
+            <Input 
+              type="email" 
+              name="email"
+              value={formData.email} 
+              onChange={handleInputChange}
+              onKeyDown={handleKeyDown}
+              placeholder="Digite seu email profissional"
+              className={commonInputClasses}
+              autoFocus
+            />
+            <Button 
+              className={commonButtonClasses}
+              onClick={handleNext}
+              disabled={!formData.email.trim()}
+            >
+              Continuar
+              <ChevronRightIcon className="h-5 w-5 ml-2" />
+            </Button>
+          </motion.div>
+        );
 
-    // Step 7: Qual seu faturamento mensal
-    <motion.div 
-      key="revenue" 
-      initial={{ opacity: 0, y: 20 }} 
-      animate={{ opacity: 1, y: 0 }} 
-      exit={{ opacity: 0, y: -20 }}
-      className="text-center w-full max-w-2xl mx-auto"
-    >
-      <h2 className="text-3xl font-semibold text-white mb-4">
-        Qual seu faturamento mensal?
-      </h2>
-      <p className="text-white/80 mb-8">Essa informação nos ajuda a calcular seu potencial de crescimento</p>
-      <div className="grid grid-cols-1 gap-4 px-4 mb-10">
-        {[
-          '0 - 30 mil / mês',
-          '30 mil a 100 mil / mês',
-          '100 mil a 1 milhão / mês',
-          'Acima de 1 milhão'
-        ].map((option) => (
-          <button
-            key={option}
-            onClick={() => handleSelectChange(option, 'revenue')}
-            className={`text-left text-2xl py-6 px-6 rounded-xl backdrop-blur-sm border-2 transition-all hover:border-white/60 ${
-              formData.revenue === option
-                ? 'bg-blue-600 border-blue-400 text-white'
-                : 'bg-white/10 border-white/30 text-white'
-            }`}
+      case 3:
+        return (
+          <motion.div 
+            key="whatsapp" 
+            initial={{ opacity: 0, y: 20 }} 
+            animate={{ opacity: 1, y: 0 }} 
+            exit={{ opacity: 0, y: -20 }}
+            className="space-y-6"
           >
-            <div className="flex items-center">
-              <div className={`w-6 h-6 rounded-full flex items-center justify-center mr-3 ${
-                formData.revenue === option ? 'bg-white text-blue-700' : 'border-2 border-white/60'
-              }`}>
-                {formData.revenue === option && <CheckIcon className="h-4 w-4" />}
-              </div>
-              {option}
+            <div className="text-center">
+              <h2 className="text-2xl font-semibold text-gray-800 mb-4">
+                Qual é o seu WhatsApp?
+              </h2>
+              <p className="text-gray-600">Para agilizar nossa comunicação</p>
             </div>
-          </button>
-        ))}
-      </div>
-    </motion.div>,
+            <Input 
+              type="tel" 
+              name="whatsapp"
+              value={formData.whatsapp} 
+              onChange={handleInputChange}
+              onKeyDown={handleKeyDown}
+              placeholder="+55 (00) 00000-0000"
+              className={commonInputClasses}
+              autoFocus
+            />
+            <Button 
+              className={commonButtonClasses}
+              onClick={handleNext}
+              disabled={formData.whatsapp.length < 8}
+            >
+              Continuar
+              <ChevronRightIcon className="h-5 w-5 ml-2" />
+            </Button>
+          </motion.div>
+        );
 
-    // Step 8: Já utiliza alguma tecnologia
-    <motion.div 
-      key="technology" 
-      initial={{ opacity: 0, y: 20 }} 
-      animate={{ opacity: 1, y: 0 }} 
-      exit={{ opacity: 0, y: -20 }}
-      className="text-center w-full max-w-2xl mx-auto"
-    >
-      <h2 className="text-3xl font-semibold text-white mb-4">
-        Já utiliza alguma tecnologia?
-      </h2>
-      <p className="text-white/80 mb-8">Vamos mostrar como o Med1 se integra ao seu fluxo atual</p>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 px-4 mb-10">
-        {['Sim', 'Ainda não!'].map((option) => (
-          <button
-            key={option}
-            onClick={() => setFormData(prev => ({...prev, useTechnology: option}))}
-            className={`text-left text-2xl py-6 px-6 rounded-xl backdrop-blur-sm border-2 transition-all hover:border-white/60 ${
-              formData.useTechnology === option
-                ? 'bg-blue-600 border-blue-400 text-white'
-                : 'bg-white/10 border-white/30 text-white'
-            }`}
+      case 4:
+        return (
+          <motion.div 
+            key="instagram" 
+            initial={{ opacity: 0, y: 20 }} 
+            animate={{ opacity: 1, y: 0 }} 
+            exit={{ opacity: 0, y: -20 }}
+            className="space-y-6"
           >
-            <div className="flex items-center">
-              <div className={`w-6 h-6 rounded-full flex items-center justify-center mr-3 ${
-                formData.useTechnology === option ? 'bg-white text-blue-700' : 'border-2 border-white/60'
-              }`}>
-                {formData.useTechnology === option && <CheckIcon className="h-4 w-4" />}
-              </div>
-              {option}
+            <div className="text-center">
+              <h2 className="text-2xl font-semibold text-gray-800 mb-4">
+                Qual é o seu Instagram?
+              </h2>
+              <p className="text-gray-600">Para conhecermos melhor seu trabalho</p>
             </div>
-          </button>
-        ))}
-      </div>
-      <Button 
-        className="bg-blue-600 text-white hover:bg-blue-700 hover:scale-105 active:scale-95 transition-all border-none shadow-lg mt-6 px-8 py-6 text-lg rounded-xl group"
-        variant="default"
-        onClick={submitFormData}
-        disabled={formData.useTechnology === '' || isSubmitting}
-      >
-        {isSubmitting ? 'Enviando...' : 'Enviar Dados'}
-        <span className="ml-2 bg-white/20 rounded-full p-1.5 group-hover:bg-white/30 transition-all">
-          <CheckIcon className="h-4 w-4 text-white" />
-        </span>
-      </Button>
-    </motion.div>,
+            <Input 
+              type="text" 
+              name="instagram"
+              value={formData.instagram} 
+              onChange={handleInputChange}
+              onKeyDown={handleKeyDown}
+              placeholder="@seuperfil"
+              className={commonInputClasses}
+              autoFocus
+            />
+            <Button 
+              className={commonButtonClasses}
+              onClick={handleNext}
+              disabled={!formData.instagram.trim()}
+            >
+              Continuar
+              <ChevronRightIcon className="h-5 w-5 ml-2" />
+            </Button>
+          </motion.div>
+        );
 
-    // Step 9: Confirmação
-    <motion.div 
-      key="confirmation" 
-      initial={{ opacity: 0, y: 20 }} 
-      animate={{ opacity: 1, y: 0, scale: 1 }} 
-      exit={{ opacity: 0, y: -20 }}
-      className="text-center w-full max-w-2xl mx-auto"
-    >
-      <div className="bg-white/10 backdrop-blur-sm border-2 border-white/30 rounded-xl p-10 mb-10 shadow-2xl">
-        <motion.div 
-          initial={{ scale: 0.8 }}
-          animate={{ scale: 1 }}
-          transition={{ delay: 0.2, duration: 0.5, type: 'spring' }}
-          className="w-24 h-24 mx-auto bg-green-500 rounded-full flex items-center justify-center mb-8 shadow-lg"
-        >
-          <CheckIcon className="h-14 w-14 text-white" />
-        </motion.div>
-        <h2 className="text-4xl font-bold text-white mb-6">
-          Parabéns!
-        </h2>
-        <p className="text-xl text-white/90 mb-8 leading-relaxed">
-          {isSubmitting ? (
-            "Enviando seus dados..."
-          ) : submitError ? (
-            <>Erro ao enviar: {submitError}</>
-          ) : (
-            "Sua demonstração foi agendada! Iremos analisar sua ficha e entrar em contato em breve para confirmar os detalhes."
-          )}
-        </p>
-        {submitError && (
-          <Button 
-            className="bg-blue-600 text-white hover:bg-blue-700 hover:scale-105 active:scale-95 transition-all border-none shadow-lg mt-6 px-8 py-6 text-lg rounded-xl"
-            variant="default"
-            onClick={submitFormData}
-            disabled={isSubmitting}
+      case 5:
+        return (
+          <motion.div 
+            key="area" 
+            initial={{ opacity: 0, y: 20 }} 
+            animate={{ opacity: 1, y: 0 }} 
+            exit={{ opacity: 0, y: -20 }}
+            className="space-y-6"
           >
-            Tentar novamente
-            <ChevronRightIcon className="h-5 w-5 ml-2" />
-          </Button>
-        )}
-      </div>
-    </motion.div>
-  ];
+            <div className="text-center">
+              <h2 className="text-2xl font-semibold text-gray-800 mb-4">
+                Qual é sua área de atuação?
+              </h2>
+            </div>
+            <div className="grid grid-cols-1 gap-3">
+              {['Clínica', 'Consultório', 'Hospital', 'Outro'].map((option) => (
+                <Button
+                  key={option}
+                  variant="outline"
+                  className={`w-full p-4 ${formData.area === option ? 'bg-blue-50 border-blue-500' : ''}`}
+                  onClick={() => handleSelectChange(option, 'area')}
+                >
+                  {option}
+                </Button>
+              ))}
+            </div>
+          </motion.div>
+        );
+
+      case 6:
+        return (
+          <motion.div 
+            key="employees" 
+            initial={{ opacity: 0, y: 20 }} 
+            animate={{ opacity: 1, y: 0 }} 
+            exit={{ opacity: 0, y: -20 }}
+            className="space-y-6"
+          >
+            <div className="text-center">
+              <h2 className="text-2xl font-semibold text-gray-800 mb-4">
+                Quantos funcionários você tem?
+              </h2>
+            </div>
+            <div className="grid grid-cols-1 gap-3">
+              {['1-5', '6-10', '11-20', '21+'].map((option) => (
+                <Button
+                  key={option}
+                  variant="outline"
+                  className={`w-full p-4 ${formData.employees === option ? 'bg-blue-50 border-blue-500' : ''}`}
+                  onClick={() => handleSelectChange(option, 'employees')}
+                >
+                  {option}
+                </Button>
+              ))}
+            </div>
+          </motion.div>
+        );
+
+      case 7:
+        return (
+          <motion.div 
+            key="revenue" 
+            initial={{ opacity: 0, y: 20 }} 
+            animate={{ opacity: 1, y: 0 }} 
+            exit={{ opacity: 0, y: -20 }}
+            className="space-y-6"
+          >
+            <div className="text-center">
+              <h2 className="text-2xl font-semibold text-gray-800 mb-4">
+                Qual seu faturamento mensal?
+              </h2>
+            </div>
+            <div className="grid grid-cols-1 gap-3">
+              {[
+                'Até R$ 30 mil',
+                'R$ 30 mil a R$ 50 mil',
+                'R$ 50 mil a R$ 100 mil',
+                'Mais de R$ 100 mil'
+              ].map((option) => (
+                <Button
+                  key={option}
+                  variant="outline"
+                  className={`w-full p-4 ${formData.revenue === option ? 'bg-blue-50 border-blue-500' : ''}`}
+                  onClick={() => handleSelectChange(option, 'revenue')}
+                >
+                  {option}
+                </Button>
+              ))}
+            </div>
+          </motion.div>
+        );
+
+      case 8:
+        return (
+          <motion.div 
+            key="technology" 
+            initial={{ opacity: 0, y: 20 }} 
+            animate={{ opacity: 1, y: 0 }} 
+            exit={{ opacity: 0, y: -20 }}
+            className="space-y-6"
+          >
+            <div className="text-center">
+              <h2 className="text-2xl font-semibold text-gray-800 mb-4">
+                Você já usa algum software médico?
+              </h2>
+            </div>
+            <div className="grid grid-cols-1 gap-3">
+              {['Sim', 'Não'].map((option) => (
+                <Button
+                  key={option}
+                  variant="outline"
+                  className={`w-full p-4 ${formData.useTechnology === option ? 'bg-blue-50 border-blue-500' : ''}`}
+                  onClick={() => {
+                    handleSelectChange(option, 'useTechnology');
+                    setTimeout(submitFormData, 500);
+                  }}
+                >
+                  {option}
+                </Button>
+              ))}
+            </div>
+          </motion.div>
+        );
+
+      case 9:
+        return (
+          <motion.div 
+            key="success" 
+            initial={{ opacity: 0, y: 20 }} 
+            animate={{ opacity: 1, y: 0 }} 
+            exit={{ opacity: 0, y: -20 }}
+            className="text-center space-y-6"
+          >
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+              <CalendarIcon className="h-8 w-8 text-green-600" />
+            </div>
+            <h2 className="text-2xl font-semibold text-gray-800">
+              Agendamento realizado!
+            </h2>
+            <p className="text-gray-600">
+              Em breve nossa equipe entrará em contato para agendar sua demonstração.
+            </p>
+            <Link href="/auth/signin">
+              <Button 
+                className={commonButtonClasses}
+              >
+                Voltar para o login
+              </Button>
+            </Link>
+          </motion.div>
+        );
+
+      default:
+        return null;
+    }
+  };
 
   return (
-    <div className="min-h-[100dvh] bg-gradient-to-br from-blue-800 via-blue-700 to-blue-900 flex flex-col relative overflow-hidden">
-      {/* Elementos decorativos */}
-      <div className="absolute top-20 left-10 w-80 h-80 bg-blue-500/20 rounded-full blur-3xl -z-10" />
-      <div className="absolute bottom-20 right-10 w-80 h-80 bg-indigo-500/20 rounded-full blur-3xl -z-10" />
-
-      {/* Botão de sair */}
-      <button 
-        onClick={() => router.push('/auth/signin')}
-        className="absolute top-4 right-4 text-white/60 hover:text-white transition-colors flex items-center text-sm bg-white/10 backdrop-blur-sm px-3 py-1.5 rounded-full"
-      >
-        <span className="mr-1">Sair</span>
-        <XMarkIcon className="h-4 w-4" />
-      </button>
-
-      {/* Tempo restante - agora em um botão para toggle */}
-      <button 
-        onClick={toggleCountdown}
-        className="absolute top-4 left-4 text-white/60 hover:text-white transition-colors flex items-center text-xs bg-white/10 backdrop-blur-sm px-2 py-1 rounded-full"
-      >
-        <CalendarIcon className="h-3 w-3 mr-1" />
-        <span>Timer</span>
-      </button>
-
-      {/* Countdown display */}
-      {showCountdown && (
-        <div className="absolute top-12 left-4 text-white/80 flex items-center text-xs bg-white/10 backdrop-blur-sm px-2 py-1 rounded-full">
-          <span className={`${timeRemaining < 60 ? 'text-red-300' : 'text-white'}`}>
-            {formatTime(timeRemaining)}
-          </span>
+    <div className="min-h-screen bg-white relative flex items-center justify-center">
+      <div className="w-full max-w-[480px] mx-auto px-4">
+        <div className="flex justify-center mb-8 items-center gap-3">
+          <Image
+            src="/logo.png"
+            alt="MED1 Logo"
+            width={48}
+            height={48}
+            priority
+            className="h-12 w-12"
+          />
+          <span className="text-3xl font-semibold text-[#5c5b60]">MED1</span>
         </div>
-      )}
-
-      <div className="container mx-auto px-4 py-8 flex-1 flex flex-col">
-        <div className="flex justify-center mb-16 pt-8">
-          <Logo className="scale-150" variant="light" />
-        </div>
-
-        <div className="flex-1 flex items-center justify-center px-4 py-8">
+        
+        <div className="bg-white rounded-xl p-8 border border-gray-200 shadow-sm">
           <AnimatePresence mode="wait">
-            {steps[step]}
+            {renderStep()}
           </AnimatePresence>
-        </div>
 
-        <div className="mt-auto pb-12 flex justify-center">
-          <div className="flex space-x-3">
-            {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => (
-              <div 
-                key={i} 
-                className={`h-3 w-3 rounded-full transition-all duration-300 ${
-                  i === step ? 'bg-white w-8' : i < step ? 'bg-blue-400' : 'bg-white/30'
-                }`}
-              />
-            ))}
-          </div>
+          {submitError && (
+            <div className="mt-4 text-red-600 text-sm text-center">
+              {submitError}
+            </div>
+          )}
         </div>
       </div>
     </div>

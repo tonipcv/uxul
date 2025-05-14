@@ -24,7 +24,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { toast } from "@/components/ui/use-toast";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Check, ChevronsUpDown, Edit, Share2, Copy, Trash, Gift } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -41,6 +41,7 @@ import {
 } from "@/components/ui/table";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { QRCodeCanvas } from 'qrcode.react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 interface PatientReferral {
   id: string;
@@ -111,10 +112,8 @@ export default function ReferralsPage() {
   const [baseUrl, setBaseUrl] = useState('');
   const [userSlug, setUserSlug] = useState('');
   const [isClient, setIsClient] = useState(false);
-  const [openCombobox, setOpenCombobox] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [filteredPatients, setFilteredPatients] = useState<Patient[]>([]);
-  const [openPageCombobox, setOpenPageCombobox] = useState(false);
   const [pageSearchQuery, setPageSearchQuery] = useState("");
   const [filteredPages, setFilteredPages] = useState<Page[]>([]);
   const [selectedReferral, setSelectedReferral] = useState<PatientReferral | undefined>(undefined);
@@ -133,8 +132,11 @@ export default function ReferralsPage() {
 
   useEffect(() => {
     if (session?.user?.id) {
-      console.log('Fetching patients on session change');
+      console.log('[useEffect] Session available, fetching data...');
       fetchPatients();
+      fetchPages();
+      fetchReferrals();
+      fetchUserProfile();
     }
   }, [session?.user?.id]);
 
@@ -142,13 +144,30 @@ export default function ReferralsPage() {
     if (isClient && typeof window !== 'undefined') {
       setBaseUrl(window.location.origin);
     }
-    
-    if (session?.user?.id) {
-      fetchReferrals();
-      fetchUserProfile();
-      fetchPages();
+  }, [isClient]);
+
+  useEffect(() => {
+    if (searchQuery) {
+      const filtered = patients.filter(patient =>
+        patient.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        patient.email.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+      setFilteredPatients(filtered);
+    } else {
+      setFilteredPatients(patients);
     }
-  }, [session, isClient]);
+  }, [searchQuery, patients]);
+
+  useEffect(() => {
+    if (pageSearchQuery) {
+      const filtered = pages.filter(page =>
+        page.title.toLowerCase().includes(pageSearchQuery.toLowerCase())
+      );
+      setFilteredPages(filtered);
+    } else {
+      setFilteredPages(pages);
+    }
+  }, [pageSearchQuery, pages]);
 
   const fetchUserProfile = async () => {
     if (!session?.user?.id) return;
@@ -199,16 +218,11 @@ export default function ReferralsPage() {
       if (response.ok) {
         const data = await response.json();
         console.log('Received pages data:', data);
-        if (Array.isArray(data) && data.length > 0) {
+        if (Array.isArray(data)) {
           setPages(data);
           setFilteredPages(data);
         } else {
           console.log('No pages data received or empty array');
-          toast({
-            title: "Aviso",
-            description: "Você precisa criar uma página antes de criar um link de referência",
-            variant: "destructive"
-          });
         }
       } else {
         const errorText = await response.text();
@@ -231,27 +245,31 @@ export default function ReferralsPage() {
 
   const fetchPatients = async () => {
     if (!session?.user?.id) {
-      console.log('No user session, skipping fetch');
+      console.log('[fetchPatients] No user session, skipping fetch');
       return;
     }
     
     try {
-      console.log('Fetching patients...');
+      console.log('[fetchPatients] Starting fetch...');
       const response = await fetch('/api/patients');
-      console.log('Response status:', response.status);
+      console.log('[fetchPatients] Response status:', response.status);
       
       if (response.ok) {
-        const { data } = await response.json();
-        console.log('Received patients data:', data);
-        if (Array.isArray(data) && data.length > 0) {
-          setPatients(data);
-          setFilteredPatients(data);
+        const patients = await response.json();
+        console.log('[fetchPatients] Received data:', patients);
+        
+        if (Array.isArray(patients)) {
+          console.log('[fetchPatients] Setting patients array:', patients.length, 'items');
+          setPatients(patients);
+          setFilteredPatients(patients);
         } else {
-          console.log('No patients data received or empty array');
+          console.log('[fetchPatients] Received non-array data:', patients);
+          setPatients([]);
+          setFilteredPatients([]);
         }
       } else {
         const errorText = await response.text();
-        console.error('Error response:', errorText);
+        console.error('[fetchPatients] Error response:', errorText);
         toast({
           title: "Erro",
           description: "Erro ao carregar pacientes: " + errorText,
@@ -259,7 +277,7 @@ export default function ReferralsPage() {
         });
       }
     } catch (error) {
-      console.error('Erro ao buscar pacientes:', error);
+      console.error('[fetchPatients] Error:', error);
       toast({
         title: "Erro",
         description: "Não foi possível carregar a lista de pacientes",
@@ -428,6 +446,12 @@ export default function ReferralsPage() {
     }
   };
 
+  console.log('[ReferralsPage] Rendering...');
+  console.log('[ReferralsPage] Patients Data:', patients);
+  console.log('[ReferralsPage] Pages Data:', pages);
+  console.log('[ReferralsPage] Selected Patient:', selectedPatient);
+  console.log('[ReferralsPage] Selected Page:', selectedPage);
+
   return (
     <div className="min-h-[100dvh] bg-gray-100 pt-20 pb-24 md:pt-12 md:pb-16 px-2 sm:px-4">
       <div className="container mx-auto px-0 sm:pl-4 md:pl-8 lg:pl-16 max-w-full sm:max-w-[95%] md:max-w-[90%] lg:max-w-[85%]">
@@ -584,77 +608,77 @@ export default function ReferralsPage() {
         </div>
       </div>
 
-      {/* Create Modal */}
-      <Sheet 
-        open={showCreateModal} 
-        onOpenChange={handleCreateModalChange}
-      >
-        <SheetContent className="w-full sm:max-w-xl overflow-y-auto">
-          <div className="space-y-4">
-            <SheetHeader>
-              <SheetTitle className="text-lg font-bold text-gray-900">
-                {isEditMode ? 'Editar Link de Referência' : 'Novo Link de Referência'}
-              </SheetTitle>
-            </SheetHeader>
+      <Sheet open={showCreateModal} onOpenChange={handleCreateModalChange}>
+        <SheetContent className="w-full sm:max-w-xl">
+          <SheetHeader>
+            <SheetTitle className="text-lg font-bold text-gray-900">
+              {isEditMode ? 'Editar Link de Referência' : 'Novo Link de Referência'}
+            </SheetTitle>
+          </SheetHeader>
 
+          <div className="space-y-4 py-4">
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Informações Básicas */}
               <div>
                 <h3 className="text-sm font-medium text-gray-500 mb-3">Informações Básicas</h3>
                 <div className="grid gap-4 bg-gray-50/50 p-4 rounded-lg">
                   <div className="space-y-2">
                     <Label htmlFor="patient" className="text-sm text-gray-700">Paciente</Label>
-                    <Select
-                      value={selectedPatient?.id || ''}
-                      onValueChange={(value) => {
-                        const patient = patients.find(p => p.id === value);
-                        setSelectedPatient(patient || undefined);
-                      }}
-                    >
-                      <SelectTrigger className="h-9 bg-white/50 border-gray-200 focus:border-gray-300 text-gray-900">
-                        <SelectValue placeholder="Selecione um paciente" />
-                      </SelectTrigger>
-                      <SelectContent>
+                    <div className="relative">
+                      <select 
+                        className="w-full rounded-md border border-gray-300 py-2 pl-3 pr-10 text-sm"
+                        value={selectedPatient?.id || ''}
+                        onChange={(e) => {
+                          console.log('Native select change:', e.target.value);
+                          const patient = patients.find(p => p.id === e.target.value);
+                          if (patient) {
+                            console.log('Setting patient:', patient);
+                            setSelectedPatient(patient);
+                          }
+                        }}
+                      >
+                        <option value="">Selecione um paciente</option>
                         {patients.map((patient) => (
-                          <SelectItem key={patient.id} value={patient.id}>
-                            {patient.name}
-                          </SelectItem>
+                          <option key={patient.id} value={patient.id}>
+                            {patient.name} ({patient.email})
+                          </option>
                         ))}
-                      </SelectContent>
-                    </Select>
+                      </select>
+                    </div>
                   </div>
 
-                  <div className="space-y-2">
+                  <div className="space-y-2 mt-4">
                     <Label htmlFor="page" className="text-sm text-gray-700">Página</Label>
-                    <Select
-                      value={selectedPage?.id || ''}
-                      onValueChange={(value) => {
-                        const page = pages.find(p => p.id === value);
-                        setSelectedPage(page || undefined);
-                      }}
-                    >
-                      <SelectTrigger className="h-9 bg-white/50 border-gray-200 focus:border-gray-300 text-gray-900">
-                        <SelectValue placeholder="Selecione uma página" />
-                      </SelectTrigger>
-                      <SelectContent>
+                    <div className="relative">
+                      <select 
+                        className="w-full rounded-md border border-gray-300 py-2 pl-3 pr-10 text-sm"
+                        value={selectedPage?.id || ''}
+                        onChange={(e) => {
+                          console.log('Native select change:', e.target.value);
+                          const page = pages.find(p => p.id === e.target.value);
+                          if (page) {
+                            const isDisabled = selectedPatient && patientHasPageAccess(selectedPatient.id, page.id);
+                            if (!isDisabled) {
+                              console.log('Setting page:', page);
+                              setSelectedPage(page);
+                            }
+                          }
+                        }}
+                      >
+                        <option value="">Selecione uma página</option>
                         {pages.map((page) => {
                           const isDisabled = selectedPatient && patientHasPageAccess(selectedPatient.id, page.id);
                           return (
-                            <SelectItem 
+                            <option 
                               key={page.id} 
                               value={page.id}
                               disabled={isDisabled}
-                              className={cn(
-                                isDisabled && "opacity-50 cursor-not-allowed"
-                              )}
                             >
-                              {page.title}
-                              {isDisabled && " (Já tem acesso)"}
-                            </SelectItem>
+                              {page.title} {isDisabled ? "(Já tem acesso)" : ""}
+                            </option>
                           );
                         })}
-                      </SelectContent>
-                    </Select>
+                      </select>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -692,7 +716,6 @@ export default function ReferralsPage() {
         </SheetContent>
       </Sheet>
 
-      {/* Add QR Code Sheet */}
       <Sheet
         open={showQRCode}
         onOpenChange={setShowQRCode}
