@@ -59,7 +59,7 @@ export async function POST(request: Request) {
 
     const body = await request.json();
     console.log('POST /api/pages - Request body:', body);
-    const { title, subtitle, layout, primaryColor, avatarUrl, slug: customSlug, isModal } = body;
+    const { title, subtitle, layout, primaryColor, avatarUrl, address, addresses, slug: customSlug, isModal } = body;
 
     if (!title?.trim()) {
       console.log('POST /api/pages - Missing title');
@@ -108,6 +108,8 @@ export async function POST(request: Request) {
       layout,
       primaryColor,
       avatarUrl,
+      address,
+      addresses,
       slug,
     });
 
@@ -121,7 +123,15 @@ export async function POST(request: Request) {
           layout: layout || 'classic',
           primaryColor: primaryColor || "#0070df",
           avatarUrl: avatarUrl || null,
+          address: address || null,
           isModal: isModal || false,
+          addresses: addresses?.length ? {
+            create: addresses.map(addr => ({
+              name: addr.name,
+              address: addr.address,
+              isDefault: addr.isDefault
+            }))
+          } : undefined,
           blocks: {
             create: [] // Initialize empty blocks array
           },
@@ -132,6 +142,7 @@ export async function POST(request: Request) {
         include: {
           blocks: true,
           socialLinks: true,
+          addresses: true,
           user: {
             select: {
               id: true,

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { verify } from 'jsonwebtoken';
+import { getToken } from 'next-auth/jwt';
 
 const JWT_SECRET = process.env.NEXTAUTH_SECRET || 'your-jwt-secret';
 
@@ -12,15 +13,36 @@ const publicRoutes = [
   '/api/auth',
   '/api/patient/magic-link',
   '/api/patient/verify',
-  '/patient/access/verify'
+  '/patient/access/verify',
+  '/bloqueado'
 ];
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  
+  // Verificar se o usuário está autenticado
+  const token = await getToken({ req: request });
+  const isAuthenticated = !!token;
 
   // Verificar se é uma rota pública
-  if (publicRoutes.some(route => pathname.startsWith(route))) {
+  const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route));
+
+  if (isPublicRoute) {
+    // Se estiver autenticado e tentando acessar página de login/registro, redireciona para dashboard
+    if (isAuthenticated && (pathname.startsWith('/auth/signin') || pathname.startsWith('/auth/register'))) {
+      return NextResponse.redirect(new URL('/dashboard', request.url));
+    }
     return NextResponse.next();
+  }
+
+  // Redirecionar para o dashboard para raiz quando estiver autenticado
+  if (pathname === '/' && isAuthenticated) {
+    return NextResponse.redirect(new URL('/dashboard', request.url));
+  }
+
+  // Verificar se é uma rota que precisa de autenticação
+  if (!isAuthenticated && !isPublicRoute && pathname !== '/') {
+    return NextResponse.redirect(new URL('/auth/signin', request.url));
   }
 
   // Verificar se é uma rota do portal do paciente

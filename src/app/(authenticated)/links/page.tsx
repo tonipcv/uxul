@@ -18,7 +18,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { PlusCircle, Link as LinkIcon, ExternalLink, Instagram, Youtube, Facebook, Linkedin, Twitter, Trash2 } from 'lucide-react';
+import { PlusCircle, Link as LinkIcon, ExternalLink, Instagram, Youtube, Facebook, Linkedin, Twitter, Trash2, MapIcon } from 'lucide-react';
+import { AddressManager, Address } from '@/components/ui/address-manager';
 
 // Get the base URL from environment variable, fallback to production URL if not available
 const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://med1.app';
@@ -43,10 +44,17 @@ interface Page {
   slug: string;
   subtitle?: string;
   avatarUrl?: string;
+  address?: string;
   primaryColor: string;
   layout: string;
   blocks: PageBlock[];
   socialLinks: SocialLink[];
+  addresses?: {
+    id: string;
+    name: string;
+    address: string;
+    isDefault: boolean;
+  }[];
 }
 
 interface User {
@@ -70,6 +78,8 @@ export default function LinksPage() {
     layout: 'classic',
     primaryColor: '#0070df',
     avatarUrl: '',
+    address: '',
+    addresses: [] as Address[],
     isModal: false,
   });
   const [isCreating, setIsCreating] = useState(false);
@@ -149,6 +159,8 @@ export default function LinksPage() {
         layout: 'classic',
         primaryColor: '#0070df',
         avatarUrl: '',
+        address: '',
+        addresses: [],
         isModal: false,
       });
     } catch (error) {
@@ -413,6 +425,19 @@ export default function LinksPage() {
                 </div>
 
                 <div className="space-y-2">
+                  <Label htmlFor="address">Endereço</Label>
+                  <Input
+                    id="address"
+                    value={newPage.address}
+                    onChange={(e) => setNewPage({ ...newPage, address: e.target.value })}
+                    placeholder="Ex: Rua das Flores, 123"
+                  />
+                  <p className="text-xs text-gray-500">
+                    Endereço da página
+                  </p>
+                </div>
+
+                <div className="space-y-2">
                   <Label htmlFor="primaryColor">Cor Principal</Label>
                   <div className="flex gap-2">
                     <Input
@@ -464,6 +489,21 @@ export default function LinksPage() {
                     Quando ativado, a página será exibida em um modal ao invés de uma página completa
                   </p>
                 </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="addresses">Endereços</Label>
+                    <MapIcon className="h-4 w-4 text-gray-400" />
+                  </div>
+                  <AddressManager 
+                    addresses={newPage.addresses} 
+                    onChange={(newAddresses) => setNewPage({ ...newPage, addresses: newAddresses })}
+                    primaryColor={newPage.primaryColor}
+                  />
+                  <p className="text-xs text-gray-500">
+                    Adicione um ou mais endereços que serão exibidos na sua página com um mapa interativo.
+                  </p>
+                </div>
               </div>
 
               <div className="flex items-center justify-end gap-2 pt-4 border-t">
@@ -478,6 +518,8 @@ export default function LinksPage() {
                       layout: 'classic',
                       primaryColor: '#0070df',
                       avatarUrl: '',
+                      address: '',
+                      addresses: [],
                       isModal: false,
                     });
                   }}

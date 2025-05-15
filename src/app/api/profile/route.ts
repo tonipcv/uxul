@@ -10,7 +10,7 @@ export async function PUT(req: Request) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
     }
 
-    const { name, image, specialty, pageTemplate } = await req.json();
+    const { name, image, specialty, phone } = await req.json();
 
     const updatedUser = await prisma.user.update({
       where: { email: session.user.email },
@@ -18,7 +18,7 @@ export async function PUT(req: Request) {
         name,
         image,
         specialty,
-        pageTemplate
+        phone
       },
     });
 

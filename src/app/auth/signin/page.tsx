@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, Suspense } from "react";
-import { signIn } from "next-auth/react";
+import { useState, Suspense, useEffect } from "react";
+import { signIn, useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,6 +19,7 @@ export default function SignIn() {
 
 function SignInContent() {
   const router = useRouter();
+  const { data: session, status } = useSession();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
   const error = searchParams.get('error');
@@ -26,12 +27,23 @@ function SignInContent() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [loginError, setLoginError] = useState("");
+
+  // Redirecionar se já estiver autenticado
+  useEffect(() => {
+    if (status === 'authenticated' && session) {
+      console.log("Usuário autenticado, redirecionando para:", callbackUrl);
+      router.push(callbackUrl);
+    }
+  }, [status, session, router, callbackUrl]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setLoginError("");
 
     try {
+      console.log("Tentando login com:", email);
       const result = await signIn('credentials', {
         email,
         password,
@@ -41,19 +53,35 @@ function SignInContent() {
       });
 
       if (result?.error) {
-        // Handle error
+        console.error("Erro no login:", result.error);
+        setLoginError(result.error);
+        return;
       }
 
       if (result?.ok) {
+        console.log("Login bem-sucedido, redirecionando para:", callbackUrl);
         router.push(callbackUrl);
         router.refresh();
       }
     } catch (err) {
-      // Handle general error
+      console.error("Erro ao fazer login:", err);
+      setLoginError("Erro ao fazer login. Tente novamente.");
     } finally {
       setIsLoading(false);
     }
   };
+
+  // Se já estiver autenticado, mostre uma mensagem
+  if (status === 'authenticated') {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center p-8">
+          <h2 className="text-xl font-semibold mb-2">Você já está autenticado</h2>
+          <p className="mb-4">Redirecionando para o dashboard...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-white relative flex items-center justify-center">
@@ -61,13 +89,13 @@ function SignInContent() {
         <div className="flex justify-center mb-8 items-center gap-3">
           <Image
             src="/logo.png"
-            alt="MED1 Logo"
+            alt="Logo"
             width={48}
             height={48}
             priority
             className="h-12 w-12"
           />
-          <span className="text-3xl font-semibold text-[#5c5b60]">MED1</span>
+          <span className="text-3xl font-semibold text-[#5c5b60]"></span>
         </div>
         
         <div className="bg-white rounded-xl p-8 border border-gray-200 shadow-sm">
@@ -96,8 +124,8 @@ function SignInContent() {
                 className="bg-white text-black"
               />
             </div>
-            {error && (
-              <div className="text-red-600 text-sm">{error}</div>
+            {(error || loginError) && (
+              <div className="text-red-600 text-sm">{error || loginError}</div>
             )}
             <Button 
               type="submit" 

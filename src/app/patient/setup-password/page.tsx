@@ -164,13 +164,13 @@ function SetupPasswordContent() {
         <div className="flex justify-center mb-8 items-center gap-3">
           <Image
             src="/logo.png"
-            alt="MED1 Logo"
+            alt="Logo"
             width={48}
             height={48}
             priority
             className="h-12 w-12"
           />
-          <span className="text-3xl font-semibold text-[#5c5b60]">MED1</span>
+          <span className="text-3xl font-semibold text-[#5c5b60]"></span>
         </div>
 
         <div className="bg-white rounded-xl p-8 border border-gray-200 shadow-sm">

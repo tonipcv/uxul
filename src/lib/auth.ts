@@ -93,8 +93,7 @@ export const authOptions: AuthOptions = {
             name: true,
             password: true,
             slug: true,
-            image: true,
-            plan: true
+            image: true
           }
         });
 
@@ -118,7 +117,7 @@ export const authOptions: AuthOptions = {
           type: 'user' as const,
           userSlug: user.slug,
           image: user.image,
-          plan: user.plan || undefined
+          plan: undefined
         };
       }
     })

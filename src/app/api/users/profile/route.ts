@@ -47,7 +47,7 @@ export async function GET(req: NextRequest) {
         slug: true,
         specialty: true,
         image: true,
-        pageTemplate: true,
+        phone: true,
         _count: {
           select: {
             indications: true,

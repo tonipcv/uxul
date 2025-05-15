@@ -2,11 +2,13 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Instagram, Youtube, Facebook, Linkedin, Twitter, MessageCircle } from 'lucide-react';
+import { Instagram, Youtube, Facebook, Linkedin, Twitter, MessageCircle, MapPin } from 'lucide-react';
 import { BsPatchCheckFill } from 'react-icons/bs';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { FormModal } from '@/components/FormModal';
+import { LocationMap } from '@/components/ui/location-map';
+import { Address } from '@/components/ui/address-manager';
 
 const PLATFORM_ICONS = {
   INSTAGRAM: Instagram,
@@ -52,6 +54,11 @@ interface ModernTemplateProps {
         isModal?: boolean;
         modalTitle?: string;
         successPage?: string;
+        address?: string;
+        city?: string;
+        state?: string;
+        zipCode?: string;
+        country?: string;
       };
       order: number;
     }>;
@@ -232,6 +239,36 @@ export default function ModernTemplate({ page }: ModernTemplateProps) {
                       Enviar
                     </Button>
                   </form>
+                </div>
+              );
+            }
+
+            if (block.type === 'ADDRESS') {
+              // Criar um objeto de endereço para o LocationMap
+              const addressObject: Address = {
+                id: block.id,
+                name: block.content.city || 'Location',
+                address: `${block.content.address}, ${block.content.city}, ${block.content.state} ${block.content.zipCode}, ${block.content.country}`,
+                isDefault: true
+              };
+              
+              return (
+                <div
+                  key={block.id}
+                  className="bg-white rounded-2xl shadow-xl p-8 transform transition-all duration-300 hover:shadow-2xl"
+                  style={{ borderColor: page.primaryColor + '20', borderWidth: '1px' }}
+                >
+                  <h2 
+                    className="text-2xl font-semibold mb-6 flex items-center gap-2"
+                    style={{ color: page.primaryColor }}
+                  >
+                    <MapPin size={20} />
+                    {block.content.city || 'Location'}
+                  </h2>
+                  <LocationMap 
+                    addresses={[addressObject]} 
+                    primaryColor={page.primaryColor}
+                  />
                 </div>
               );
             }

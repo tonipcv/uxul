@@ -4,14 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   UserCircleIcon,
-  ChartBarIcon,
-  LinkIcon,
-  UsersIcon,
-  Cog6ToothIcon,
-  FunnelIcon,
-  HeartIcon,
-  SparklesIcon,
-  ShoppingBagIcon,
+  MegaphoneIcon,
 } from '@heroicons/react/24/outline';
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -40,15 +33,8 @@ export default function Navigation() {
 
   // Lista de rotas protegidas onde a navegação deve aparecer
   const protectedRoutes = [
-    '/dashboard',
-    '/dashboard/indications',
-    '/dashboard/leads',
-    '/dashboard/pipeline',
-    '/dashboard/services',
-    '/dashboard/pacientes',
     '/profile',
-    '/IA',
-    '/links'
+    '/outbound'
   ];
 
   // Só mostrar navegação em rotas protegidas
@@ -62,52 +48,10 @@ export default function Navigation() {
       title: "Dashboard",
       items: [
         {
-          href: '/dashboard',
-          label: 'Dashboard',
-          icon: ChartBarIcon,
-          description: 'Visão geral'
-        },
-        {
-          href: '/dashboard/services',
-          label: 'Serviços',
-          icon: ShoppingBagIcon,
-          description: 'Gerenciar serviços'
-        },
-        {
-          href: '/dashboard/indications',
-          label: 'Indicações',
-          icon: LinkIcon,
-          description: 'Gerenciar links'
-        },
-        {
-          href: '/links',
-          label: 'Páginas',
-          icon: LinkIcon,
-          description: 'Páginas de links'
-        },
-        {
-          href: '/dashboard/leads',
-          label: 'Leads',
-          icon: UsersIcon,
-          description: 'Lista de contatos'
-        },
-        {
-          href: '/dashboard/pacientes',
-          label: 'Pacientes',
-          icon: HeartIcon,
-          description: 'Gerenciar pacientes'
-        },
-        {
-          href: '/dashboard/pipeline',
-          label: 'Pipeline',
-          icon: FunnelIcon,
-          description: 'Gestão de status'
-        },
-        {
-          href: '/IA',
-          label: 'Assistente IA',
-          icon: SparklesIcon,
-          description: 'Análise de pacientes'
+          href: '/outbound',
+          label: 'Outbound',
+          icon: MegaphoneIcon,
+          description: 'Prospecção ativa'
         },
       ]
     }
@@ -160,7 +104,7 @@ export default function Navigation() {
       <nav className="fixed left-0 top-0 bottom-0 w-52 transition-all duration-300 border-r border-gray-200/50 bg-gradient-to-b from-gray-100 to-gray-200/80 shadow-[1px_0_5px_rgba(0,0,0,0.05)] hidden lg:block z-40">
         <div className="flex flex-col h-full">
           <div className="h-14 flex items-center px-4 border-b border-gray-200/50 bg-white/10">
-            <Link href="/" className="flex items-center gap-2">
+            <Link href="/" className="flex items-center justify-center w-full">
               <div className="relative w-24 h-8">
                 <Image
                   src="/logo.png"
@@ -170,7 +114,6 @@ export default function Navigation() {
                   priority
                 />
               </div>
-              <span className="font-semibold text-[#2d5568] text-lg">MED1</span>
             </Link>
           </div>
           <ScrollArea className="flex-1 py-4">
@@ -210,7 +153,10 @@ export default function Navigation() {
       {/* Mobile Header */}
       <header className="fixed top-0 left-0 right-0 h-14 border-b border-gray-200/50 bg-gradient-to-b from-gray-100 to-gray-200/80 shadow-[0_1px_5px_rgba(0,0,0,0.05)] z-40 lg:hidden">
         <div className="h-full px-4 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
+          <div className="w-8">
+            {/* Espaço vazio para manter o layout centralizado */}
+          </div>
+          <Link href="/" className="flex items-center justify-center">
             <div className="relative w-20 h-7">
               <Image
                 src="/logo.png"
@@ -220,7 +166,6 @@ export default function Navigation() {
                 priority
               />
             </div>
-            <span className="font-semibold text-[#2d5568] text-lg">MED1</span>
           </Link>
           <Link href="/profile">
             <Avatar className="h-8 w-8 ring-1 ring-white/20 bg-white/80">
@@ -264,30 +209,6 @@ export default function Navigation() {
 
       {/* Desktop Spacer */}
       <div className="hidden lg:block w-52 flex-shrink-0" />
-
-      {/* WhatsApp Float Button */}
-      <a 
-        href="https://wa.me/5511976638147" 
-        target="_blank" 
-        rel="noopener noreferrer"
-        className="group fixed bottom-20 right-4 lg:bottom-8 lg:right-8 z-50"
-      >
-        <div className="relative">
-          {/* Profile Image */}
-          <div className="rounded-full overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 w-14 h-14 lg:w-16 lg:h-16 ring-2 ring-white bg-white">
-            <Image
-              src="/toni.jpeg"
-              alt="Contact Toni"
-              width={64}
-              height={64}
-              className="object-cover w-full h-full hover:scale-110 transition-transform duration-300"
-              priority
-            />
-            {/* Online Indicator */}
-            <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full ring-2 ring-white" />
-          </div>
-        </div>
-      </a>
     </>
   );
 } 

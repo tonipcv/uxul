@@ -13,6 +13,7 @@ import { SocialLinksEditor } from '@/components/SocialLinksEditor';
 import { ArrowLeft, Save, Trash2 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AddressManager, Address } from '@/components/ui/address-manager';
 
 interface Page {
   id: string;
@@ -20,10 +21,12 @@ interface Page {
   title: string;
   subtitle?: string;
   avatarUrl?: string;
+  address?: string;
   primaryColor: string;
   layout: string;
   blocks: PageBlock[];
   socialLinks: SocialLink[];
+  addresses?: Address[];
   user?: {
     slug: string;
   };
@@ -179,6 +182,51 @@ export function PageEditor({ pageId }: PageEditorProps) {
     } catch (error) {
       console.error('Error updating social links:', error);
       toast.error(error instanceof Error ? error.message : 'Erro ao atualizar redes sociais');
+      
+      // On error, fetch the entire page to ensure consistency
+      try {
+        const response = await fetch(`/api/pages/${pageId}`);
+        if (response.ok) {
+          const updatedPage = await response.json();
+          setPage(updatedPage);
+        }
+      } catch (fetchError) {
+        console.error('Error fetching page:', fetchError);
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleAddressesChange = async (newAddresses: Address[]) => {
+    if (!page) return;
+    
+    try {
+      setIsLoading(true);
+      
+      // Optimistically update the UI
+      setPage(prevPage => ({
+        ...prevPage!,
+        addresses: newAddresses
+      }));
+
+      const response = await fetch(`/api/pages/${pageId}/addresses`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ addresses: newAddresses }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to update addresses');
+      }
+      
+      toast.success('Endereços atualizados com sucesso');
+    } catch (error) {
+      console.error('Error updating addresses:', error);
+      toast.error(error instanceof Error ? error.message : 'Erro ao atualizar endereços');
       
       // On error, fetch the entire page to ensure consistency
       try {
@@ -371,6 +419,22 @@ export function PageEditor({ pageId }: PageEditorProps) {
                     onChange={(e) => handleChange('avatarUrl', e.target.value)}
                     placeholder="https://exemplo.com/seu-avatar.jpg"
                   />
+                </div>
+
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="addresses">Endereços</Label>
+                  </div>
+                  <AddressManager 
+                    addresses={page.addresses || []} 
+                    onChange={(newAddresses) => {
+                      handleAddressesChange(newAddresses);
+                    }}
+                    primaryColor={page.primaryColor}
+                  />
+                  <p className="text-xs text-gray-500">
+                    Adicione um ou mais endereços que serão exibidos na sua página com um mapa interativo.
+                  </p>
                 </div>
               </CardContent>
             </Card>

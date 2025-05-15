@@ -3,9 +3,11 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { Instagram, Youtube, Facebook, Linkedin, Twitter, MessageCircle, ArrowUpRight } from 'lucide-react';
+import { Instagram, Youtube, Facebook, Linkedin, Twitter, MessageCircle, ArrowUpRight, MapPin } from 'lucide-react';
 import { BsPatchCheckFill } from 'react-icons/bs';
 import { FormModal } from '@/components/FormModal';
+import { LocationMap } from '@/components/ui/location-map';
+import { Address } from '@/components/ui/address-manager';
 
 interface BentoDarkTemplateProps {
   page: {
@@ -16,8 +18,21 @@ interface BentoDarkTemplateProps {
     primaryColor: string;
     blocks: Array<{
       id: string;
-      type: 'BUTTON' | 'FORM';
-      content: any;
+      type: 'BUTTON' | 'FORM' | 'ADDRESS';
+      content: {
+        title?: string;
+        label?: string;
+        url?: string;
+        pipelineId?: string;
+        isModal?: boolean;
+        modalTitle?: string;
+        successPage?: string;
+        address?: string;
+        city?: string;
+        state?: string;
+        zipCode?: string;
+        country?: string;
+      };
     }>;
     socialLinks: Array<{
       platform: 'INSTAGRAM' | 'WHATSAPP' | 'YOUTUBE' | 'FACEBOOK' | 'LINKEDIN' | 'TWITTER';
@@ -169,6 +184,43 @@ const BentoDarkTemplate = ({ page }: BentoDarkTemplateProps) => {
                   </h2>
                   {/* Form implementation */}
                   <p className="text-gray-400">Form coming soon...</p>
+                </div>
+              );
+            }
+
+            if (block.type === 'ADDRESS') {
+              // Criar um objeto de endereço para o LocationMap
+              const addressObject: Address = {
+                id: block.id,
+                name: block.content.city || 'Location',
+                address: `${block.content.address}, ${block.content.city}, ${block.content.state} ${block.content.zipCode}, ${block.content.country}`,
+                isDefault: true
+              };
+              
+              return (
+                <div
+                  key={block.id}
+                  className={cn(
+                    "backdrop-blur-md rounded-2xl p-8 border border-white/10",
+                    index % 3 === 0 ? "md:col-span-2" : ""
+                  )}
+                  style={{ 
+                    background: `linear-gradient(135deg, ${lighterColor}10 0%, ${darkerColor}10 100%)`,
+                  }}
+                >
+                  <h2 
+                    className="text-2xl font-semibold mb-6 flex items-center gap-2"
+                    style={{ color: primaryColor }}
+                  >
+                    <MapPin size={20} />
+                    {block.content.city || 'Location'}
+                  </h2>
+                  <div className="rounded-xl overflow-hidden">
+                    <LocationMap 
+                      addresses={[addressObject]} 
+                      primaryColor={primaryColor}
+                    />
+                  </div>
                 </div>
               );
             }

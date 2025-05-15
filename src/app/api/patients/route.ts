@@ -80,6 +80,14 @@ export async function POST(req: Request) {
       );
     }
 
+    // Verificar se o email é o mesmo do usuário logado
+    if (email === session.user.email) {
+      return NextResponse.json(
+        { error: 'Não é possível usar o mesmo email do médico para o paciente' },
+        { status: 400 }
+      );
+    }
+
     // Verificar se já existe um paciente com este email
     const existingPatient = await db.patient.findFirst({
       where: {
@@ -91,7 +99,7 @@ export async function POST(req: Request) {
     if (existingPatient) {
       return NextResponse.json(
         { error: 'Já existe um paciente com este email' },
-        { status: 400 }
+        { status: 409 }
       );
     }
 
@@ -130,8 +138,17 @@ export async function POST(req: Request) {
   } catch (error) {
     console.error('Erro ao criar paciente:', error);
     
-    // Verificar se é um erro conhecido
+    // Verificar se é um erro de unique constraint do Prisma (email duplicado)
     if (error instanceof Error) {
+      const errorMessage = error.message;
+      
+      if (errorMessage.includes("Unique constraint failed") && errorMessage.includes("email")) {
+        return NextResponse.json(
+          { error: 'Já existe um paciente com este email' },
+          { status: 409 } // 409 Conflict é usado para conflitos de recurso
+        );
+      }
+      
       return NextResponse.json(
         { error: error.message },
         { status: 500 }

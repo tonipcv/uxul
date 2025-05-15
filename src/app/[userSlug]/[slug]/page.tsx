@@ -101,7 +101,7 @@ interface TemplatePageProps {
   primaryColor: string;
   blocks: Array<{
     id: string;
-    type: 'BUTTON' | 'FORM';
+    type: 'BUTTON' | 'FORM' | 'ADDRESS';
     content: {
       title?: string;
       label?: string;
@@ -110,6 +110,11 @@ interface TemplatePageProps {
       isModal?: boolean;
       modalTitle?: string;
       successPage?: string;
+      address?: string;
+      city?: string;
+      state?: string;
+      zipCode?: string;
+      country?: string;
     };
     order: number;
   }>;
@@ -135,7 +140,7 @@ function transformPageContent(page: any, templateType: string): any {
     primaryColor: page.primaryColor,
     blocks: page.blocks.map((block: any) => ({
       id: block.id,
-      type: block.type as 'BUTTON' | 'FORM',
+      type: block.type as 'BUTTON' | 'FORM' | 'ADDRESS',
       content: {
         title: block.content.title,
         label: block.content.label,
@@ -143,7 +148,12 @@ function transformPageContent(page: any, templateType: string): any {
         pipelineId: block.content.pipelineId,
         isModal: block.content.isModal,
         modalTitle: block.content.modalTitle,
-        successPage: block.content.successPage
+        successPage: block.content.successPage,
+        address: block.content.address,
+        city: block.content.city,
+        state: block.content.state,
+        zipCode: block.content.zipCode,
+        country: block.content.country
       },
       order: block.order
     })),
@@ -247,7 +257,7 @@ async function getContent(userSlug: string, slug: string): Promise<ContentRespon
           layout: page.layout,
           blocks: page.blocks.map(block => ({
             id: block.id,
-            type: block.type as 'BUTTON' | 'FORM',
+            type: block.type as 'BUTTON' | 'FORM' | 'ADDRESS',
             content: block.content,
             order: block.order,
           })),
@@ -319,7 +329,7 @@ async function getContent(userSlug: string, slug: string): Promise<ContentRespon
             layout: referral.page.layout,
             blocks: referral.page.blocks.map(block => ({
               id: block.id,
-              type: block.type,
+              type: block.type as 'BUTTON' | 'FORM' | 'ADDRESS',
               content: block.content,
               order: block.order,
             })),

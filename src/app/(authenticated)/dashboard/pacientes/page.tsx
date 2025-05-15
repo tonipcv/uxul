@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from "next-auth/react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -38,6 +38,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import { CSVImportModal } from "@/components/patients/csv-import-modal";
+import { DateTimePicker } from "@/components/ui/date-picker";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -69,7 +70,8 @@ export default function PacientesPage() {
   const [viewingPatient, setViewingPatient] = useState<Patient | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [createStep, setCreateStep] = useState<'personal' | 'clinical'>('personal');
+  const [isSaving, setIsSaving] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
   const [editFormData, setEditFormData] = useState({
     name: "",
     email: "",
@@ -119,7 +121,7 @@ export default function PacientesPage() {
     }
   };
 
-  // Buscar dados reais de pacientes da API
+  // Fetch patients data when session changes
   useEffect(() => {
     fetchPatients();
   }, [session]);
@@ -149,6 +151,37 @@ export default function PacientesPage() {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [isStatusOpen, isCreateStatusOpen]);
+
+  // useEffect to clean up state when create modal is closed
+  useEffect(() => {
+    if (!isCreateModalOpen) {
+      setCreateFormData({
+        name: "",
+        email: "",
+        phone: "",
+        status: "novo",
+        appointmentDate: "",
+        medicalNotes: "",
+        hasPortalAccess: false
+      });
+    }
+  }, [isCreateModalOpen]);
+
+  // useEffect to clean up state when edit/view modals are closed
+  useEffect(() => {
+    if (!isViewModalOpen && !isEditModalOpen) {
+      setViewingPatient(null);
+      setEditingPatient(null);
+      setEditFormData({
+        name: "",
+        email: "",
+        phone: "",
+        status: "novo",
+        appointmentDate: "",
+        medicalNotes: ""
+      });
+    }
+  }, [isViewModalOpen, isEditModalOpen]);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -263,6 +296,20 @@ export default function PacientesPage() {
     }));
   };
 
+  const handleAppointmentDateChange = (date: Date | null) => {
+    setEditFormData(prev => ({ 
+      ...prev, 
+      appointmentDate: date ? date.toISOString() : "" 
+    }));
+  };
+
+  const handleCreateAppointmentDateChange = (date: Date | null) => {
+    setCreateFormData(prev => ({ 
+      ...prev, 
+      appointmentDate: date ? date.toISOString() : "" 
+    }));
+  };
+
   const handleUpdatePatient = async () => {
     if (!editingPatient) return;
 
@@ -276,6 +323,7 @@ export default function PacientesPage() {
       return;
     }
 
+    setIsSaving(true);
     try {
       const response = await fetch(`/api/patients/${editingPatient.id}`, {
         method: 'PUT',
@@ -309,6 +357,7 @@ export default function PacientesPage() {
           description: "As informações do paciente foram atualizadas com sucesso.",
         });
         
+        // Fechando o modal depois de atualizar os dados
         setIsEditModalOpen(false);
       } else {
         throw new Error(data.error || 'Erro ao atualizar paciente');
@@ -320,11 +369,13 @@ export default function PacientesPage() {
         description: error instanceof Error ? error.message : "Não foi possível atualizar o paciente. Tente novamente.",
         variant: "destructive",
       });
+    } finally {
+      setIsSaving(false);
     }
   };
 
   const handleCreateNewPatient = async () => {
-    // Validar campos obrigatórios
+    // Validar campos obrigatórios - only validate required fields (name, email, phone)
     if (!createFormData.name || !createFormData.email || !createFormData.phone) {
       toast({
         title: "Campos obrigatórios",
@@ -345,6 +396,7 @@ export default function PacientesPage() {
       return;
     }
 
+    setIsCreating(true);
     try {
       const response = await fetch('/api/patients', {
         method: 'POST',
@@ -365,6 +417,8 @@ export default function PacientesPage() {
       });
 
       const data = await response.json();
+      
+      console.log('API response:', { status: response.status, data });
 
       if (response.ok) {
         // Adiciona o novo paciente à lista local
@@ -375,29 +429,38 @@ export default function PacientesPage() {
           description: "O novo paciente foi criado com sucesso.",
         });
         
-        // Limpar formulário e fechar modal
-        setCreateFormData({
-          name: "",
-          email: "",
-          phone: "",
-          status: "novo",
-          appointmentDate: "",
-          medicalNotes: "",
-          hasPortalAccess: false
-        });
+        // Fechar modal
         setIsCreateModalOpen(false);
-        setCreateStep('personal');
       } else {
-        // Mostrar mensagem de erro específica da API
+        // Tratar diferentes tipos de erro da API baseado no status code
+        if (response.status === 409) {
+          // Conflito - email duplicado
+          toast({
+            title: "Email já cadastrado",
+            description: "Já existe um paciente cadastrado com este email.",
+            variant: "destructive",
+          });
+        } else {
+          // Outros erros da API
         throw new Error(data.error || 'Erro ao criar paciente');
+        }
       }
     } catch (error) {
       console.error('Erro ao criar paciente:', error);
+      
+      // Exibir a mensagem de erro (se já não foi exibida pelo bloco acima)
+      const errorMessage = error instanceof Error ? error.message : "";
+      
+      // Só exibe o toast se não for um erro 409 (que já foi tratado)
+      if (!errorMessage.includes("Email já cadastrado")) {
       toast({
         title: "Erro",
-        description: error instanceof Error ? error.message : "Não foi possível criar o paciente. Tente novamente.",
+          description: errorMessage || "Não foi possível criar o paciente. Tente novamente.",
         variant: "destructive",
       });
+      }
+    } finally {
+      setIsCreating(false);
     }
   };
 
@@ -473,6 +536,22 @@ export default function PacientesPage() {
     }
   };
 
+  const handleCloseImportModal = () => {
+    setIsImportModalOpen(false);
+  };
+
+  const handleImportComplete = () => {
+    setIsImportModalOpen(false);
+    fetchPatients();
+  };
+
+  // Update the import modal open handler to close dropdowns
+  const handleOpenImportModal = () => {
+    setIsStatusOpen(false);
+    setIsCreateStatusOpen(false);
+    setIsImportModalOpen(true);
+  };
+
   if (loading) {
     return (
       <div className="min-h-[100dvh] bg-gray-100 pt-20 pb-24 md:pt-12 md:pb-16 flex items-center justify-center">
@@ -508,7 +587,7 @@ export default function PacientesPage() {
                     <DocumentTextIcon className="h-4 w-4 mr-2" />
                     <span>Novo Paciente</span>
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setIsImportModalOpen(true)} className="cursor-pointer">
+                  <DropdownMenuItem onClick={handleOpenImportModal} className="cursor-pointer">
                     <TableCellsIcon className="h-4 w-4 mr-2" />
                     <span>Import CSV</span>
                   </DropdownMenuItem>
@@ -706,23 +785,27 @@ export default function PacientesPage() {
         </div>
 
       {/* View Modal */}
-      <Sheet open={isViewModalOpen || isEditModalOpen} onOpenChange={(open) => {
+      <Sheet
+        open={isViewModalOpen || isEditModalOpen}
+        onOpenChange={(open) => {
         if (!open) {
-          setIsViewModalOpen(false);
+            // Close dropdowns
+            setIsStatusOpen(false);
+            setIsCreateStatusOpen(false);
+            
+            // Close modals
+            if (isEditModalOpen) {
           setIsEditModalOpen(false);
-          // Reset form data when closing
-          setEditFormData({
-            name: "",
-            email: "",
-            phone: "",
-            status: "novo",
-            appointmentDate: "",
-            medicalNotes: "",
-          });
-          // Reset viewing patient
-          setViewingPatient(null);
+              setIsViewModalOpen(false);
+            } else {
+              setIsViewModalOpen(false);
+            }
+            
+            // Refresh data
+            fetchPatients();
         }
-      }}>
+        }}
+      >
         <SheetContent side="right" className="w-full sm:max-w-[900px] p-0 bg-gray-50">
           <div className="flex h-full flex-col">
             <div className="px-6 py-4 border-b border-gray-200 bg-white">
@@ -822,14 +905,13 @@ export default function PacientesPage() {
 
                     <div>
                       <Label htmlFor="appointmentDate">Data da Consulta</Label>
-                      <Input 
-                        id="appointmentDate" 
-                        name="appointmentDate"
-                        type="datetime-local"
-                        value={editFormData.appointmentDate}
-                        onChange={handleFormChange}
-                        className="mt-1.5"
+                      <div className="mt-1.5">
+                        <DateTimePicker
+                          date={editFormData.appointmentDate ? new Date(editFormData.appointmentDate) : null}
+                          onChange={handleAppointmentDateChange}
+                          placeholder="Selecione data e hora da consulta"
                       />
+                      </div>
                     </div>
 
                     <div>
@@ -945,13 +1027,18 @@ export default function PacientesPage() {
                 <Button 
                     onClick={handleUpdatePatient}
                     className="h-10"
+                    disabled={isSaving}
                   >
-                    Salvar alterações
+                    {isSaving ? (
+                      <>
+                        <span className="animate-spin rounded-full h-4 w-4 border border-current border-t-transparent mr-2"></span>
+                        Salvando...
+                      </>
+                    ) : "Salvar alterações"}
                   </Button>
                 ) : (
                   <Button 
                   onClick={() => {
-                      setIsViewModalOpen(false);
                       setIsEditModalOpen(true);
                     }}
                     className="h-10"
@@ -969,23 +1056,14 @@ export default function PacientesPage() {
       <Sheet
         open={isCreateModalOpen}
         onOpenChange={(open) => {
-          if (open !== isCreateModalOpen) {
             setIsCreateModalOpen(open);
             if (!open) {
-              setCreateStep('personal');
-              setCreateFormData({
-                name: "",
-                email: "",
-                phone: "",
-                status: "novo",
-                appointmentDate: "",
-                medicalNotes: "",
-                hasPortalAccess: false
-              });
-              // Ensure dropdowns are closed
-              setIsCreateStatusOpen(false);
+            // Close dropdowns
               setIsStatusOpen(false);
-            }
+            setIsCreateStatusOpen(false);
+            
+            // Refresh data
+            fetchPatients();
           }
         }}
       >
@@ -1005,7 +1083,6 @@ export default function PacientesPage() {
             <ScrollArea className="flex-1">
               <div className="p-6">
                 <div className="space-y-6">
-                  {createStep === 'personal' ? (
                     <>
                       <div>
                         <Label htmlFor="name">Nome completo</Label>
@@ -1096,23 +1173,21 @@ export default function PacientesPage() {
                           Enviar acesso ao portal do paciente
                         </label>
                       </div>
-                    </>
-                  ) : (
-                    <>
+
+                    {/* Optional fields - data da consulta e prontuário */}
                       <div>
-                        <Label htmlFor="appointmentDate">Data da Consulta</Label>
-                        <Input
-                          id="appointmentDate"
-                          name="appointmentDate"
-                          type="datetime-local"
-                          value={createFormData.appointmentDate}
-                          onChange={handleCreateFormChange}
-                          className="mt-1.5"
+                      <Label htmlFor="appointmentDate">Data da Consulta (opcional)</Label>
+                      <div className="mt-1.5">
+                        <DateTimePicker
+                          date={createFormData.appointmentDate ? new Date(createFormData.appointmentDate) : null}
+                          onChange={handleCreateAppointmentDateChange}
+                          placeholder="Selecione data e hora da consulta"
                         />
+                      </div>
                       </div>
 
                       <div>
-                        <Label htmlFor="medicalNotes">Prontuário Médico</Label>
+                      <Label htmlFor="medicalNotes">Prontuário Médico (opcional)</Label>
                         <Textarea 
                           id="medicalNotes" 
                           name="medicalNotes"
@@ -1123,7 +1198,6 @@ export default function PacientesPage() {
                         />
                       </div>
                     </>
-                  )}
                 </div>
               </div>
             </ScrollArea>
@@ -1132,37 +1206,22 @@ export default function PacientesPage() {
               <div className="flex justify-end gap-3">
                 <Button 
                   variant="outline" 
-                  onClick={() => {
-                    if (createStep === 'clinical') {
-                      setCreateStep('personal');
-                    } else {
-                      setIsCreateModalOpen(false);
-                      setCreateStep('personal');
-                    }
-                  }}
+                  onClick={() => setIsCreateModalOpen(false)}
                   className="h-10"
                 >
-                  {createStep === 'clinical' ? 'Voltar' : 'Cancelar'}
+                  Cancelar
                 </Button>
                 <Button 
-                  onClick={() => {
-                    if (createStep === 'personal') {
-                      if (!createFormData.name || !createFormData.email || !createFormData.phone) {
-                        toast({
-                          title: "Campos obrigatórios",
-                          description: "Por favor, preencha todos os campos obrigatórios.",
-                          variant: "destructive",
-                        });
-                        return;
-                      }
-                      setCreateStep('clinical');
-                    } else {
-                      handleCreateNewPatient();
-                    }
-                  }}
+                  onClick={handleCreateNewPatient}
                   className="h-10"
+                  disabled={isCreating}
                 >
-                  {createStep === 'personal' ? 'Próximo' : 'Criar Paciente'}
+                  {isCreating ? (
+                    <>
+                      <span className="animate-spin rounded-full h-4 w-4 border border-current border-t-transparent mr-2"></span>
+                      Criando...
+                    </>
+                  ) : "Criar Paciente"}
                 </Button>
               </div>
             </div>
@@ -1173,14 +1232,8 @@ export default function PacientesPage() {
       {/* Add CSV Import Modal */}
       <CSVImportModal
         isOpen={isImportModalOpen}
-        onClose={() => setIsImportModalOpen(false)}
-        onImportComplete={() => {
-          setIsImportModalOpen(false);
-          // Refresh patients list
-          if (session?.user?.id) {
-            fetchPatients();
-          }
-        }}
+        onClose={handleCloseImportModal}
+        onImportComplete={handleImportComplete}
       />
     </>
   );

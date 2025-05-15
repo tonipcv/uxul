@@ -4,11 +4,13 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
-import { Instagram, Youtube, Facebook, Linkedin, Twitter, MessageCircle } from 'lucide-react';
+import { Instagram, Youtube, Facebook, Linkedin, Twitter, MessageCircle, MapPin } from 'lucide-react';
 import { BsPatchCheckFill } from 'react-icons/bs';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { FormModal } from '@/components/FormModal';
+import { LocationMap } from '@/components/ui/location-map';
+import { Address } from '@/components/ui/address-manager';
 
 interface CollorTemplateProps {
   page: {
@@ -19,8 +21,21 @@ interface CollorTemplateProps {
     primaryColor: string;
     blocks: Array<{
       id: string;
-      type: 'BUTTON' | 'FORM';
-      content: any;
+      type: 'BUTTON' | 'FORM' | 'ADDRESS';
+      content: {
+        title?: string;
+        label?: string;
+        url?: string;
+        pipelineId?: string;
+        isModal?: boolean;
+        modalTitle?: string;
+        successPage?: string;
+        address?: string;
+        city?: string;
+        state?: string;
+        zipCode?: string;
+        country?: string;
+      };
     }>;
     socialLinks: Array<{
       platform: 'INSTAGRAM' | 'WHATSAPP' | 'YOUTUBE' | 'FACEBOOK' | 'LINKEDIN' | 'TWITTER';
@@ -262,6 +277,40 @@ const CollorTemplate = ({ page }: CollorTemplateProps) => {
                       Enviar
                     </Button>
                   </form>
+                </div>
+              );
+            }
+
+            if (block.type === 'ADDRESS') {
+              // Criar um objeto de endereço para o LocationMap
+              const addressObject: Address = {
+                id: block.id,
+                name: block.content.city || 'Location',
+                address: `${block.content.address}, ${block.content.city}, ${block.content.state} ${block.content.zipCode}, ${block.content.country}`,
+                isDefault: true
+              };
+              
+              return (
+                <div
+                  key={block.id}
+                  className="backdrop-blur-sm rounded-xl p-8 shadow-xl"
+                  style={{ 
+                    background: `linear-gradient(135deg, ${lighterColor}10 0%, ${darkerColor}10 100%)`,
+                    borderColor: `${primaryColor}20`,
+                    borderWidth: '1px',
+                  }}
+                >
+                  <h2 
+                    className="text-2xl font-semibold mb-6 flex items-center gap-2"
+                    style={{ color: primaryColor }}
+                  >
+                    <MapPin size={20} />
+                    {block.content.city || 'Location'}
+                  </h2>
+                  <LocationMap 
+                    addresses={[addressObject]} 
+                    primaryColor={primaryColor}
+                  />
                 </div>
               );
             }

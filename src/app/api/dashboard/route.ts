@@ -110,7 +110,7 @@ export async function GET(req: NextRequest) {
     // Buscar as origens de tráfego mais comuns
     const topSourcesRaw = await prisma.$queryRaw`
       SELECT "utmSource" as "source", COUNT(*) as "count"
-      FROM "public"."Lead"
+      FROM "Lead"
       WHERE "userId" = ${userId} AND "utmSource" IS NOT NULL
       GROUP BY "utmSource"
       ORDER BY "count" DESC
@@ -157,7 +157,6 @@ export async function GET(req: NextRequest) {
       totalRevenue: Number(totalRevenue),
       potentialRevenue: Number(potentialRevenue),
       revenue: Number(totalRevenue),
-      totalPatients: await prisma.patient.count({ where: { userId } }),
       clickToLeadRate: totalLeads > 0 ? Math.min(Math.round((totalClicks / totalLeads)), 100) : 0
     };
 

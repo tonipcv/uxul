@@ -13,7 +13,7 @@ import { useDebouncedCallback } from 'use-debounce';
 
 interface Block {
   id: string;
-  type: 'BUTTON' | 'FORM';
+  type: 'BUTTON' | 'FORM' | 'ADDRESS';
   content: any;
   order: number;
 }
@@ -79,7 +79,7 @@ export function BlockEditor({ blocks, onBlocksChange, disabled = false }: BlockE
     }
   };
 
-  const handleAddBlock = async (type: 'BUTTON' | 'FORM') => {
+  const handleAddBlock = async (type: 'BUTTON' | 'FORM' | 'ADDRESS') => {
     setIsAddingBlock(true);
     try {
       const newBlock: Block = {
@@ -87,13 +87,21 @@ export function BlockEditor({ blocks, onBlocksChange, disabled = false }: BlockE
         type,
         content: type === 'BUTTON' 
           ? { label: 'New Button', url: '' } 
-          : { 
-              title: 'New Form', 
-              isModal: false, 
-              modalTitle: '',
-              pipelineId: '',
-              successPage: ''
-            },
+          : type === 'FORM' 
+            ? { 
+                title: 'New Form', 
+                isModal: false, 
+                modalTitle: '',
+                pipelineId: '',
+                successPage: ''
+              }
+            : {
+                address: '',
+                city: '',
+                state: '',
+                zipCode: '',
+                country: ''
+              },
         order: localBlocks.length,
       };
       const updatedBlocks = [...localBlocks, newBlock];
@@ -122,7 +130,7 @@ export function BlockEditor({ blocks, onBlocksChange, disabled = false }: BlockE
       setHasUnsavedChanges(true);
       
       toast.success('Bloco removido!', {
-        description: `O ${blockToDelete.type === 'BUTTON' ? 'botão' : 'formulário'} foi excluído com sucesso.`,
+        description: `O ${blockToDelete.type === 'BUTTON' ? 'botão' : blockToDelete.type === 'FORM' ? 'formulário' : 'endereço'} foi excluído com sucesso.`,
         duration: 4000,
         position: 'top-right',
         style: {
@@ -249,6 +257,18 @@ export function BlockEditor({ blocks, onBlocksChange, disabled = false }: BlockE
             )}
             Add Form
           </Button>
+          <Button 
+            onClick={() => handleAddBlock('ADDRESS')} 
+            variant="outline"
+            disabled={disabled || isAddingBlock}
+          >
+            {isAddingBlock ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <PlusCircle className="h-4 w-4 mr-2" />
+            )}
+            Add Address
+          </Button>
         </div>
 
         <div className="flex items-center gap-2">
@@ -361,7 +381,7 @@ export function BlockEditor({ blocks, onBlocksChange, disabled = false }: BlockE
                         />
                       </div>
                     </div>
-                  ) : (
+                  ) : block.type === 'FORM' ? (
                     <div className="space-y-4">
                       <div className="flex items-center gap-2">
                         <FormInput className="h-4 w-4 text-gray-400" />
@@ -464,6 +484,82 @@ export function BlockEditor({ blocks, onBlocksChange, disabled = false }: BlockE
                         <p className="text-xs text-gray-500">
                           URL para onde o usuário será redirecionado após enviar o formulário.
                         </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium">Address Block</span>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor={`address-${block.id}`}>Address</Label>
+                        <Input
+                          id={`address-${block.id}`}
+                          value={block.content.address}
+                          onChange={(e) =>
+                            handleBlockContentChange(block.id, {
+                              ...block.content,
+                              address: e.target.value,
+                            })
+                          }
+                          disabled={disabled}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor={`city-${block.id}`}>City</Label>
+                        <Input
+                          id={`city-${block.id}`}
+                          value={block.content.city}
+                          onChange={(e) =>
+                            handleBlockContentChange(block.id, {
+                              ...block.content,
+                              city: e.target.value,
+                            })
+                          }
+                          disabled={disabled}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor={`state-${block.id}`}>State</Label>
+                        <Input
+                          id={`state-${block.id}`}
+                          value={block.content.state}
+                          onChange={(e) =>
+                            handleBlockContentChange(block.id, {
+                              ...block.content,
+                              state: e.target.value,
+                            })
+                          }
+                          disabled={disabled}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor={`zip-code-${block.id}`}>Zip Code</Label>
+                        <Input
+                          id={`zip-code-${block.id}`}
+                          value={block.content.zipCode}
+                          onChange={(e) =>
+                            handleBlockContentChange(block.id, {
+                              ...block.content,
+                              zipCode: e.target.value,
+                            })
+                          }
+                          disabled={disabled}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor={`country-${block.id}`}>Country</Label>
+                        <Input
+                          id={`country-${block.id}`}
+                          value={block.content.country}
+                          onChange={(e) =>
+                            handleBlockContentChange(block.id, {
+                              ...block.content,
+                              country: e.target.value,
+                            })
+                          }
+                          disabled={disabled}
+                        />
                       </div>
                     </div>
                   )}

@@ -5,23 +5,15 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState, useEffect } from "react";
-import { ArrowRightOnRectangleIcon, CameraIcon, LinkIcon, UserIcon, UserGroupIcon, ClipboardDocumentIcon, SparklesIcon, ShoppingCartIcon, SwatchIcon } from '@heroicons/react/24/outline';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ArrowRightOnRectangleIcon, CameraIcon, LinkIcon, UserIcon, EnvelopeIcon, PhoneIcon } from '@heroicons/react/24/outline';
 import { Label } from "@/components/ui/label";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { toast } from "@/components/ui/use-toast";
-import { Badge } from "@/components/ui/badge";
-import { useUserPlan } from "@/hooks/use-user-plan";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
-import Link from "next/link";
-import { Separator } from "@/components/ui/separator";
 
 export default function ProfilePage() {
   const router = useRouter();
   const { data: session, status } = useSession();
-  const { isPremium, isLoading: isPlanLoading, planExpiresAt, daysRemaining } = useUserPlan();
 
   // Estados para os dados do perfil
   const [isEditing, setIsEditing] = useState(false);
@@ -30,10 +22,7 @@ export default function ProfilePage() {
   const [image, setImage] = useState('');
   const [specialty, setSpecialty] = useState('');
   const [slug, setSlug] = useState('');
-  const [pageTemplate, setPageTemplate] = useState('default');
-  const [leadCount, setLeadCount] = useState(0);
-  const [indicationCount, setIndicationCount] = useState(0);
-  const [baseUrl, setBaseUrl] = useState('');
+  const [phone, setPhone] = useState('');
   
   // Estados de UI
   const [isUploading, setIsUploading] = useState(false);
@@ -46,9 +35,6 @@ export default function ProfilePage() {
   // Efeito para marcar que estamos no cliente
   useEffect(() => {
     setIsClient(true);
-    // Use environment variable instead of window.location.origin
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://med1.app';
-    setBaseUrl(appUrl);
   }, []);
 
   // Efeito para carregar os dados do perfil quando a sessão estiver pronta
@@ -61,7 +47,7 @@ export default function ProfilePage() {
       // Redirecionar para login se não estiver autenticado
       router.push('/auth/signin');
     }
-  }, [status, session, isClient, profileFetched]);
+  }, [status, session, isClient, profileFetched, router]);
 
   const fetchUserProfile = async () => {
     if (!session?.user?.id) return;
@@ -69,36 +55,37 @@ export default function ProfilePage() {
     setIsLoading(true);
     
     try {
-      // Usar AbortController para poder cancelar a requisição se necessário
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 8000);
-      
       const response = await fetch(`/api/users/profile?userId=${session.user.id}`, {
-        signal: controller.signal,
         cache: 'no-store'
       });
       
-      clearTimeout(timeoutId);
-      
       if (response.ok) {
         const data = await response.json();
+        console.log("Dados do perfil:", data); // Debug: verificar dados recebidos
+        
         // Atualizar os estados apenas quando os dados forem recebidos
         setName(data.name || '');
         setEmail(data.email || '');
         setImage(data.image || '');
         setSpecialty(data.specialty || '');
         setSlug(data.slug || '');
-        setPageTemplate(data.pageTemplate || 'default');
-        setLeadCount(data._count?.leads || 0);
-        setIndicationCount(data._count?.indications || 0);
+        setPhone(data.phone || '');
         setProfileFetched(true);
       } else {
         console.error('Erro ao buscar perfil:', response.statusText);
+        toast({
+          title: "Erro",
+          description: "Não foi possível carregar seu perfil. Tente novamente mais tarde.",
+          variant: "destructive"
+        });
       }
     } catch (error) {
-      if ((error as Error).name !== 'AbortError') {
         console.error('Erro ao buscar perfil do usuário:', error);
-      }
+      toast({
+        title: "Erro",
+        description: "Ocorreu um problema ao carregar seus dados.",
+        variant: "destructive"
+      });
     } finally {
       setIsLoading(false);
     }
@@ -149,7 +136,7 @@ export default function ProfilePage() {
           name, 
           image: newImage || image,
           specialty,
-          pageTemplate
+          phone
         }),
       });
 
@@ -171,17 +158,6 @@ export default function ProfilePage() {
     }
   };
 
-  const copyProfileLinkToClipboard = () => {
-    if (isClient && typeof navigator !== 'undefined' && navigator.clipboard) {
-      const profileUrl = `${baseUrl}/${slug}`;
-      navigator.clipboard.writeText(profileUrl);
-      toast({
-        title: "Link copiado",
-        description: "Seu link de perfil foi copiado para a área de transferência",
-      });
-    }
-  };
-
   // Mostrar um spinner enquanto carrega
   if (!isClient || status === 'loading' || (isLoading && !profileFetched)) {
     return (
@@ -192,197 +168,187 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 px-4 pt-6 pb-8 lg:ml-52">
-      <div className="max-w-5xl mx-auto">
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-4 sm:mb-3">
+    <div className="min-h-[100dvh] bg-gray-100 pt-20 pb-24 md:pt-12 md:pb-16 px-4 lg:ml-52">
+      <div className="container mx-auto px-0 sm:pl-4 md:pl-8 lg:pl-0 max-w-[95%] lg:max-w-[90%]">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8">
           <div>
-            <h1 className="text-lg md:text-xl font-bold text-gray-900 tracking-[-0.03em] font-inter">Seu Perfil</h1>
-            <p className="text-xs md:text-sm text-gray-600 tracking-[-0.03em] font-inter">Gerencie seus dados e configurações</p>
+            <h1 className="text-2xl font-bold text-gray-900">Seu Perfil</h1>
+            <p className="text-sm text-gray-600 mt-1">
+              Gerencie suas informações pessoais
+            </p>
           </div>
+          
           {!isEditing && (
-            <div className="flex gap-2 mt-2 md:mt-0">
               <Button 
-                variant="outline" 
-                size="sm"
-                className="bg-gray-800/5 border-0 shadow-[0_4px_12px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.1)] transition-all duration-300 rounded-2xl text-gray-700 hover:bg-gray-800/10 h-8 text-xs"
                 onClick={() => setIsEditing(true)}
+              className="mt-4 md:mt-0 bg-primary hover:bg-primary/90"
               >
                 Editar Perfil
               </Button>
-              <Link href="/settings/interest-options">
-                <Button 
-                  variant="outline"
-                  size="sm"
-                  className="bg-gray-800/5 border-0 shadow-[0_4px_12px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.1)] transition-all duration-300 rounded-2xl text-gray-700 hover:bg-gray-800/10 h-8 text-xs"
-                >
-                  Configurações
-                </Button>
-              </Link>
-            </div>
           )}
         </div>
 
-        {/* Visão geral do perfil */}
-        <Card className="bg-gray-800/5 border-0 shadow-[0_8px_30px_rgba(0,0,0,0.12)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.16)] transition-all duration-300 rounded-2xl mb-4">
-          <CardHeader className="px-4 py-3 sm:p-3">
-            <CardTitle className="text-sm md:text-base font-bold text-gray-900 tracking-[-0.03em] font-inter">
-              Informações Pessoais
-            </CardTitle>
-            <CardDescription className="text-xs text-gray-500 tracking-[-0.03em] font-inter">
-              Dados da sua conta
-            </CardDescription>
+        <Card className="bg-white shadow-md mb-6">
+          <CardHeader className="pb-2">
+            <CardTitle>Informações Pessoais</CardTitle>
+            <CardDescription>Seus dados básicos de contato</CardDescription>
           </CardHeader>
-          <CardContent className="px-4 py-3 sm:p-3">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
-              {/* Foto de perfil */}
-              <div className="flex flex-col items-center space-y-3">
-                <div className="relative group">
-                  <div className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden border border-gray-300 bg-gray-200">
+          
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-[180px_1fr] gap-6">
+              {/* Coluna da foto */}
+              <div className="flex flex-col items-center gap-4">
+                <div className="relative w-32 h-32 mx-auto">
+                  <div className="rounded-full overflow-hidden w-full h-full border-2 border-gray-200">
                     {image ? (
                       <Image
                         src={image}
-                        alt="Profile"
+                        alt={name || "Perfil"}
                         fill
                         className="object-cover"
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-gray-300">
-                        <CameraIcon className="h-10 w-10 text-gray-500" />
+                      <div className="w-full h-full flex items-center justify-center bg-gray-100">
+                        <UserIcon className="h-12 w-12 text-gray-400" />
                       </div>
                     )}
                   </div>
+                  
+                  {!isEditing ? null : (
+                    <>
                   <label 
-                    className="absolute inset-0 flex items-center justify-center bg-gray-800/50 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer rounded-full"
-                    htmlFor="image-upload"
+                        className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 hover:opacity-100 transition-opacity cursor-pointer rounded-full text-white"
+                        htmlFor="profile-photo"
                   >
-                    <CameraIcon className="h-6 w-6 text-white" />
+                        <CameraIcon className="h-8 w-8" />
                   </label>
                   <input
                     type="file"
-                    id="image-upload"
+                        id="profile-photo"
+                        className="hidden"
                     accept="image/*"
-                    className="hidden"
                     onChange={handleImageUpload}
                     disabled={isUploading}
                   />
+                    </>
+                  )}
+                  
                   {isUploading && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-gray-800/50 rounded-full">
-                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full">
+                      <div className="animate-spin rounded-full h-8 w-8 border-4 border-white border-t-transparent"></div>
                     </div>
                   )}
                 </div>
-                <p className="text-xs text-gray-500">
-                  Clique na imagem para alterar sua foto
-                </p>
+                
+                <Button
+                  variant="outline"
+                  onClick={() => signOut({ callbackUrl: '/auth/signin' })}
+                  className="w-full mt-2"
+                >
+                  <ArrowRightOnRectangleIcon className="h-4 w-4 mr-2" />
+                  Sair
+                </Button>
               </div>
 
-              {/* Dados do perfil */}
-              <div className="md:col-span-2 space-y-4">
+              {/* Coluna dos dados */}
+              <div>
                 {isEditing ? (
-                  <div className="space-y-3">
-                    <div className="space-y-1">
-                      <Label className="text-xs text-gray-700 font-medium">Nome</Label>
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="name">Nome</Label>
                       <Input
+                          id="name"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
-                        className="bg-white shadow-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 h-8 text-xs"
+                          placeholder="Seu nome completo"
                       />
                     </div>
 
-                    <div className="space-y-1">
-                      <Label className="text-xs text-gray-700 font-medium">Especialidade</Label>
+                      <div className="space-y-2">
+                        <Label htmlFor="email">Email</Label>
                       <Input
-                        value={specialty}
-                        onChange={(e) => setSpecialty(e.target.value)}
-                        className="bg-white shadow-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 h-8 text-xs"
-                        placeholder="Ex: Cardiologista, Nutricionista..."
+                          id="email"
+                          value={email}
+                          disabled
+                          className="bg-gray-50"
                       />
+                      </div>
                     </div>
                     
-                    <div className="space-y-1">
-                      <Label className="text-xs text-gray-700 font-medium">Email</Label>
-                      <p className="text-xs text-gray-900">{email}</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="specialty">Especialidade</Label>
+                        <Input
+                          id="specialty"
+                          value={specialty}
+                          onChange={(e) => setSpecialty(e.target.value)}
+                          placeholder="Ex: Cardiologista, Dentista..."
+                        />
                     </div>
 
-                    <div className="space-y-1">
-                      <Label className="text-xs text-gray-700 font-medium">Template da Página</Label>
-                      <Select value={pageTemplate} onValueChange={setPageTemplate}>
-                        <SelectTrigger className="bg-white shadow-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 h-8 text-xs">
-                          <SelectValue placeholder="Selecione um template" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-white rounded-xl border border-gray-200 shadow-md">
-                          <SelectItem value="default" className="focus:bg-blue-50 text-xs">Padrão</SelectItem>
-                          <SelectItem value="minimal" className="focus:bg-blue-50 text-xs">Minimalista</SelectItem>
-                          <SelectItem value="pro" className="focus:bg-blue-50 text-xs">Profissional</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <div className="space-y-2">
+                        <Label htmlFor="phone">Telefone</Label>
+                        <Input
+                          id="phone"
+                          value={phone}
+                          onChange={(e) => setPhone(e.target.value)}
+                          placeholder="(00) 00000-0000"
+                        />
+                      </div>
                     </div>
                     
-                    <div className="pt-2 flex gap-2">
+                    <div className="flex gap-2 justify-end mt-4">
                       <Button 
-                        type="button" 
-                        onClick={() => handleSave()}
-                        className="bg-[#6366f1] hover:bg-[#4f46e5] text-white shadow-md shadow-blue-500/20 rounded-xl h-8 text-xs"
-                      >
-                        Salvar Alterações
-                      </Button>
-                      <Button 
-                        type="button" 
                         variant="outline" 
                         onClick={() => setIsEditing(false)}
-                        className="border border-gray-300 bg-white text-gray-700 rounded-xl shadow-sm h-8 text-xs"
                       >
                         Cancelar
+                      </Button>
+                      <Button
+                        onClick={() => handleSave()}
+                      >
+                        Salvar Alterações
                       </Button>
                     </div>
                   </div>
                 ) : (
-                  <div className="space-y-3">
+                  <div className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <h3 className="text-sm font-medium text-gray-500 mb-1">Nome</h3>
+                        <p className="text-gray-900">{name || "-"}</p>
+                      </div>
                     <div>
-                      <h2 className="text-base sm:text-lg font-bold text-gray-900 tracking-[-0.03em] font-inter">{name}</h2>
-                      {specialty && (
-                        <div className="flex items-center mt-1">
-                          <UserIcon className="h-3.5 w-3.5 mr-1 text-gray-500" />
-                          <span className="text-gray-700 text-xs">{specialty}</span>
+                        <h3 className="text-sm font-medium text-gray-500 mb-1">Email</h3>
+                        <div className="flex items-center">
+                          <EnvelopeIcon className="h-4 w-4 mr-1 text-gray-400" />
+                          <p className="text-gray-900">{email || "-"}</p>
                         </div>
-                      )}
+                      </div>
                     </div>
                     
-                    <div className="space-y-1.5">
-                      <div className="flex items-center text-gray-700">
-                        <UserIcon className="h-3.5 w-3.5 mr-1.5 text-gray-500" />
-                        <span className="text-xs">Username: <span className="font-medium">{slug}</span></span>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <h3 className="text-sm font-medium text-gray-500 mb-1">Especialidade</h3>
+                        <p className="text-gray-900">{specialty || "-"}</p>
                       </div>
-                      
-                      <div className="flex items-center text-gray-700">
-                        <LinkIcon className="h-3.5 w-3.5 mr-1.5 text-gray-500" />
-                        <span className="text-xs">Seu link: <span className="text-gray-900">{baseUrl}/{slug}</span></span>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className="ml-1 h-5 w-5 p-0 hover:bg-gray-100 text-gray-500 rounded-lg"
-                          onClick={copyProfileLinkToClipboard}
-                        >
-                          <ClipboardDocumentIcon className="h-3.5 w-3.5" />
-                        </Button>
-                      </div>
-                      
-                      <div className="flex items-center space-x-3 mt-1.5">
-                        <div className="text-xs bg-[#f2f1ff] text-[#8b5cf6] px-1.5 py-0.5 rounded-md flex items-center">
-                          <UserGroupIcon className="h-3.5 w-3.5 inline mr-1" />
-                          {leadCount} leads
-                        </div>
-                        <div className="text-xs bg-[#def6ff] text-[#6366f1] px-1.5 py-0.5 rounded-md flex items-center">
-                          <LinkIcon className="h-3.5 w-3.5 inline mr-1" />
-                          {indicationCount} indicações
-                        </div>
-                        {isPremium && (
-                          <div className="text-xs bg-[#d8fffa] text-[#4ade80] px-1.5 py-0.5 rounded-md flex items-center">
-                            <SparklesIcon className="h-3.5 w-3.5 inline mr-1" />
-                            Premium
+                      <div>
+                        <h3 className="text-sm font-medium text-gray-500 mb-1">Telefone</h3>
+                        {phone ? (
+                          <div className="flex items-center">
+                            <PhoneIcon className="h-4 w-4 mr-1 text-gray-400" />
+                            <p className="text-gray-900">{phone}</p>
                           </div>
+                        ) : (
+                          <p className="text-gray-500 italic">Não informado</p>
                         )}
                       </div>
+                    </div>
+                    
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-500 mb-1">Username</h3>
+                      <p className="text-gray-900">{slug || "-"}</p>
                     </div>
                   </div>
                 )}
@@ -391,78 +357,18 @@ export default function ProfilePage() {
           </CardContent>
         </Card>
 
-        {/* Métricas do usuário */}
-        <Card className="bg-gray-800/5 border-0 shadow-[0_8px_30px_rgba(0,0,0,0.12)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.16)] transition-all duration-300 rounded-2xl mb-4">
-          <CardHeader className="px-4 py-3 sm:p-3">
-            <CardTitle className="text-sm md:text-base font-bold text-gray-900 tracking-[-0.03em] font-inter">
-              Métricas e Estatísticas
-            </CardTitle>
-            <CardDescription className="text-xs text-gray-500 tracking-[-0.03em] font-inter">
-              Desempenho da sua conta
-            </CardDescription>
+        <Card className="bg-white shadow-md">
+          <CardHeader className="pb-2">
+            <CardTitle>Configurações da Conta</CardTitle>
+            <CardDescription>Preferências e opções adicionais</CardDescription>
           </CardHeader>
-          <CardContent className="px-4 py-3 sm:p-3">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <Card className="bg-gray-800/5 border-0 shadow-[0_4px_12px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.1)] transition-all duration-300 rounded-2xl">
-                <CardContent className="p-3">
-                  <div className="flex items-center gap-2 mb-1">
-                    <UserGroupIcon className="h-4 w-4 text-[#8b5cf6]" />
-                    <p className="text-xs text-gray-700">Leads Totais</p>
-                  </div>
-                  <p className="text-lg md:text-xl font-bold text-gray-900">{leadCount}</p>
-                </CardContent>
-              </Card>
-              
-              <Card className="bg-gray-800/5 border-0 shadow-[0_4px_12px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.1)] transition-all duration-300 rounded-2xl">
-                <CardContent className="p-3">
-                  <div className="flex items-center gap-2 mb-1">
-                    <LinkIcon className="h-4 w-4 text-[#6366f1]" />
-                    <p className="text-xs text-gray-700">Links de Indicação</p>
-                  </div>
-                  <p className="text-lg md:text-xl font-bold text-gray-900">{indicationCount}</p>
-                </CardContent>
-              </Card>
-              
-              <Card className="bg-gray-800/5 border-0 shadow-[0_4px_12px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.1)] transition-all duration-300 rounded-2xl">
-                <CardContent className="p-3">
-                  <div className="flex items-center gap-2 mb-1">
-                    <SwatchIcon className="h-4 w-4 text-[#4ade80]" />
-                    <p className="text-xs text-gray-700">Taxa de Conversão</p>
-                  </div>
-                  <p className="text-lg md:text-xl font-bold text-gray-900">
-                    {indicationCount && leadCount
-                      ? `${Math.round((leadCount / indicationCount) * 100)}%`
-                      : "0%"}
-                  </p>
-                </CardContent>
-              </Card>
-              
-              <Card className="bg-gray-800/5 border-0 shadow-[0_4px_12px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.1)] transition-all duration-300 rounded-2xl">
-                <CardContent className="p-3">
-                  <div className="flex items-center gap-2 mb-1">
-                    <ShoppingCartIcon className="h-4 w-4 text-gray-700" />
-                    <p className="text-xs text-gray-700">Status da Conta</p>
-                  </div>
-                  <p className="text-lg md:text-xl font-bold text-gray-900">
-                    {isPremium ? "Premium" : "Free"}
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
+          
+          <CardContent>
+            <p className="text-gray-600 mb-4">
+              Para alterar sua senha ou informações avançadas, entre em contato com o suporte.
+            </p>
           </CardContent>
         </Card>
-
-        {/* Botão de Logout */}
-        <div className="pt-1">
-          <Button 
-            variant="outline" 
-            className="w-full bg-gray-800/5 border-0 shadow-[0_4px_12px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.1)] transition-all duration-300 rounded-2xl text-gray-700 hover:bg-gray-800/10 h-8 text-xs"
-            onClick={() => signOut({ callbackUrl: '/auth/signin' })}
-          >
-            <ArrowRightOnRectangleIcon className="h-3.5 w-3.5 mr-1.5" />
-            Sair da Conta
-          </Button>
-        </div>
       </div>
     </div>
   );

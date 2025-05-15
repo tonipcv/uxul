@@ -2,11 +2,12 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Instagram, Youtube, Facebook, Linkedin, Twitter, MessageCircle } from 'lucide-react';
-import { BsPatchCheckFill } from 'react-icons/bs';
+import { Instagram, Youtube, Facebook, Linkedin, Twitter, MessageCircle, MapPin } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { FormModal } from '@/components/FormModal';
+import { LocationMap } from '@/components/ui/location-map';
+import { Address } from '@/components/ui/address-manager';
 
 const PLATFORM_ICONS = {
   INSTAGRAM: Instagram,
@@ -18,17 +19,18 @@ const PLATFORM_ICONS = {
   TIKTOK: MessageCircle,
 };
 
+// Componente de verificação 
 const VerifiedBadge = () => (
   <svg
-    width="18"
-    height="18"
-    viewBox="0 0 18 18"
+    width="16"
+    height="16"
+    viewBox="0 0 16 16"
     fill="none"
     xmlns="http://www.w3.org/2000/svg"
   >
-    <circle cx="9" cy="9" r="9" fill="#0095F6"/>
+    <circle cx="8" cy="8" r="8" fill="#0095F6"/>
     <path
-      d="M13.093 6.436a.75.75 0 0 0-1.036-.248l-3.144 2.115-1.17-1.635a.75.75 0 0 0-1.222.873l1.75 2.444a.75.75 0 0 0 1.129.076l3.75-3.125a.75.75 0 0 0-.057-1.5z"
+      d="M11.5 6.5a.75.75 0 0 0-1.036-.248l-2.464 1.65-.87-1.218a.75.75 0 0 0-1.225.873l1.3 1.82a.75.75 0 0 0 1.129.076l3.25-2.703a.75.75 0 0 0-.084-1.25z"
       fill="#fff"
     />
   </svg>
@@ -52,6 +54,11 @@ interface MinimalTemplateProps {
         isModal?: boolean;
         modalTitle?: string;
         successPage?: string;
+        address?: string;
+        city?: string;
+        state?: string;
+        zipCode?: string;
+        country?: string;
       };
       order: number;
     }>;
@@ -104,42 +111,45 @@ export default function MinimalTemplate({ page }: MinimalTemplateProps) {
     }
   };
 
+  // Ajustar as cores
+  const primaryColor = page.primaryColor;
+
   return (
     <div className="min-h-screen bg-white py-16 px-4 sm:px-6">
-      <div className="max-w-lg mx-auto space-y-8">
-        {/* Header */}
-        <div className="text-center space-y-4">
+      <div className="max-w-lg mx-auto space-y-10">
+        {/* Header - Design minimalista profissional */}
+        <div className="text-center space-y-5">
           <div className="relative w-24 h-24 mx-auto mb-6">
             <img
               src={page.avatarUrl || page.user.image || '/default-avatar.png'}
               alt={page.user.name}
-              className="w-full h-full object-cover rounded-full shadow-lg"
+              className="w-full h-full object-cover rounded-full shadow-md"
             />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 flex items-center justify-center gap-2">
+          <h1 className="text-2xl font-medium tracking-tight text-gray-800 flex items-center justify-center gap-2">
             {page.user.name}
-            <div className="rounded-full drop-shadow-[0_2px_4px_rgba(0,149,246,0.2)]">
-              <BsPatchCheckFill size={24} className="text-[#0095F6]" />
-            </div>
+            <span className="ml-1">
+              <VerifiedBadge />
+            </span>
           </h1>
           {page.user.specialty && (
-            <p className="text-gray-600 text-lg">{page.user.specialty}</p>
+            <p className="text-gray-600 text-base font-normal">{page.user.specialty}</p>
           )}
           {page.subtitle && (
-            <p className="text-gray-600 text-base">{page.subtitle}</p>
+            <p className="text-gray-500 text-sm max-w-sm mx-auto mt-2">{page.subtitle}</p>
           )}
         </div>
 
-        {/* Content Blocks */}
-        <div className="space-y-3">
+        {/* Content Blocks - Design minimalista profissional */}
+        <div className="space-y-4">
           {page.blocks.map((block) => {
             if (block.type === 'BUTTON') {
               return (
                 <Button
                   key={block.id}
-                  className="w-full py-4 text-base font-medium rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+                  className="w-full py-3 text-base font-medium rounded-md shadow-sm hover:shadow-md transition-all duration-300"
                   style={{
-                    backgroundColor: page.primaryColor,
+                    backgroundColor: primaryColor,
                     color: 'white',
                   }}
                   asChild
@@ -161,9 +171,9 @@ export default function MinimalTemplate({ page }: MinimalTemplateProps) {
                 return (
                   <Button
                     key={block.id}
-                    className="w-full py-4 text-base font-medium rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+                    className="w-full py-3 text-base font-medium rounded-md shadow-sm hover:shadow-md transition-all duration-300"
                     style={{
-                      backgroundColor: page.primaryColor,
+                      backgroundColor: primaryColor,
                       color: 'white',
                     }}
                     onClick={() => {
@@ -179,22 +189,22 @@ export default function MinimalTemplate({ page }: MinimalTemplateProps) {
               return (
                 <div
                   key={block.id}
-                  className="bg-gray-50 rounded-xl p-4 shadow-lg"
+                  className="bg-gray-50 rounded-md p-5 shadow-sm border border-gray-100"
                 >
                   <h2 
-                    className="text-lg font-medium mb-3"
-                    style={{ color: page.primaryColor }}
+                    className="text-base font-medium mb-4"
+                    style={{ color: primaryColor }}
                   >
                     {block.content.title}
                   </h2>
-                  <form onSubmit={(e) => handleSubmit(e, block)} className="space-y-4">
+                  <form onSubmit={(e) => handleSubmit(e, block)} className="space-y-3">
                     <div>
                       <Label htmlFor="name" className="text-sm text-gray-600">Nome</Label>
                       <Input 
                         id="name" 
                         name="name"
                         placeholder="Seu nome completo"
-                        className="mt-1"
+                        className="mt-1 text-sm"
                         required
                       />
                     </div>
@@ -205,7 +215,7 @@ export default function MinimalTemplate({ page }: MinimalTemplateProps) {
                         name="email"
                         type="email"
                         placeholder="seu@email.com"
-                        className="mt-1"
+                        className="mt-1 text-sm"
                         required
                       />
                     </div>
@@ -215,15 +225,15 @@ export default function MinimalTemplate({ page }: MinimalTemplateProps) {
                         id="phone" 
                         name="phone"
                         placeholder="(00) 00000-0000"
-                        className="mt-1"
+                        className="mt-1 text-sm"
                         required
                       />
                     </div>
                     <Button 
                       type="submit"
-                      className="w-full"
+                      className="w-full mt-2 font-medium"
                       style={{
-                        backgroundColor: page.primaryColor,
+                        backgroundColor: primaryColor,
                         color: 'white',
                       }}
                     >
@@ -234,13 +244,43 @@ export default function MinimalTemplate({ page }: MinimalTemplateProps) {
               );
             }
 
+            if (block.type === 'ADDRESS') {
+              // Criar um objeto de endereço para o LocationMap
+              const addressObject: Address = {
+                id: block.id,
+                name: block.content.city || 'Location',
+                address: `${block.content.address}, ${block.content.city}, ${block.content.state} ${block.content.zipCode}, ${block.content.country}`,
+                isDefault: true
+              };
+              
+              return (
+                <div
+                  key={block.id}
+                  className="bg-gray-50 rounded-md p-5 shadow-sm border border-gray-100"
+                >
+                  <h2 
+                    className="text-base font-medium mb-4 flex items-center gap-2"
+                    style={{ color: primaryColor }}
+                  >
+                    <MapPin size={16} />
+                    {block.content.city || 'Location'}
+                  </h2>
+                  <LocationMap 
+                    addresses={[addressObject]} 
+                    primaryColor={primaryColor}
+                    height="180px"
+                  />
+                </div>
+              );
+            }
+
             return null;
           })}
         </div>
 
-        {/* Social Links */}
+        {/* Social Links - Design minimalista profissional */}
         {page.socialLinks.length > 0 && (
-          <div className="flex justify-center gap-3 mt-6">
+          <div className="flex justify-center gap-4 mt-8">
             {page.socialLinks.map((link) => {
               const Icon = PLATFORM_ICONS[link.platform] || MessageCircle;
               return (
@@ -249,8 +289,7 @@ export default function MinimalTemplate({ page }: MinimalTemplateProps) {
                   href={link.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-gray-600 hover:text-gray-900 transition-colors duration-200"
-                  style={{ color: page.primaryColor + '90' }}
+                  className="text-gray-500 hover:text-gray-700 transition-colors duration-200"
                 >
                   <Icon className="h-5 w-5" />
                 </a>
@@ -259,9 +298,9 @@ export default function MinimalTemplate({ page }: MinimalTemplateProps) {
           </div>
         )}
 
-        {/* Footer */}
+        {/* Footer - Design minimalista profissional */}
         <div className="text-center text-xs text-gray-400 pt-6">
-          <p className="opacity-75">Created with Med1</p>
+          <p className="opacity-70">Created with Med1</p>
         </div>
       </div>
 

@@ -38,7 +38,7 @@ export async function PUT(
 
     // Validar cada bloco
     for (const block of blocks) {
-      if (!block.type || !['BUTTON', 'FORM'].includes(block.type)) {
+      if (!block.type || !['BUTTON', 'FORM', 'ADDRESS'].includes(block.type)) {
         return NextResponse.json(
           { error: 'Invalid block type' },
           { status: 400 }

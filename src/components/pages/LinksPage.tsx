@@ -1,5 +1,7 @@
 import { Button } from '@/components/ui/button';
-import { Instagram, Youtube, Facebook, Linkedin, Twitter, MessageCircle } from 'lucide-react';
+import { Instagram, Youtube, Facebook, Linkedin, Twitter, MessageCircle, MapPin } from 'lucide-react';
+import { LocationMap } from '@/components/ui/location-map';
+import { Address } from '@/components/ui/address-manager';
 
 const PLATFORM_ICONS = {
   INSTAGRAM: Instagram,
@@ -17,6 +19,8 @@ interface LinksPageProps {
     subtitle?: string;
     avatarUrl?: string;
     primaryColor: string;
+    address?: string;
+    addresses?: Address[];
     blocks: Array<{
       id: string;
       type: string;
@@ -35,6 +39,9 @@ interface LinksPageProps {
 }
 
 export default function LinksPage({ page }: LinksPageProps) {
+  // Verificar se tem endereços disponíveis (novo formato ou legado)
+  const hasAddresses = (page.addresses && page.addresses.length > 0) || !!page.address;
+  
   return (
     <div
       className="min-h-screen py-12 px-4"
@@ -60,6 +67,17 @@ export default function LinksPage({ page }: LinksPageProps) {
             <p className="text-gray-600">{page.subtitle}</p>
           )}
         </div>
+
+        {/* Location Map */}
+        {hasAddresses && (
+          <div className="space-y-3">
+            <LocationMap 
+              addresses={page.addresses} 
+              address={page.address} 
+              primaryColor={page.primaryColor}
+            />
+          </div>
+        )}
 
         {/* Social Links */}
         {page.socialLinks.length > 0 && (
@@ -123,6 +141,36 @@ export default function LinksPage({ page }: LinksPageProps) {
                   </h2>
                   {/* Form implementation will be added later */}
                   <p className="text-gray-500">Form coming soon...</p>
+                </div>
+              );
+            }
+
+            if (block.type === 'ADDRESS') {
+              // Criar um objeto de endereço para o LocationMap
+              const addressObject: Address = {
+                id: block.id,
+                name: block.content.city || 'Location',
+                address: `${block.content.address}, ${block.content.city}, ${block.content.state} ${block.content.zipCode}, ${block.content.country}`,
+                isDefault: true
+              };
+              
+              return (
+                <div
+                  key={block.id}
+                  className="bg-white rounded-lg shadow-lg p-6 transform transition-all duration-300 hover:shadow-xl"
+                  style={{ borderColor: page.primaryColor + '20', borderWidth: '1px' }}
+                >
+                  <h2 
+                    className="text-xl font-semibold mb-4 flex items-center gap-2"
+                    style={{ color: page.primaryColor }}
+                  >
+                    <MapPin size={18} />
+                    {block.content.city || 'Location'}
+                  </h2>
+                  <LocationMap 
+                    addresses={[addressObject]} 
+                    primaryColor={page.primaryColor}
+                  />
                 </div>
               );
             }

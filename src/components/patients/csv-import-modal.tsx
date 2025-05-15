@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -41,7 +41,15 @@ export function CSVImportModal({ isOpen, onClose, onImportComplete }: CSVImportM
   const [headers, setHeaders] = useState<string[]>([]);
   const [previewData, setPreviewData] = useState<string[][]>([]);
   const [fieldMapping, setFieldMapping] = useState<Record<string, string>>({});
+  const [isImporting, setIsImporting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Reset state when modal closes
+  useEffect(() => {
+    if (!isOpen) {
+      resetState();
+    }
+  }, [isOpen]);
 
   const resetState = () => {
     setStep('upload');
@@ -49,13 +57,13 @@ export function CSVImportModal({ isOpen, onClose, onImportComplete }: CSVImportM
     setHeaders([]);
     setPreviewData([]);
     setFieldMapping({});
+    setIsImporting(false);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
   };
 
   const handleClose = () => {
-    resetState();
     onClose();
   };
 
@@ -118,6 +126,7 @@ export function CSVImportModal({ isOpen, onClose, onImportComplete }: CSVImportM
   const handleImport = async () => {
     if (!file || !validateMapping()) return;
 
+    setIsImporting(true);
     try {
       const content = await file.text();
       const { data } = parseCSV(content);
@@ -164,11 +173,20 @@ export function CSVImportModal({ isOpen, onClose, onImportComplete }: CSVImportM
         description: "Não foi possível importar os pacientes. Tente novamente.",
         variant: "destructive"
       });
+    } finally {
+      setIsImporting(false);
     }
   };
 
   return (
-    <Sheet open={isOpen} onOpenChange={handleClose}>
+    <Sheet 
+      open={isOpen} 
+      onOpenChange={(open) => {
+        if (!open) {
+          handleClose();
+        }
+      }}
+    >
       <SheetContent className="w-full sm:max-w-xl overflow-y-auto">
         <SheetHeader>
           <SheetTitle className="text-lg font-bold text-gray-900">
@@ -278,9 +296,14 @@ export function CSVImportModal({ isOpen, onClose, onImportComplete }: CSVImportM
                 </Button>
                 <Button
                   onClick={handleImport}
-                  disabled={!validateMapping()}
+                  disabled={!validateMapping() || isImporting}
                 >
-                  Importar
+                  {isImporting ? (
+                    <>
+                      <span className="animate-spin rounded-full h-4 w-4 border border-current border-t-transparent mr-2"></span>
+                      Importando...
+                    </>
+                  ) : "Importar"}
                 </Button>
               </div>
             </div>
