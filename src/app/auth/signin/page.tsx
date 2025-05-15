@@ -43,7 +43,7 @@ function SignInContent() {
     setLoginError("");
 
     try {
-      console.log("Tentando login com:", email);
+      console.log("Iniciando processo de login com:", email);
       const result = await signIn('credentials', {
         email,
         password,
@@ -52,6 +52,8 @@ function SignInContent() {
         callbackUrl
       });
 
+      console.log("Resultado do login:", result);
+
       if (result?.error) {
         console.error("Erro no login:", result.error);
         setLoginError(result.error);
@@ -59,9 +61,12 @@ function SignInContent() {
       }
 
       if (result?.ok) {
-        console.log("Login bem-sucedido, redirecionando para:", callbackUrl);
-        router.push(callbackUrl);
-        router.refresh();
+        console.log("Login bem-sucedido, aguardando sessão...");
+        // Aguarda um momento para a sessão ser atualizada
+        setTimeout(() => {
+          console.log("Redirecionando para:", callbackUrl);
+          window.location.href = callbackUrl;
+        }, 1000);
       }
     } catch (err) {
       console.error("Erro ao fazer login:", err);

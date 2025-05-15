@@ -19,30 +19,37 @@ const publicRoutes = [
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  console.log('Middleware - Pathname:', pathname);
   
   // Verificar se o usuário está autenticado
   const token = await getToken({ req: request });
-  const isAuthenticated = !!token;
+  console.log('Middleware - Token existe:', !!token);
 
   // Verificar se é uma rota pública
   const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route));
+  console.log('Middleware - É rota pública:', isPublicRoute);
 
   if (isPublicRoute) {
     // Se estiver autenticado e tentando acessar página de login/registro, redireciona para dashboard
-    if (isAuthenticated && (pathname.startsWith('/auth/signin') || pathname.startsWith('/auth/register'))) {
+    if (token && (pathname.startsWith('/auth/signin') || pathname.startsWith('/auth/register'))) {
+      console.log('Middleware - Usuário autenticado tentando acessar rota pública, redirecionando para dashboard');
       return NextResponse.redirect(new URL('/dashboard', request.url));
     }
     return NextResponse.next();
   }
 
   // Redirecionar para o dashboard para raiz quando estiver autenticado
-  if (pathname === '/' && isAuthenticated) {
+  if (pathname === '/' && token) {
+    console.log('Middleware - Redirecionando raiz para dashboard');
     return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 
   // Verificar se é uma rota que precisa de autenticação
-  if (!isAuthenticated && !isPublicRoute && pathname !== '/') {
-    return NextResponse.redirect(new URL('/auth/signin', request.url));
+  if (!token && !isPublicRoute && pathname !== '/') {
+    console.log('Middleware - Usuário não autenticado tentando acessar rota protegida');
+    const signInUrl = new URL('/auth/signin', request.url);
+    signInUrl.searchParams.set('callbackUrl', pathname);
+    return NextResponse.redirect(signInUrl);
   }
 
   // Verificar se é uma rota do portal do paciente
@@ -72,6 +79,7 @@ export async function middleware(request: NextRequest) {
     }
   }
 
+  console.log('Middleware - Permitindo acesso');
   return NextResponse.next();
 }
 
