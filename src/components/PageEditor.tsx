@@ -32,9 +32,16 @@ interface Page {
   };
 }
 
+interface Block {
+  id: string;
+  type: 'BUTTON' | 'FORM' | 'ADDRESS';
+  content: any;
+  order: number;
+}
+
 interface PageBlock {
   id: string;
-  type: 'BUTTON' | 'FORM';
+  type: 'BUTTON' | 'FORM' | 'ADDRESS';
   content: any;
   order: number;
 }
@@ -115,10 +122,12 @@ export function PageEditor({ pageId }: PageEditorProps) {
     setPage({ ...page, [field]: value });
   };
 
-  const handleBlocksChange = async (newBlocks: PageBlock[]) => {
+  const handleBlocksChange = async (newBlocks: Block[]) => {
     if (!page) return;
     
     try {
+      setIsLoading(true);
+      
       const response = await fetch(`/api/pages/${pageId}/blocks`, {
         method: 'PUT',
         headers: {
@@ -128,24 +137,24 @@ export function PageEditor({ pageId }: PageEditorProps) {
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to update blocks');
+        throw new Error('Erro ao atualizar blocos');
       }
-      
-      setPage(prevPage => ({
-        ...prevPage!,
-        blocks: newBlocks
-      }));
+
+      const updatedBlocks = await response.json();
+      setPage((prevPage) => {
+        if (!prevPage) return null;
+        return {
+          ...prevPage,
+          blocks: updatedBlocks,
+        };
+      });
+
+      toast.success('Blocos atualizados com sucesso');
     } catch (error) {
-      console.error('Error updating blocks:', error);
-      toast.error(error instanceof Error ? error.message : 'Error updating blocks');
-      
-      const pageResponse = await fetch(`/api/pages/${pageId}`);
-      if (pageResponse.ok) {
-        const updatedPage = await pageResponse.json();
-        setPage(updatedPage);
-      }
-      throw error;
+      console.error('Erro ao atualizar blocos:', error);
+      toast.error('Ocorreu um erro ao atualizar os blocos');
+    } finally {
+      setIsLoading(false);
     }
   };
 

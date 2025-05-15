@@ -14,7 +14,7 @@ declare module 'next-auth' {
     id: string;
     email: string;
     name: string;
-    type: 'user' | 'patient';
+    type: 'user';
     userSlug?: string;
     image?: string | null;
     plan?: string;
@@ -47,42 +47,6 @@ export const authOptions: AuthOptions = {
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
           throw new Error('Email e senha são obrigatórios');
-        }
-
-        if (credentials.type === 'patient') {
-          const patient = await prisma.patient.findFirst({
-            where: { email: credentials.email },
-            include: {
-              user: {
-                select: {
-                  slug: true,
-                  plan: true
-                }
-              }
-            }
-          });
-
-          if (!patient) {
-            throw new Error('Email não encontrado');
-          }
-
-          if (!patient.hasPassword || !patient.password) {
-            throw new Error('Conta sem senha definida');
-          }
-
-          const passwordValid = await compare(credentials.password, patient.password);
-          if (!passwordValid) {
-            throw new Error('Senha incorreta');
-          }
-
-          return {
-            id: patient.id,
-            email: patient.email,
-            name: patient.name,
-            type: 'patient' as const,
-            userSlug: patient.user?.slug,
-            plan: patient.user?.plan || undefined
-          };
         }
 
         const user = await prisma.user.findUnique({
@@ -141,7 +105,7 @@ export const authOptions: AuthOptions = {
           ...session.user,
           id: token.id,
           email: token.email,
-          type: token.type as 'user' | 'patient',
+          type: token.type as 'user',
           userSlug: token.userSlug as string | undefined,
           image: token.image as string | null | undefined,
           plan: token.plan
