@@ -148,12 +148,6 @@ function SignInContent() {
             >
               Forgot your password?
             </Link>
-            <Link 
-              href="/auth/register" 
-              className="text-gray-600 hover:text-black text-sm"
-            >
-              Don't have an account? Sign up
-            </Link>
           </div>
         </div>
       </div>
