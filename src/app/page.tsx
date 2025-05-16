@@ -13,7 +13,7 @@ export default function Home() {
     if (status === 'loading') return;
 
     if (session) {
-      router.push('/dashboard');
+      router.push('/dre');
     } else {
       router.push('/auth/signin');
     }

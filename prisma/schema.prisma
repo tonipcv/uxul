@@ -323,3 +323,36 @@ model ContactInteraction {
 
   @@index([outboundId])
 }
+
+model FactEntry {
+  id                     Int      @id @default(autoincrement())
+  period                 String   // Ex: "2025-01"
+  version                String   // Ex: "Actual"
+  scenario               String   // Ex: "Base Case"
+  bu                     String   // Unidade de Negócio
+  region                 String
+  channel                String
+  productSku             String
+  customer               String
+  costCenterCode         String
+  glAccount              String
+  pnlLine                String   // Ex: Net Revenue, SG&A, etc.
+  value                  Float
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+  importedAt             DateTime @default(now())
+  product                ProductInfo @relation(fields: [productSku], references: [sku])
+  costCenter             CostCenterInfo @relation(fields: [costCenterCode], references: [code])
+}
+
+model ProductInfo {
+  sku                   String   @id // mesma chave do FactEntry
+  description           String?
+  factEntries          FactEntry[]
+}
+
+model CostCenterInfo {
+  code                  String   @id
+  description           String?
+  factEntries          FactEntry[]
+}

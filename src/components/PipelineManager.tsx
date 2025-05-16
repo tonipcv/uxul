@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { toast } from "@/components/ui/use-toast";
+import { useToast } from "@/components/ui/use-toast";
 import { PlusIcon } from "@heroicons/react/24/outline";
 
 interface Pipeline {
@@ -27,6 +27,7 @@ interface PipelineManagerProps {
 }
 
 export function PipelineManager({ pipelines, currentPipelineId, onPipelineChange, onPipelineCreate }: PipelineManagerProps) {
+  const { toast } = useToast();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [newPipeline, setNewPipeline] = useState({
     name: '',

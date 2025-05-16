@@ -28,7 +28,7 @@ const toastState = {
   listeners: [] as Function[],
 };
 
-export function toast(props: ToastProps) {
+function toast(props: ToastProps) {
   // Usar um ID sequencial, que é determinístico
   const id = `toast-${++idCounter}`;
   const toast = {
@@ -60,11 +60,11 @@ export function useToast() {
     };
   }, []);
   
-  return toasts;
+  return { toast, toasts };
 }
 
 export default function Toaster() {
-  const toasts = useToast();
+  const { toasts } = useToast();
   const [isClient, setIsClient] = useState(false);
   
   useEffect(() => {

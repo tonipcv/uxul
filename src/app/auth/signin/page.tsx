@@ -11,7 +11,14 @@ import { useRouter, useSearchParams } from "next/navigation";
 
 export default function SignIn() {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="animate-pulse">
+          <div className="h-12 w-12 bg-gray-200 rounded-lg mb-8"></div>
+          <div className="h-[400px] w-[480px] bg-gray-100 rounded-xl"></div>
+        </div>
+      </div>
+    }>
       <SignInContent />
     </Suspense>
   );
@@ -28,6 +35,7 @@ function SignInContent() {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [loginError, setLoginError] = useState("");
+  const [logoError, setLogoError] = useState(false);
 
   // Redirecionar se já estiver autenticado
   useEffect(() => {
@@ -91,16 +99,23 @@ function SignInContent() {
   return (
     <div className="min-h-screen bg-white relative flex items-center justify-center">
       <div className="w-full max-w-[480px] mx-auto px-4">
-        <div className="flex justify-center mb-8 items-center gap-3">
-          <Image
-            src="/logo.png"
-            alt="Logo"
-            width={48}
-            height={48}
-            priority
-            className="h-12 w-12"
-          />
-          <span className="text-3xl font-semibold text-[#5c5b60]"></span>
+        <div className="flex justify-center mb-8">
+          <div className="relative h-16 w-16">
+            {!logoError ? (
+              <Image
+                src="/logo.png"
+                alt="Logo"
+                fill
+                priority
+                className="object-contain"
+                onError={() => setLogoError(true)}
+              />
+            ) : (
+              <div className="h-16 w-16 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-2xl">
+                U
+              </div>
+            )}
+          </div>
         </div>
         
         <div className="bg-white rounded-xl p-8 border border-gray-200 shadow-sm">

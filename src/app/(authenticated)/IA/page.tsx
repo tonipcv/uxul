@@ -29,13 +29,13 @@ export default function IAPage() {
     setIsLoading(true);
 
     try {
-      const response = await fetch('/api/ai/chat', {
+      const response = await fetch('/api/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          message: userMessage,
+          messages: [{ role: 'user', content: userMessage }],
         }),
       });
 
@@ -43,11 +43,41 @@ export default function IAPage() {
         throw new Error('Erro ao processar mensagem');
       }
 
-      const data = await response.json();
-      setMessages(prev => [...prev, { role: 'assistant', content: data.response }]);
+      if (!response.body) {
+        throw new Error('Resposta sem conteúdo');
+      }
+
+      // Processar o stream
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let assistantMessage = '';
+
+      // Adicionar mensagem vazia do assistente que será atualizada
+      setMessages(prev => [...prev, { role: 'assistant', content: '' }]);
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        // Decodificar o chunk e adicionar diretamente à mensagem
+        const chunk = decoder.decode(value);
+        assistantMessage += chunk;
+        
+        // Atualizar a última mensagem com o conteúdo acumulado
+        setMessages(prev => {
+          const newMessages = [...prev];
+          newMessages[newMessages.length - 1] = {
+            role: 'assistant',
+            content: assistantMessage
+          };
+          return newMessages;
+        });
+      }
     } catch (error) {
       console.error('Erro:', error);
       toast.error('Erro ao processar sua mensagem. Tente novamente.');
+      // Remover a última mensagem em caso de erro
+      setMessages(prev => prev.slice(0, -1));
     } finally {
       setIsLoading(false);
     }
