@@ -8,6 +8,7 @@ import {
   ChartBarIcon,
   SparklesIcon,
   CalculatorIcon,
+  TableCellsIcon,
 } from '@heroicons/react/24/outline';
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -40,7 +41,8 @@ export default function Navigation() {
     '/outbound',
     '/dre',
     '/ia',
-    '/formulas'
+    '/formulas',
+    '/pivot'
   ];
 
   // Só mostrar navegação em rotas protegidas
@@ -76,6 +78,12 @@ export default function Navigation() {
           label: 'Fórmulas',
           icon: CalculatorIcon,
           description: 'Fórmulas básicas do P&L'
+        },
+        {
+          href: '/pivot',
+          label: 'Pivot Table',
+          icon: TableCellsIcon,
+          description: 'Análise dinâmica dos dados'
         },
       ]
     }

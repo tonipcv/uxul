@@ -1,8 +1,9 @@
 import './globals.css'
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
-import { Providers } from '@/components/providers'
-import { Toaster } from 'sonner'
+import { Providers } from './providers'
+import { AuthProvider } from './auth-provider'
+import { Toaster } from '@/components/ui/toaster'
 import { cn } from '@/lib/utils'
 import Script from 'next/script'
 
@@ -84,8 +85,10 @@ export default function RootLayout({
           />
         </noscript>
         <Providers>
-          {children}
-          <Toaster richColors position="top-right" />
+          <AuthProvider>
+            {children}
+            <Toaster />
+          </AuthProvider>
         </Providers>
       </body>
     </html>
