@@ -10,6 +10,7 @@ import {
   SortingState,
   getFilteredRowModel,
   RowSelectionState,
+  ColumnFiltersState,
 } from "@tanstack/react-table";
 import {
   Table,
@@ -23,9 +24,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/components/ui/use-toast";
-import { TrashIcon } from "@heroicons/react/24/outline";
-import React from "react";
+import { TrashIcon, ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -36,11 +44,12 @@ export function DataTable<TData, TValue>({
   columns,
   data,
 }: DataTableProps<TData, TValue>) {
-  const [sorting, setSorting] = React.useState<SortingState>([]);
+  const [sorting, setSorting] = useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = React.useState("");
   const [rowSelection, setRowSelection] = React.useState<RowSelectionState>({});
   const [isDeleting, setIsDeleting] = React.useState(false);
   const [selectAll, setSelectAll] = React.useState(false);
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const { toast } = useToast();
   const router = useRouter();
 
@@ -68,12 +77,27 @@ export function DataTable<TData, TValue>({
     onSortingChange: setSorting,
     onGlobalFilterChange: setGlobalFilter,
     onRowSelectionChange: setRowSelection,
+    onColumnFiltersChange: setColumnFilters,
     state: {
       sorting,
       globalFilter,
       rowSelection,
+      columnFilters,
     },
     enableRowSelection: true,
+    meta: {
+      updateData: (rowIndex: number, columnId: string, value: unknown) => {
+        toast({
+          title: "Valor atualizado",
+          description: "O registro foi atualizado com sucesso.",
+        });
+      },
+    },
+    initialState: {
+      pagination: {
+        pageSize: 100,
+      },
+    },
   });
 
   const handleDelete = async () => {
@@ -217,31 +241,101 @@ export function DataTable<TData, TValue>({
           </TableBody>
         </Table>
       </div>
-      <div className="flex items-center justify-between py-3">
-        <div className="text-sm text-gray-500">
-          {table.getSelectedRowModel().rows.length > 0 && (
-            <span>{table.getSelectedRowModel().rows.length} registro(s) selecionado(s)</span>
+      <div className="flex items-center justify-between py-4">
+        <div className="flex-1 text-sm text-gray-500">
+          {table.getFilteredRowModel().rows.length > 0 && (
+            <>
+              <span>
+                Página {table.getState().pagination.pageIndex + 1} de{' '}
+                {table.getPageCount()}
+              </span>
+              <span className="mx-2">·</span>
+              <span>
+                Total de {table.getFilteredRowModel().rows.length} registros
+              </span>
+              {table.getSelectedRowModel().rows.length > 0 && (
+                <>
+                  <span className="mx-2">·</span>
+                  <span>{table.getSelectedRowModel().rows.length} selecionado(s)</span>
+                </>
+              )}
+            </>
           )}
         </div>
-        <div className="flex items-center space-x-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.previousPage()}
-            disabled={!table.getCanPreviousPage()}
-            className="bg-white"
-          >
-            Anterior
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.nextPage()}
-            disabled={!table.getCanNextPage()}
-            className="bg-white"
-          >
-            Próxima
-          </Button>
+        <div className="flex items-center space-x-6 lg:space-x-8">
+          <div className="flex items-center space-x-2">
+            <p className="text-sm font-medium">Registros por página</p>
+            <Select
+              value={`${table.getState().pagination.pageSize}`}
+              onValueChange={(value) => {
+                table.setPageSize(Number(value))
+              }}
+            >
+              <SelectTrigger className="h-8 w-[70px]">
+                <SelectValue placeholder={table.getState().pagination.pageSize} />
+              </SelectTrigger>
+              <SelectContent side="top">
+                {[50, 100, 150].map((pageSize) => (
+                  <SelectItem key={pageSize} value={`${pageSize}`}>
+                    {pageSize}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Button
+              variant="outline"
+              className="hidden h-8 w-8 p-0 lg:flex"
+              onClick={() => table.setPageIndex(0)}
+              disabled={!table.getCanPreviousPage()}
+            >
+              <span className="sr-only">Ir para primeira página</span>
+              <ChevronLeftIcon className="h-4 w-4" />
+              <ChevronLeftIcon className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              className="h-8 w-8 p-0"
+              onClick={() => table.previousPage()}
+              disabled={!table.getCanPreviousPage()}
+            >
+              <span className="sr-only">Ir para página anterior</span>
+              <ChevronLeftIcon className="h-4 w-4" />
+            </Button>
+            <div className="flex items-center gap-1">
+              <Input
+                className="h-8 w-[50px] bg-white"
+                value={table.getState().pagination.pageIndex + 1}
+                onChange={(e) => {
+                  const page = e.target.value ? Number(e.target.value) - 1 : 0;
+                  table.setPageIndex(page);
+                }}
+              />
+              <span className="text-sm text-gray-500">
+                de {table.getPageCount()}
+              </span>
+            </div>
+            <Button
+              variant="outline"
+              className="h-8 w-8 p-0"
+              onClick={() => table.nextPage()}
+              disabled={!table.getCanNextPage()}
+            >
+              <span className="sr-only">Ir para próxima página</span>
+              <ChevronRightIcon className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              className="hidden h-8 w-8 p-0 lg:flex"
+              onClick={() => table.setPageIndex(table.getPageCount() - 1)}
+              disabled={!table.getCanNextPage()}
+            >
+              <span className="sr-only">Ir para última página</span>
+              <ChevronRightIcon className="h-4 w-4" />
+              <ChevronRightIcon className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </div>
     </div>

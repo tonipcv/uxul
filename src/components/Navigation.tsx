@@ -7,6 +7,7 @@ import {
   MegaphoneIcon,
   ChartBarIcon,
   SparklesIcon,
+  CalculatorIcon,
 } from '@heroicons/react/24/outline';
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -38,7 +39,8 @@ export default function Navigation() {
     '/profile',
     '/outbound',
     '/dre',
-    '/ia'
+    '/ia',
+    '/formulas'
   ];
 
   // Só mostrar navegação em rotas protegidas
@@ -68,6 +70,12 @@ export default function Navigation() {
           label: 'Assistente IA',
           icon: SparklesIcon,
           description: 'Análise financeira inteligente'
+        },
+        {
+          href: '/formulas',
+          label: 'Fórmulas',
+          icon: CalculatorIcon,
+          description: 'Fórmulas básicas do P&L'
         },
       ]
     }

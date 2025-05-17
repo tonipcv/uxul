@@ -83,9 +83,16 @@ export default async function DREPage() {
             </Suspense>
           </div>
 
-          <Tabs defaultValue="analytics" className="space-y-6">
+          <Tabs defaultValue="table" className="space-y-6">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-2 border-b border-gray-200">
               <TabsList className="bg-white/50 p-1">
+                <TabsTrigger 
+                  value="table" 
+                  className="flex items-center gap-2 px-4 py-2 data-[state=active]:bg-white"
+                >
+                  <TableCellsIcon className="h-4 w-4" />
+                  <span>Dados</span>
+                </TabsTrigger>
                 <TabsTrigger 
                   value="analytics" 
                   className="flex items-center gap-2 px-4 py-2 data-[state=active]:bg-white"
@@ -100,15 +107,16 @@ export default async function DREPage() {
                   <ChartBarIcon className="h-4 w-4" />
                   <span>Gráficos</span>
                 </TabsTrigger>
-                <TabsTrigger 
-                  value="table" 
-                  className="flex items-center gap-2 px-4 py-2 data-[state=active]:bg-white"
-                >
-                  <TableCellsIcon className="h-4 w-4" />
-                  <span>Dados</span>
-                </TabsTrigger>
               </TabsList>
             </div>
+
+            <TabsContent value="table" className="mt-0">
+              <Card className="bg-white border-0 shadow-sm hover:shadow-md transition-all duration-300">
+                <CardContent className="p-6">
+                  <DataTable columns={columns} data={facts} />
+                </CardContent>
+              </Card>
+            </TabsContent>
 
             <TabsContent value="analytics" className="mt-0">
               <Card className="bg-white border-0 shadow-sm hover:shadow-md transition-all duration-300">
@@ -122,14 +130,6 @@ export default async function DREPage() {
               <Card className="bg-white border-0 shadow-sm hover:shadow-md transition-all duration-300">
                 <CardContent className="p-6">
                   <DRECharts data={facts} />
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="table" className="mt-0">
-              <Card className="bg-white border-0 shadow-sm hover:shadow-md transition-all duration-300">
-                <CardContent className="p-6">
-                  <DataTable columns={columns} data={facts} />
                 </CardContent>
               </Card>
             </TabsContent>
