@@ -3,6 +3,9 @@ import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 import { Prisma } from '@prisma/client';
 
+// Helper para lidar com identificadores SQL
+const id = (field: string) => Prisma.raw(`"${field.replace(/"/g,'')}"`);
+
 // Schema de validação para a requisição
 const PivotRequestSchema = z.object({
   filters: z.object({
@@ -18,8 +21,8 @@ const PivotRequestSchema = z.object({
     field: z.string(),
     direction: z.enum(['asc', 'desc'])
   }).optional(),
-  page: z.number().optional(),
-  pageSize: z.number().optional(),
+  page: z.number().optional().default(1),
+  pageSize: z.number().optional().default(100),
 });
 
 interface QueryResult {
@@ -27,14 +30,13 @@ interface QueryResult {
 }
 
 interface TotalsResult {
-  total_value: number;
   [key: string]: number;
 }
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { filters, rows, columns, metrics, sortBy, page = 1, pageSize = 100 } = PivotRequestSchema.parse(body);
+    const { filters, rows, columns, metrics, sortBy, page, pageSize } = PivotRequestSchema.parse(body);
 
     console.log('API Request:', { filters, rows, columns, metrics });
 
@@ -44,12 +46,14 @@ export async function POST(req: Request) {
       WHERE 1=1
       ${filters?.scenario ? Prisma.sql` AND scenario = ${filters.scenario}` : Prisma.empty}
       ${filters?.version?.length ? Prisma.sql` AND version = ANY(${filters.version}::text[])` : Prisma.empty}
+      ${filters?.period?.length ? Prisma.sql` AND period = ANY(${filters.period}::text[])` : Prisma.empty}
+      ${filters?.bu?.length ? Prisma.sql` AND bu = ANY(${filters.bu}::text[])` : Prisma.empty}
     `;
 
     // Query para contar total de registros
     const countQuery = Prisma.sql`
       WITH distinct_rows AS (
-        SELECT DISTINCT ${Prisma.raw(rows.map(r => `"${r}"`).join(', '))}
+        SELECT DISTINCT ${Prisma.raw(rows.map(r => id(r).sql).join(', '))}
         ${baseQuery}
       )
       SELECT COUNT(1) as count FROM distinct_rows
@@ -64,7 +68,7 @@ export async function POST(req: Request) {
     if (totalCount === 0) {
       return NextResponse.json({
         data: [],
-        totals: { total_value: 0 },
+        totals: {},
         metadata: { page, pageSize, total: 0 }
       });
     }
@@ -72,28 +76,23 @@ export async function POST(req: Request) {
     // Query principal
     let mainQuery = Prisma.sql`
       SELECT 
-        ${Prisma.raw(rows.map(r => `"${r}"`).join(', '))}
+        ${Prisma.raw(rows.map(r => id(r).sql).join(', '))}
     `;
 
     // Adicionar métricas base
     if (!columns.length) {
       mainQuery = Prisma.sql`${mainQuery},
-        ${Prisma.raw(metrics.map(metric => {
-          if (metric === 'SUM(value)') {
-            return 'SUM(value) as value';
-          }
-          return metric;
-        }).join(', '))}
+        ${Prisma.raw(metrics.map(m => `${m} as "${m}"`).join(', '))}
       `;
     }
 
     // Adicionar colunas pivotadas
     if (columns.length > 0) {
       const uniqueValues = await prisma.$queryRaw<Array<{[key: string]: string}>>`
-        SELECT DISTINCT "${Prisma.raw(columns[0])}" 
+        SELECT DISTINCT ${id(columns[0])}
         FROM "FactEntry" 
-        WHERE "${Prisma.raw(columns[0])}" IS NOT NULL 
-        ORDER BY "${Prisma.raw(columns[0])}"
+        WHERE ${id(columns[0])} IS NOT NULL 
+        ORDER BY ${id(columns[0])}
       `;
 
       console.log('Unique Values Query Result:', uniqueValues);
@@ -102,24 +101,24 @@ export async function POST(req: Request) {
       console.log('Column Values:', columnValues);
 
       // Construir subconsultas para cada valor de coluna
-      const pivotColumns = columnValues.map(value => {
-        const safeColumnAlias = value.replace(/[^a-zA-Z0-9_]/g, '_');
-        return `COALESCE(SUM(CASE 
-          WHEN "${columns[0]}" = '${value}' THEN "value"
-          ELSE 0 
-        END), 0) as "${safeColumnAlias}"`;
+      const pivotColumns = columnValues.map(valueFromColumn => {
+        const aliasName = valueFromColumn.replace(/[^a-zA-Z0-9_]/g, '_');
+        return Prisma.sql`SUM(CASE 
+          WHEN ${id(columns[0])} = ${valueFromColumn} THEN ${id("value")}
+          ELSE NULL 
+        END) as ${id(aliasName)}`;
       });
 
       mainQuery = Prisma.sql`${mainQuery},
-        ${Prisma.raw(pivotColumns.join(',\n'))}
+        ${Prisma.join(pivotColumns, ',\n')}
       `;
     }
 
     // Completar a query principal
     mainQuery = Prisma.sql`${mainQuery}
       ${baseQuery}
-      GROUP BY ${Prisma.raw(rows.map(r => `"${r}"`).join(', '))}
-      ${sortBy ? Prisma.sql`ORDER BY "${sortBy.field}" ${Prisma.raw(sortBy.direction)}` : Prisma.empty}
+      GROUP BY ${Prisma.raw(rows.map(r => id(r).sql).join(', '))}
+      ${sortBy ? Prisma.sql`ORDER BY ${id(sortBy.field)} ${Prisma.raw(sortBy.direction)}` : Prisma.empty}
       LIMIT ${pageSize}
       OFFSET ${(page - 1) * pageSize}
     `;
@@ -132,12 +131,7 @@ export async function POST(req: Request) {
     // Query de totais
     const totalsQuery = Prisma.sql`
       SELECT 
-        ${Prisma.raw(metrics.map(metric => {
-          if (metric === 'SUM(value)') {
-            return 'SUM("value") as total_value';
-          }
-          return metric;
-        }).join(', '))}
+        ${Prisma.raw(metrics.map(metric => `${metric} as "${metric}"`).join(', '))}
       ${baseQuery}
     `;
 
@@ -163,8 +157,23 @@ export async function POST(req: Request) {
     return NextResponse.json(response);
   } catch (error) {
     console.error('Erro ao processar pivot:', error);
+    
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: 'Dados inválidos', details: error.errors },
+        { status: 400 }
+      );
+    }
+
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      return NextResponse.json(
+        { error: 'Erro no banco de dados', code: error.code },
+        { status: 500 }
+      );
+    }
+
     return NextResponse.json(
-      { error: 'Erro ao processar pivot' },
+      { error: 'Erro interno ao processar pivot' },
       { status: 500 }
     );
   }

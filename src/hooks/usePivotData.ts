@@ -34,8 +34,8 @@ async function fetchPivotData(config: PivotRequest): Promise<PivotResponse> {
         console.warn(`Null/undefined value found for key "${key}" in row ${index}`);
         processedRow[key] = 0; // Converter null/undefined para 0
       } else if (typeof value === 'string' && !isNaN(Number(value))) {
-        // Converter strings numéricas para números
-        processedRow[key] = Number(value);
+        // Converter strings numéricas para números, preservando decimais
+        processedRow[key] = parseFloat(value);
       } else if (typeof value === 'number') {
         // Garantir que é um número válido
         processedRow[key] = isNaN(value) ? 0 : value;
@@ -71,11 +71,14 @@ async function fetchPivotData(config: PivotRequest): Promise<PivotResponse> {
 
 export function usePivotData(config: PivotRequest): UseQueryResult<PivotResponse, Error> {
   return useQuery({
-    queryKey: ['pivot', config],
+    queryKey: ['pivot', JSON.stringify(config)], // Serializar o config para garantir que a query seja atualizada
     queryFn: () => fetchPivotData(config),
-    staleTime: 1000 * 60 * 5, // 5 minutos
+    staleTime: 0, // Sempre considerar os dados como stale para forçar refetch
     gcTime: 1000 * 60 * 30, // 30 minutos
     retry: 2,
-    refetchOnWindowFocus: false
+    refetchOnWindowFocus: true, // Refetch quando a janela ganhar foco
+    refetchOnMount: true, // Refetch quando o componente montar
+    refetchOnReconnect: true, // Refetch quando reconectar
+    enabled: true // Garantir que a query seja executada
   });
 } 
