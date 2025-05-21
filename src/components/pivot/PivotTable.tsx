@@ -1,16 +1,12 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
-import {
-  createColumnHelper,
-  flexRender,
-  getCoreRowModel,
-  getSortedRowModel,
-  getFilteredRowModel,
-  useReactTable,
-  SortingState,
-} from '@tanstack/react-table';
+import { useState, useEffect } from 'react';
+import { DataTable } from 'primereact/datatable';
+import { Column } from 'primereact/column';
 import { PivotRequest } from '@/types/pivot';
+import 'primereact/resources/themes/lara-light-blue/theme.css';
+import 'primereact/resources/primereact.min.css';
+import 'primeicons/primeicons.css';
 
 interface PivotTableProps {
   initialConfig: PivotRequest;
@@ -45,35 +41,7 @@ export function PivotTable({ initialConfig }: PivotTableProps) {
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [sorting, setSorting] = useState<SortingState>([]);
-
-  const columnHelper = createColumnHelper<any>();
-
-  const columns = useMemo(() => {
-    if (!data.length) return [];
-    
-    return Object.keys(data[0]).map(field => 
-      columnHelper.accessor(field, {
-        header: () => getHeaderName(field),
-        cell: info => {
-          const value = info.getValue();
-          return typeof value === 'number' ? currencyFormatter(value) : value;
-        },
-      })
-    );
-  }, [data, columnHelper]);
-
-  const table = useReactTable({
-    data,
-    columns,
-    state: {
-      sorting,
-    },
-    onSortingChange: setSorting,
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-  });
+  const [expandedRows, setExpandedRows] = useState<any>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -96,7 +64,9 @@ export function PivotTable({ initialConfig }: PivotTableProps) {
           throw new Error('Formato de dados inválido');
         }
 
-        setData(result.data);
+        // Transformar os dados para o formato de pivot
+        const pivotData = transformData(result.data, initialConfig);
+        setData(pivotData);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Erro ao carregar dados');
       } finally {
@@ -106,6 +76,71 @@ export function PivotTable({ initialConfig }: PivotTableProps) {
 
     fetchData();
   }, [initialConfig]);
+
+  const transformData = (rawData: any[], config: PivotRequest) => {
+    // Primeiro, vamos agrupar por dimensão principal (primeira dimensão em rows)
+    const mainDimension = config.rows[0];
+    const groups = new Map();
+
+    // Agrupar os dados
+    rawData.forEach(row => {
+      const mainValue = row[mainDimension];
+      if (!groups.has(mainValue)) {
+        groups.set(mainValue, {
+          [mainDimension]: mainValue,
+          details: [],
+          ...config.columns.reduce((acc, col) => ({
+            ...acc,
+            [col]: 0
+          }), {})
+        });
+      }
+      
+      const group = groups.get(mainValue);
+      group.details.push(row);
+      
+      // Somar valores para as colunas
+      config.columns.forEach(col => {
+        if (typeof row[col] === 'number') {
+          group[col] = (group[col] || 0) + row[col];
+        }
+      });
+    });
+
+    // Converter o Map em array
+    return Array.from(groups.values());
+  };
+
+  const numberTemplate = (rowData: any, col: { field: string }) => {
+    const value = rowData[col.field];
+    return typeof value === 'number' ? currencyFormatter(value) : value;
+  };
+
+  const rowExpansionTemplate = (data: any) => {
+    if (!data.details || !data.details.length) {
+      return <div className="p-3">Nenhum detalhe disponível</div>;
+    }
+
+    // Determinar as colunas para os detalhes
+    const detailColumns = Object.keys(data.details[0])
+      .filter(key => !initialConfig.rows.includes(key) || key === initialConfig.rows[0]);
+
+    return (
+      <div className="p-3">
+        <DataTable value={data.details} className="p-datatable-sm">
+          {detailColumns.map(col => (
+            <Column
+              key={col}
+              field={col}
+              header={getHeaderName(col)}
+              body={typeof data.details[0][col] === 'number' ? numberTemplate : undefined}
+              sortable
+            />
+          ))}
+        </DataTable>
+      </div>
+    );
+  };
 
   if (loading) {
     return (
@@ -134,48 +169,36 @@ export function PivotTable({ initialConfig }: PivotTableProps) {
     );
   }
 
+  // Determinar as colunas principais
+  const mainColumns = Object.keys(data[0])
+    .filter(key => key !== 'details');
+
   return (
-    <div className="bg-white rounded-lg shadow overflow-hidden">
-      <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            {table.getHeaderGroups().map(headerGroup => (
-              <tr key={headerGroup.id}>
-                {headerGroup.headers.map(header => (
-                  <th
-                    key={header.id}
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                    onClick={header.column.getToggleSortingHandler()}
-                  >
-                    {flexRender(
-                      header.column.columnDef.header,
-                      header.getContext()
-                    )}
-                    {{
-                      asc: ' 🔼',
-                      desc: ' 🔽',
-                    }[header.column.getIsSorted() as string] ?? null}
-                  </th>
-                ))}
-              </tr>
-            ))}
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {table.getRowModel().rows.map(row => (
-              <tr key={row.id} className="hover:bg-gray-50">
-                {row.getVisibleCells().map(cell => (
-                  <td
-                    key={cell.id}
-                    className="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
-                  >
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+    <div className="card">
+      <DataTable
+        value={data}
+        expandedRows={expandedRows}
+        onRowToggle={(e) => setExpandedRows(e.data)}
+        rowExpansionTemplate={rowExpansionTemplate}
+        className="p-datatable-gridlines"
+        showGridlines
+        stripedRows
+        removableSort
+        resizableColumns
+        scrollable
+        scrollHeight="500px"
+      >
+        <Column expander style={{ width: '3em' }} />
+        {mainColumns.map(field => (
+          <Column
+            key={field}
+            field={field}
+            header={getHeaderName(field)}
+            body={typeof data[0][field] === 'number' ? numberTemplate : undefined}
+            sortable
+          />
+        ))}
+      </DataTable>
     </div>
   );
 } 

@@ -58,7 +58,7 @@
     --radius: 0.5rem;
 
     --foreground-rgb: 0, 0, 0;
-    --background-start-rgb: 255, 255, 255;
+    --background-start-rgb: 214, 219, 220;
     --background-end-rgb: 255, 255, 255;
   }
 
@@ -201,4 +201,70 @@
 
 .react-flow__background {
   background-color: white !important;
+}
+
+/* PrimeReact Custom Styles */
+.p-datatable .p-datatable-tbody > tr > td {
+  padding: 0.75rem 1rem;
+}
+
+.p-datatable .p-datatable-thead > tr > th {
+  background-color: #f8fafc;
+  color: #64748b;
+  font-weight: 600;
+  padding: 0.75rem 1rem;
+}
+
+.p-datatable .p-sortable-column:hover {
+  background-color: #f1f5f9;
+}
+
+.p-datatable .p-datatable-tbody > tr:hover {
+  background-color: #f8fafc;
+}
+
+.p-datatable .p-datatable-tbody > tr.p-highlight {
+  background-color: #e0f2fe;
+}
+
+/* Customização do tema para combinar com o design existente */
+.card {
+  background: white;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  margin-bottom: 1rem;
+}
+
+.p-datatable .p-column-header-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Estilo para células numéricas */
+.p-datatable .p-datatable-tbody > tr > td.number-cell {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Estilo para linhas expandidas */
+.p-datatable .p-datatable-tbody > tr.p-row-expanded {
+  background-color: #f8fafc;
+}
+
+.p-datatable .p-row-expanded > td {
+  border-bottom: none;
+}
+
+/* Estilo para o ícone de expansão */
+.p-datatable .p-row-toggler {
+  width: 2rem;
+  height: 2rem;
+  color: #64748b;
+}
+
+.p-datatable .p-row-toggler:hover {
+  color: #0f172a;
+  background-color: #e2e8f0;
+  border-radius: 0.25rem;
 }
