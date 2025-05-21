@@ -356,3 +356,15 @@ model CostCenterInfo {
   description           String?
   factEntries          FactEntry[]
 }
+
+model PivotSnapshot {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  config      Json
+  data        Json
+  totals      Json
+  metadata    Json
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}

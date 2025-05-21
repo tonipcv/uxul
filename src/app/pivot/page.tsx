@@ -2,10 +2,10 @@
 
 import { useState } from 'react';
 import { PivotTable } from "@/components/pivot/PivotTable";
+import { PivotConfig } from "@/components/pivot/PivotConfig";
 import Navigation from "@/components/Navigation";
 import { Card, CardContent } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { AVAILABLE_DIMENSIONS, AVAILABLE_METRICS, PivotRequest } from "@/types/pivot";
+import { PivotRequest } from "@/types/pivot";
 
 const DEFAULT_CONFIG: PivotRequest = {
   rows: ['pnlLine'],
@@ -20,13 +20,6 @@ const DEFAULT_CONFIG: PivotRequest = {
 export default function PivotPage() {
   const [config, setConfig] = useState<PivotRequest>(DEFAULT_CONFIG);
 
-  const handleConfigChange = (type: 'rows' | 'columns' | 'metrics', value: string) => {
-    setConfig(prev => ({
-      ...prev,
-      [type]: [value]
-    }));
-  };
-
   return (
     <>
       <Navigation />
@@ -35,76 +28,13 @@ export default function PivotPage() {
           <div className="mb-8">
             <h1 className="text-2xl font-bold tracking-tight">Análise Dinâmica</h1>
             <p className="text-muted-foreground">
-              Analise seus dados financeiros de forma dinâmica e flexível.
+              Arraste e solte as dimensões e métricas para criar sua análise.
             </p>
           </div>
 
           <Card className="mb-6">
             <CardContent className="pt-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Linhas
-                  </label>
-                  <Select
-                    value={config.rows[0]}
-                    onValueChange={(value) => handleConfigChange('rows', value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione a dimensão" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {AVAILABLE_DIMENSIONS.map((dim) => (
-                        <SelectItem key={dim.key} value={dim.key}>
-                          {dim.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Colunas
-                  </label>
-                  <Select
-                    value={config.columns[0]}
-                    onValueChange={(value) => handleConfigChange('columns', value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione a dimensão" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {AVAILABLE_DIMENSIONS.map((dim) => (
-                        <SelectItem key={dim.key} value={dim.key}>
-                          {dim.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Métrica
-                  </label>
-                  <Select
-                    value={config.metrics[0]}
-                    onValueChange={(value) => handleConfigChange('metrics', value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione a métrica" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {AVAILABLE_METRICS.map((metric) => (
-                        <SelectItem key={metric.key} value={metric.key}>
-                          {metric.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
+              <PivotConfig config={config} onChange={setConfig} />
             </CardContent>
           </Card>
 
